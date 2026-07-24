@@ -3,27 +3,28 @@
   ABMDMS - Arduino Based Motion Detection Monitoring System
   File   : motion_sensor.ino
   Board  : Arduino Uno
-  Sensor : 3x HC-SR501 PIR Motion Sensors (multi-zone)
+  Sensor : 4x HC-SR501 PIR Motion Sensors (multi-zone)
   ============================================================
 
   WIRING  (see arduino/PIR_MULTI_ZONE_WIRING.md for the diagram)
   ------
-  All 3 PIR sensors share the breadboard's 5V (+) and GND (-) rails.
+  All 4 PIR sensors share the breadboard's 5V (+) and GND (-) rails.
   Each sensor's OUT wire goes to its OWN Arduino digital pin:
 
   Room C (existing) PIR OUT  ->  Arduino Digital Pin 2
   Room A (new)      PIR OUT  ->  Arduino Digital Pin 3
   Room B (new)      PIR OUT  ->  Arduino Digital Pin 4
-  All 3 PIR VCC               ->  breadboard (+) rail -> Arduino 5V
-  All 3 PIR GND               ->  breadboard (-) rail -> Arduino GND
+  Room D (new)      PIR OUT  ->  Arduino Digital Pin 5
+  All 4 PIR VCC               ->  breadboard (+) rail -> Arduino 5V
+  All 4 PIR GND               ->  breadboard (-) rail -> Arduino GND
 
   WHAT THIS PROGRAM DOES
   ----------------------
-  1. Waits for all 3 PIR sensors to warm up (they need time after power on).
-  2. Watches Pins 2, 3, and 4 for movement, independently per zone.
+  1. Waits for all 4 PIR sensors to warm up (they need time after power on).
+  2. Watches Pins 2, 3, 4, and 5 for movement, independently per zone.
   3. Prints "<ZONE>_MOTION_DETECTED" one time when movement STARTS in a zone.
   4. Prints "<ZONE>_MOTION_STOPPED"  one time when movement ENDS in a zone.
-     ZONE is one of: ROOMC (Pin 2), ROOMA (Pin 3), ROOMB (Pin 4).
+     ZONE is one of: ROOMC (Pin 2), ROOMA (Pin 3), ROOMB (Pin 4), ROOMD (Pin 5).
 
   IMPORTANT: each zone only prints when ITS OWN state CHANGES.
   If it printed on every loop, it would send thousands of
@@ -39,9 +40,9 @@
 // You can change these numbers if you need to.
 // ============================================================
 
-const int NUM_ZONES = 3;
-const int PIR_PIN[NUM_ZONES]   = { 2,       3,       4       }; // OUT wire per zone
-const char* ZONE_NAME[NUM_ZONES] = { "ROOMC", "ROOMA", "ROOMB" }; // printed in event tokens
+const int NUM_ZONES = 4;
+const int PIR_PIN[NUM_ZONES]   = { 2,       3,       4,       5       }; // OUT wire per zone
+const char* ZONE_NAME[NUM_ZONES] = { "ROOMC", "ROOMA", "ROOMB", "ROOMD" }; // printed in event tokens
 
 const int LED_PIN = 13;         // Built-in LED on the Arduino board (lights when ANY zone is active)
 
@@ -54,8 +55,8 @@ const unsigned long STOP_CONFIRM_MS  = 2000; // Wait this long before saying mot
 // SECTION 2 - MEMORY (variables that remember things)
 // ============================================================
 
-bool motionActive[NUM_ZONES]      = { false, false, false }; // per-zone: already reported motion?
-unsigned long lowStartedAt[NUM_ZONES] = { 0, 0, 0 };          // per-zone: when it first went quiet
+bool motionActive[NUM_ZONES]      = { false, false, false, false }; // per-zone: already reported motion?
+unsigned long lowStartedAt[NUM_ZONES] = { 0, 0, 0, 0 };          // per-zone: when it first went quiet
 
 
 // ============================================================
@@ -77,7 +78,7 @@ void setup() {
   // --- PIR warm-up ---
   // The HC-SR501 gives false readings for the first few seconds
   // after power on. We wait and show a countdown so the user knows
-  // the system is not frozen. All 3 sensors share one warm-up timer,
+  // the system is not frozen. All 4 sensors share one warm-up timer,
   // so stay away from ALL of them until it finishes.
   Serial.println("ABMDMS - Multi-Zone Motion Detection System");
   Serial.print("Warming up ");

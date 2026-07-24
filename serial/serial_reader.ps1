@@ -13,7 +13,7 @@
 #
 #      Arduino -> USB -> THIS SCRIPT -> PHP API -> MySQL
 #
-#  MULTI-ZONE (3 PIR) FORMAT
+#  MULTI-ZONE (4 PIR) FORMAT
 #  --------------------------
 #  The Arduino sketch now prints one token per zone, e.g.
 #  "ROOMA_MOTION_DETECTED". This script splits that into
@@ -42,7 +42,7 @@ $DuplicateWindow = 2     # Ignore the same event repeated within N seconds
 $ReconnectDelay  = 3     # Seconds to wait before retrying a lost connection
 
 # Matches tokens like "ROOMA_MOTION_DETECTED" -> zone=ROOMA, event=MOTION_DETECTED
-$ZonePattern = '^(ROOMA|ROOMB|ROOMC)_(MOTION_DETECTED|MOTION_STOPPED)$'
+$ZonePattern = '^(ROOMA|ROOMB|ROOMC|ROOMD)_(MOTION_DETECTED|MOTION_STOPPED)$'
 
 # ============================================================
 #  You do not need to change anything below this line.

@@ -16,7 +16,7 @@
  *
  * Data to send:
  *     event_type = MOTION_DETECTED
- *     zone       = ROOMA          (ROOMA, ROOMB, or ROOMC — defaults to ROOMC)
+ *     zone       = ROOMA          (ROOMA, ROOMB, ROOMC, or ROOMD — defaults to ROOMC)
  *     source     = ARDUINO_PIR
  *
  * WHAT IT SENDS BACK

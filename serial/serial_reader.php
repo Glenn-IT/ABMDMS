@@ -242,7 +242,7 @@ while (true) {
         echo '    Arduino: ' . $message . PHP_EOL;
 
         // Is this line a zone-tagged motion token, e.g. ROOMA_MOTION_DETECTED?
-        if (!preg_match('/^(ROOMA|ROOMB|ROOMC)_(MOTION_DETECTED|MOTION_STOPPED)$/', $message, $m)) {
+        if (!preg_match('/^(ROOMA|ROOMB|ROOMC|ROOMD)_(MOTION_DETECTED|MOTION_STOPPED)$/', $message, $m)) {
             continue;   // just a status message, nothing to save
         }
         $zone      = $m[1];

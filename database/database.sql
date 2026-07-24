@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS `motion_logs` (
     -- What happened: 'MOTION_DETECTED' or 'MOTION_STOPPED'
     `event_type` VARCHAR(20) NOT NULL,
 
-    -- Which zone it happened in: 'ROOMA', 'ROOMB', or 'ROOMC'
+    -- Which zone it happened in: 'ROOMA', 'ROOMB', 'ROOMC', or 'ROOMD'
     `zone` VARCHAR(20) NOT NULL DEFAULT 'ROOMC',
 
     -- Where it came from: 'ARDUINO_PIR' or 'SIMULATOR'

@@ -80,7 +80,7 @@ $dbCheck = testDBConnection();
 
 
     <!-- ========================================================
-         PER-ZONE STATUS (Room A / Room B / Room C)
+         PER-ZONE STATUS (Room A / Room B / Room C / Room D)
          ======================================================== -->
     <section class="zones">
 <?php foreach (ALLOWED_ZONES as $zoneCode): ?>
