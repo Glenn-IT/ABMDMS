@@ -16,6 +16,7 @@
  *
  * Data to send:
  *     event_type = MOTION_DETECTED
+ *     zone       = ROOMA          (ROOMA, ROOMB, or ROOMC — defaults to ROOMC)
  *     source     = ARDUINO_PIR
  *
  * WHAT IT SENDS BACK
@@ -63,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // ------------------------------------------------------------
 
 $eventType = isset($_POST['event_type']) ? trim((string) $_POST['event_type']) : '';
+$zone      = isset($_POST['zone'])       ? trim((string) $_POST['zone'])       : 'ROOMC';
 $source    = isset($_POST['source'])     ? trim((string) $_POST['source'])     : 'ARDUINO_PIR';
 
 
@@ -83,7 +85,17 @@ if (!in_array($eventType, ALLOWED_EVENT_TYPES, true)) {
     respond(false, 'Unable to record motion: invalid event_type.', [], 400);
 }
 
-// 3c. Clean up the source label and keep it short
+// 3c. The zone must also be one we actually allow.
+if ($zone === '') {
+    $zone = 'ROOMC';
+}
+$zone = strtoupper($zone);
+
+if (!in_array($zone, ALLOWED_ZONES, true)) {
+    respond(false, 'Unable to record motion: invalid zone.', [], 400);
+}
+
+// 3d. Clean up the source label and keep it short
 if ($source === '') {
     $source = 'ARDUINO_PIR';
 }
@@ -102,16 +114,17 @@ try {
 
     // A PREPARED STATEMENT. The ? marks are filled in safely by PDO,
     // so no one can inject SQL commands through the data.
-    $sql = 'INSERT INTO motion_logs (event_type, source, detected_at) VALUES (?, ?, ?)';
+    $sql = 'INSERT INTO motion_logs (event_type, zone, source, detected_at) VALUES (?, ?, ?, ?)';
 
     $stmt = $db->prepare($sql);
-    $stmt->execute([$eventType, $source, $detectedAt]);
+    $stmt->execute([$eventType, $zone, $source, $detectedAt]);
 
     $newId = (int) $db->lastInsertId();
 
     respond(true, 'Motion recorded successfully', [
         'id'          => $newId,
         'event_type'  => $eventType,
+        'zone'        => $zone,
         'source'      => $source,
         'detected_at' => $detectedAt,
     ]);

@@ -44,6 +44,18 @@ date_default_timezone_set('Asia/Manila');
 
 define('ALLOWED_EVENT_TYPES', ['MOTION_DETECTED', 'MOTION_STOPPED']);
 
+// The API will REFUSE to save a zone that is not in this list too.
+// ROOMC is the original/existing PIR sensor (Pin 2); ROOMA and ROOMB
+// are the 2 new sensors added on the breadboard (Pin 3 and Pin 4).
+define('ALLOWED_ZONES', ['ROOMA', 'ROOMB', 'ROOMC']);
+
+// Friendly names shown on the dashboard for each zone code above.
+define('ZONE_LABELS', [
+    'ROOMA' => 'Room A',
+    'ROOMB' => 'Room B',
+    'ROOMC' => 'Room C',
+]);
+
 
 // ------------------------------------------------------------
 // DASHBOARD SETTINGS

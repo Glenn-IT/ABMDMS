@@ -3,25 +3,32 @@
   ABMDMS - Arduino Based Motion Detection Monitoring System
   File   : motion_sensor.ino
   Board  : Arduino Uno
-  Sensor : HC-SR501 PIR Motion Sensor
+  Sensor : 3x HC-SR501 PIR Motion Sensors (multi-zone)
   ============================================================
 
-  WIRING
+  WIRING  (see arduino/PIR_MULTI_ZONE_WIRING.md for the diagram)
   ------
-  PIR VCC  ->  Arduino 5V
-  PIR GND  ->  Arduino GND
-  PIR OUT  ->  Arduino Digital Pin 2
+  All 3 PIR sensors share the breadboard's 5V (+) and GND (-) rails.
+  Each sensor's OUT wire goes to its OWN Arduino digital pin:
+
+  Room C (existing) PIR OUT  ->  Arduino Digital Pin 2
+  Room A (new)      PIR OUT  ->  Arduino Digital Pin 3
+  Room B (new)      PIR OUT  ->  Arduino Digital Pin 4
+  All 3 PIR VCC               ->  breadboard (+) rail -> Arduino 5V
+  All 3 PIR GND               ->  breadboard (-) rail -> Arduino GND
 
   WHAT THIS PROGRAM DOES
   ----------------------
-  1. Waits for the PIR sensor to warm up (it needs time after power on).
-  2. Watches Digital Pin 2 for movement.
-  3. Prints "MOTION_DETECTED" one time when movement STARTS.
-  4. Prints "MOTION_STOPPED"  one time when movement ENDS.
+  1. Waits for all 3 PIR sensors to warm up (they need time after power on).
+  2. Watches Pins 2, 3, and 4 for movement, independently per zone.
+  3. Prints "<ZONE>_MOTION_DETECTED" one time when movement STARTS in a zone.
+  4. Prints "<ZONE>_MOTION_STOPPED"  one time when movement ENDS in a zone.
+     ZONE is one of: ROOMC (Pin 2), ROOMA (Pin 3), ROOMB (Pin 4).
 
-  IMPORTANT: it only prints when the state CHANGES.
+  IMPORTANT: each zone only prints when ITS OWN state CHANGES.
   If it printed on every loop, it would send thousands of
-  messages per second and flood the database.
+  messages per second and flood the database. Zones are tracked
+  independently so triggering one zone never triggers another.
 
   Open Tools > Serial Monitor and set the baud rate to 9600.
 */
@@ -32,8 +39,11 @@
 // You can change these numbers if you need to.
 // ============================================================
 
-const int PIR_PIN = 2;          // PIR OUT wire is connected to Digital Pin 2
-const int LED_PIN = 13;         // Built-in LED on the Arduino board
+const int NUM_ZONES = 3;
+const int PIR_PIN[NUM_ZONES]   = { 2,       3,       4       }; // OUT wire per zone
+const char* ZONE_NAME[NUM_ZONES] = { "ROOMC", "ROOMA", "ROOMB" }; // printed in event tokens
+
+const int LED_PIN = 13;         // Built-in LED on the Arduino board (lights when ANY zone is active)
 
 const unsigned long WARMUP_SECONDS   = 30;   // PIR warm-up time in seconds
 const unsigned long BAUD_RATE        = 9600; // Must match the Serial Monitor
@@ -44,8 +54,8 @@ const unsigned long STOP_CONFIRM_MS  = 2000; // Wait this long before saying mot
 // SECTION 2 - MEMORY (variables that remember things)
 // ============================================================
 
-bool motionActive = false;      // true = we already reported motion is happening
-unsigned long lowStartedAt = 0; // when the sensor first went quiet
+bool motionActive[NUM_ZONES]      = { false, false, false }; // per-zone: already reported motion?
+unsigned long lowStartedAt[NUM_ZONES] = { 0, 0, 0 };          // per-zone: when it first went quiet
 
 
 // ============================================================
@@ -58,16 +68,21 @@ void setup() {
   Serial.begin(BAUD_RATE);
 
   // Tell the Arduino which pins are inputs and outputs
-  pinMode(PIR_PIN, INPUT);
+  for (int i = 0; i < NUM_ZONES; i++) {
+    pinMode(PIR_PIN[i], INPUT);
+  }
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
   // --- PIR warm-up ---
   // The HC-SR501 gives false readings for the first few seconds
   // after power on. We wait and show a countdown so the user knows
-  // the system is not frozen.
-  Serial.println("ABMDMS - Motion Detection System");
-  Serial.print("Warming up PIR sensor, please stay still (");
+  // the system is not frozen. All 3 sensors share one warm-up timer,
+  // so stay away from ALL of them until it finishes.
+  Serial.println("ABMDMS - Multi-Zone Motion Detection System");
+  Serial.print("Warming up ");
+  Serial.print(NUM_ZONES);
+  Serial.print(" PIR sensors, please stay still (");
   Serial.print(WARMUP_SECONDS);
   Serial.println(" seconds)...");
 
@@ -90,55 +105,67 @@ void setup() {
 
 void loop() {
 
-  // Read the sensor. HIGH = movement, LOW = no movement.
-  int sensorValue = digitalRead(PIR_PIN);
+  // Check each zone independently, one after another.
+  for (int i = 0; i < NUM_ZONES; i++) {
+
+    // Read this zone's sensor. HIGH = movement, LOW = no movement.
+    int sensorValue = digitalRead(PIR_PIN[i]);
 
 
-  // --------------------------------------------------------
-  // CASE A: The sensor sees movement
-  // --------------------------------------------------------
-  if (sensorValue == HIGH) {
+    // --------------------------------------------------------
+    // CASE A: This zone's sensor sees movement
+    // --------------------------------------------------------
+    if (sensorValue == HIGH) {
 
-    // Movement is still happening, so cancel any "stop" countdown
-    lowStartedAt = 0;
+      // Movement is still happening, so cancel any "stop" countdown
+      lowStartedAt[i] = 0;
 
-    // Only announce it if we have NOT already announced it.
-    // This is what stops duplicate messages.
-    if (motionActive == false) {
-      motionActive = true;
-      digitalWrite(LED_PIN, HIGH);   // turn the board LED on
+      // Only announce it if we have NOT already announced it.
+      // This is what stops duplicate messages.
+      if (motionActive[i] == false) {
+        motionActive[i] = true;
+        digitalWrite(LED_PIN, HIGH);   // turn the board LED on (any zone active)
 
-      Serial.println("MOTION_DETECTED");   // <-- the laptop reads this line
+        Serial.print(ZONE_NAME[i]);
+        Serial.println("_MOTION_DETECTED");   // <-- the laptop reads this line
+      }
+    }
+
+
+    // --------------------------------------------------------
+    // CASE B: This zone's sensor sees nothing
+    // --------------------------------------------------------
+    else {
+
+      // Only care about this if motion was previously happening
+      if (motionActive[i] == true) {
+
+        // Start a small timer the first moment it goes quiet.
+        // The PIR output can flicker for a moment, so we wait a
+        // couple of seconds to be sure the person really left.
+        if (lowStartedAt[i] == 0) {
+          lowStartedAt[i] = millis();
+        }
+
+        // Has it stayed quiet long enough?
+        if (millis() - lowStartedAt[i] >= STOP_CONFIRM_MS) {
+          motionActive[i] = false;
+          lowStartedAt[i] = 0;
+
+          Serial.print(ZONE_NAME[i]);
+          Serial.println("_MOTION_STOPPED");  // <-- the laptop reads this line
+        }
+      }
     }
   }
 
-
-  // --------------------------------------------------------
-  // CASE B: The sensor sees nothing
-  // --------------------------------------------------------
-  else {
-
-    // Only care about this if motion was previously happening
-    if (motionActive == true) {
-
-      // Start a small timer the first moment it goes quiet.
-      // The PIR output can flicker for a moment, so we wait a
-      // couple of seconds to be sure the person really left.
-      if (lowStartedAt == 0) {
-        lowStartedAt = millis();
-      }
-
-      // Has it stayed quiet long enough?
-      if (millis() - lowStartedAt >= STOP_CONFIRM_MS) {
-        motionActive = false;
-        lowStartedAt = 0;
-        digitalWrite(LED_PIN, LOW);    // turn the board LED off
-
-        Serial.println("MOTION_STOPPED");  // <-- the laptop reads this line
-      }
-    }
+  // The board LED reflects whether ANY zone is currently active
+  bool anyActive = false;
+  for (int i = 0; i < NUM_ZONES; i++) {
+    if (motionActive[i]) anyActive = true;
   }
+  digitalWrite(LED_PIN, anyActive ? HIGH : LOW);
 
-  // Small pause so we do not read the pin millions of times per second
+  // Small pause so we do not read the pins millions of times per second
   delay(50);
 }

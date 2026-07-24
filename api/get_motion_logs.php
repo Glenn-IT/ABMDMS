@@ -21,10 +21,15 @@
  * {
  *   "success": true,
  *   "status": "NO_MOTION",
+ *   "zones": {
+ *     "ROOMA": { "label": "Room A", "status": "NO_MOTION", "last_motion": "..." },
+ *     "ROOMB": { "label": "Room B", "status": "MOTION",    "last_motion": "..." },
+ *     "ROOMC": { "label": "Room C", "status": "NO_MOTION", "last_motion": "..." }
+ *   },
  *   "total_events": 125,
  *   "today_events": 25,
  *   "last_motion": "July 24, 2026 12:30 PM",
- *   "logs": [ { "id":1, "event_type":"MOTION_DETECTED", ... } ],
+ *   "logs": [ { "id":1, "event_type":"MOTION_DETECTED", "zone":"ROOMA", ... } ],
  *   "page": 1,
  *   "total_pages": 7
  * }
@@ -114,7 +119,7 @@ try {
     // --------------------------------------------------------
     // STEP 4 - Current status (is someone there RIGHT NOW?)
     // --------------------------------------------------------
-    // We look at the newest record of any kind.
+    // We look at the newest record of any kind, overall AND per zone.
     //   newest = MOTION_DETECTED -> someone is there
     //   newest = MOTION_STOPPED  -> the area is clear
 
@@ -124,13 +129,32 @@ try {
 
     $status = ($newestEvent === 'MOTION_DETECTED') ? 'MOTION' : 'NO_MOTION';
 
+    // 4a. Same thing, but one status per zone.
+    $zoneStmt = $db->prepare(
+        'SELECT event_type, detected_at FROM motion_logs
+         WHERE zone = ?
+         ORDER BY id DESC LIMIT 1'
+    );
+
+    $zones = [];
+    foreach (ALLOWED_ZONES as $zoneCode) {
+        $zoneStmt->execute([$zoneCode]);
+        $zoneRow = $zoneStmt->fetch();
+
+        $zones[$zoneCode] = [
+            'label'       => ZONE_LABELS[$zoneCode] ?? $zoneCode,
+            'status'      => ($zoneRow && $zoneRow['event_type'] === 'MOTION_DETECTED') ? 'MOTION' : 'NO_MOTION',
+            'last_motion' => $zoneRow ? date('F j, Y g:i A', strtotime($zoneRow['detected_at'])) : 'No motion yet',
+        ];
+    }
+
 
     // --------------------------------------------------------
     // STEP 5 - The history table rows (newest first)
     // --------------------------------------------------------
 
     $stmt = $db->prepare(
-        'SELECT id, event_type, source, detected_at
+        'SELECT id, event_type, zone, source, detected_at
          FROM motion_logs
          ORDER BY id DESC
          LIMIT :limit OFFSET :offset'
@@ -149,6 +173,8 @@ try {
         $logs[] = [
             'id'         => (int) $row['id'],
             'event_type' => $row['event_type'],
+            'zone'       => $row['zone'],
+            'zone_label' => ZONE_LABELS[$row['zone']] ?? $row['zone'],
             'source'     => $row['source'],
             'date'       => date('M j, Y', $time),   // Jul 24, 2026
             'time'       => date('g:i:s A', $time),  // 12:30:05 PM
@@ -163,6 +189,7 @@ try {
     echo json_encode([
         'success'      => true,
         'status'       => $status,
+        'zones'        => $zones,
         'total_events' => $totalEvents,
         'today_events' => $todayEvents,
         'last_motion'  => $lastMotion,

@@ -42,6 +42,9 @@ CREATE TABLE IF NOT EXISTS `motion_logs` (
     -- What happened: 'MOTION_DETECTED' or 'MOTION_STOPPED'
     `event_type` VARCHAR(20) NOT NULL,
 
+    -- Which zone it happened in: 'ROOMA', 'ROOMB', or 'ROOMC'
+    `zone` VARCHAR(20) NOT NULL DEFAULT 'ROOMC',
+
     -- Where it came from: 'ARDUINO_PIR' or 'SIMULATOR'
     `source` VARCHAR(50) NOT NULL DEFAULT 'ARDUINO_PIR',
 
@@ -56,9 +59,23 @@ CREATE TABLE IF NOT EXISTS `motion_logs` (
 
     -- Indexes make searching and sorting much faster
     KEY `idx_detected_at` (`detected_at`),
-    KEY `idx_event_type`  (`event_type`)
+    KEY `idx_event_type`  (`event_type`),
+    KEY `idx_zone`        (`zone`)
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+-- ============================================================
+-- UPGRADE: already imported this file before the 3-zone change?
+-- ------------------------------------------------------------
+-- CREATE TABLE IF NOT EXISTS above does NOT add columns to a table
+-- that already exists. If your `motion_logs` table was created
+-- before this update, run the two lines below ONCE in the
+-- phpMyAdmin "SQL" tab instead of re-importing this whole file.
+-- ============================================================
+
+-- ALTER TABLE `motion_logs` ADD COLUMN `zone` VARCHAR(20) NOT NULL DEFAULT 'ROOMC' AFTER `event_type`;
+-- ALTER TABLE `motion_logs` ADD KEY `idx_zone` (`zone`);
 
 
 -- ============================================================
@@ -70,7 +87,7 @@ CREATE TABLE IF NOT EXISTS `motion_logs` (
 -- line, then import the file again.
 -- ============================================================
 
--- INSERT INTO `motion_logs` (`event_type`, `source`, `detected_at`) VALUES ('MOTION_DETECTED', 'ARDUINO_PIR', NOW());
+-- INSERT INTO `motion_logs` (`event_type`, `zone`, `source`, `detected_at`) VALUES ('MOTION_DETECTED', 'ROOMA', 'ARDUINO_PIR', NOW());
 
 
 -- ============================================================
@@ -79,8 +96,8 @@ CREATE TABLE IF NOT EXISTS `motion_logs` (
 -- See everything that was recorded:
 --     SELECT * FROM motion_logs ORDER BY id DESC;
 --
--- Count all motion detections:
---     SELECT COUNT(*) FROM motion_logs WHERE event_type = 'MOTION_DETECTED';
+-- Count all motion detections in one zone:
+--     SELECT COUNT(*) FROM motion_logs WHERE event_type = 'MOTION_DETECTED' AND zone = 'ROOMA';
 --
 -- Delete all records and start over from id 1:
 --     TRUNCATE TABLE motion_logs;

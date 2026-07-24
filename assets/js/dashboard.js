@@ -149,10 +149,13 @@
 
         el.lastUpdated.textContent = data.server_time;
 
-        // ---- 2c. The history table ----
+        // ---- 2c. Per-zone status cards ----
+        renderZones(data.zones);
+
+        // ---- 2d. The history table ----
         renderTable(data.logs);
 
-        // ---- 2d. Record count + pagination ----
+        // ---- 2e. Record count + pagination ----
         el.recordCount.textContent = data.total_rows + (data.total_rows === 1 ? ' record' : ' records');
 
         currentPage = data.page;
@@ -165,16 +168,47 @@
 
 
     // --------------------------------------------------------
-    // STEP 3 - BUILD THE TABLE ROWS
+    // STEP 3 - UPDATE THE PER-ZONE STATUS CARDS
+    // --------------------------------------------------------
+    // The cards themselves (id="zone-rooma" etc.) are already drawn
+    // by index.php, one per entry in ALLOWED_ZONES - this only
+    // flips their text/colour based on the latest API response.
+    function renderZones(zones) {
+        if (!zones) {
+            return;
+        }
+
+        for (var zoneCode in zones) {
+            if (!zones.hasOwnProperty(zoneCode)) {
+                continue;
+            }
+
+            var card = document.getElementById('zone-' + zoneCode.toLowerCase());
+            if (!card) {
+                continue;   // dashboard doesn't have a card for this zone code
+            }
+
+            var zoneInfo   = zones[zoneCode];
+            var isMotion    = (zoneInfo.status === 'MOTION');
+            var valueEl     = card.querySelector('.zone-value');
+
+            card.className   = 'zone-card ' + (isMotion ? 'zone-motion' : 'zone-none');
+            valueEl.textContent = isMotion ? 'MOTION DETECTED' : 'NO MOTION';
+        }
+    }
+
+
+    // --------------------------------------------------------
+    // STEP 4 - BUILD THE TABLE ROWS
     // --------------------------------------------------------
     function renderTable(logs) {
 
         // Nothing recorded yet
         if (!logs || logs.length === 0) {
             el.historyBody.innerHTML =
-                '<tr><td colspan="5" class="empty">' +
+                '<tr><td colspan="6" class="empty">' +
                 'No motion events recorded yet.<br>' +
-                'Wave your hand in front of the PIR sensor, or use the Test Tool.' +
+                'Wave your hand in front of a PIR sensor, or use the Test Tool.' +
                 '</td></tr>';
             lastTopId = null;
             return;
@@ -196,6 +230,7 @@
             rows += '<tr' + (isNew ? ' class="is-new"' : '') + '>' +
                         '<td>' + log.id + '</td>' +
                         '<td><span class="' + pillClass + '">' + escapeHtml(log.event_type) + '</span></td>' +
+                        '<td>' + escapeHtml(log.zone_label || log.zone) + '</td>' +
                         '<td>' + escapeHtml(log.source) + '</td>' +
                         '<td>' + escapeHtml(log.date) + '</td>' +
                         '<td>' + escapeHtml(log.time) + '</td>' +
@@ -212,7 +247,7 @@
 
 
     // --------------------------------------------------------
-    // STEP 4 - PAGINATION BUTTONS
+    // STEP 5 - PAGINATION BUTTONS
     // --------------------------------------------------------
 
     el.prevBtn.addEventListener('click', function () {
@@ -233,7 +268,7 @@
 
 
     // --------------------------------------------------------
-    // STEP 5 - START
+    // STEP 6 - START
     // --------------------------------------------------------
 
     loadData();                          // load immediately

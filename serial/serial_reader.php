@@ -12,8 +12,9 @@
  *   Arduino  ->  USB cable  ->  THIS SCRIPT  ->  PHP API  ->  MySQL
  *
  * It listens to the COM port, and every time the Arduino prints
- * MOTION_DETECTED or MOTION_STOPPED it sends that event to the
- * PHP API, which saves it in the database.
+ * a zone-tagged token like ROOMA_MOTION_DETECTED it splits that
+ * into zone=ROOMA + event_type=MOTION_DETECTED and sends both to
+ * the PHP API, which saves it in the database.
  *
  * HOW TO RUN IT
  * -------------
@@ -100,7 +101,7 @@ function buildPortPath(string $port): string
  *
  * @return array{ok: bool, message: string}
  */
-function sendToApi(string $apiUrl, string $eventType, string $source): array
+function sendToApi(string $apiUrl, string $eventType, string $zone, string $source): array
 {
     $ch = curl_init($apiUrl);
 
@@ -108,6 +109,7 @@ function sendToApi(string $apiUrl, string $eventType, string $source): array
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => http_build_query([
             'event_type' => $eventType,
+            'zone'       => $zone,
             'source'     => $source,
         ]),
         CURLOPT_RETURNTRANSFER => true,
@@ -239,10 +241,12 @@ while (true) {
         // warm-up countdown and the "System Ready" message too.
         echo '    Arduino: ' . $message . PHP_EOL;
 
-        // Is this line one of our two real events?
-        if ($message !== 'MOTION_DETECTED' && $message !== 'MOTION_STOPPED') {
+        // Is this line a zone-tagged motion token, e.g. ROOMA_MOTION_DETECTED?
+        if (!preg_match('/^(ROOMA|ROOMB|ROOMC)_(MOTION_DETECTED|MOTION_STOPPED)$/', $message, $m)) {
             continue;   // just a status message, nothing to save
         }
+        $zone      = $m[1];
+        $eventType = $m[2];
 
 
         // ----------------------------------------------------
@@ -250,6 +254,8 @@ while (true) {
         // ----------------------------------------------------
         // If the exact same event arrives again within a couple
         // of seconds, ignore it so the database stays clean.
+        // $message already includes the zone, so Room A repeating
+        // fast never suppresses a real Room B event.
 
         $now = time();
 
@@ -266,7 +272,7 @@ while (true) {
         // STEP 5 - Send the event to the PHP API
         // ----------------------------------------------------
 
-        $result = sendToApi($API_URL, $message, $SOURCE);
+        $result = sendToApi($API_URL, $eventType, $zone, $SOURCE);
 
         if ($result['ok']) {
             say("[OK]   {$message} -> " . $result['message']);

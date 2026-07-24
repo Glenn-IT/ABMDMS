@@ -13,6 +13,13 @@
 #
 #      Arduino -> USB -> THIS SCRIPT -> PHP API -> MySQL
 #
+#  MULTI-ZONE (3 PIR) FORMAT
+#  --------------------------
+#  The Arduino sketch now prints one token per zone, e.g.
+#  "ROOMA_MOTION_DETECTED". This script splits that into
+#  zone=ROOMA and event_type=MOTION_DETECTED before POSTing,
+#  so each zone is saved and tracked independently.
+#
 #  HOW TO RUN IT
 #  -------------
 #  Just double-click:  start_reader.bat
@@ -33,6 +40,9 @@ $Source    = "ARDUINO_PIR"                                         # Saved with 
 
 $DuplicateWindow = 2     # Ignore the same event repeated within N seconds
 $ReconnectDelay  = 3     # Seconds to wait before retrying a lost connection
+
+# Matches tokens like "ROOMA_MOTION_DETECTED" -> zone=ROOMA, event=MOTION_DETECTED
+$ZonePattern = '^(ROOMA|ROOMB|ROOMC)_(MOTION_DETECTED|MOTION_STOPPED)$'
 
 # ============================================================
 #  You do not need to change anything below this line.
@@ -126,14 +136,19 @@ while ($true) {
         # Show everything the Arduino says (warm-up, System Ready, etc.)
         Write-Host ("    Arduino: " + $msg)
 
-        # Only two lines are real events we want to save
-        if ($msg -ne "MOTION_DETECTED" -and $msg -ne "MOTION_STOPPED") {
+        # Only zone-tagged motion tokens are real events we want to save
+        if ($msg -notmatch $ZonePattern) {
             continue
         }
+        $zone      = $Matches[1]
+        $eventType = $Matches[2]
 
         # ----------------------------------------------------
         #  STEP 3 - Duplicate protection
         # ----------------------------------------------------
+        # $msg already includes the zone (e.g. "ROOMA_MOTION_DETECTED"),
+        # so this naturally guards per-zone - Room A repeating fast
+        # never suppresses a real Room B event.
         $now = Get-Date
         if ($msg -eq $lastEvent -and ($now - $lastTime).TotalSeconds -lt $DuplicateWindow) {
             Say ("Skipped duplicate " + $msg)
@@ -147,7 +162,8 @@ while ($true) {
         # ----------------------------------------------------
         try {
             $response = Invoke-RestMethod -Uri $ApiUrl -Method Post -TimeoutSec 5 -Body @{
-                event_type = $msg
+                event_type = $eventType
+                zone       = $zone
                 source     = $Source
             }
 

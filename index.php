@@ -80,6 +80,22 @@ $dbCheck = testDBConnection();
 
 
     <!-- ========================================================
+         PER-ZONE STATUS (Room A / Room B / Room C)
+         ======================================================== -->
+    <section class="zones">
+<?php foreach (ALLOWED_ZONES as $zoneCode): ?>
+        <article id="zone-<?= strtolower($zoneCode) ?>" class="zone-card zone-none">
+            <span class="zone-dot"></span>
+            <div class="zone-text">
+                <span class="zone-label"><?= htmlspecialchars(ZONE_LABELS[$zoneCode] ?? $zoneCode) ?></span>
+                <span class="zone-value">NO MOTION</span>
+            </div>
+        </article>
+<?php endforeach; ?>
+    </section>
+
+
+    <!-- ========================================================
          SUMMARY CARDS
          ======================================================== -->
     <section class="cards">
@@ -127,6 +143,7 @@ $dbCheck = testDBConnection();
                     <tr>
                         <th>ID</th>
                         <th>Event Type</th>
+                        <th>Zone</th>
                         <th>Source</th>
                         <th>Date</th>
                         <th>Time</th>
@@ -134,7 +151,7 @@ $dbCheck = testDBConnection();
                 </thead>
                 <tbody id="history-body">
                     <tr>
-                        <td colspan="5" class="empty">Loading...</td>
+                        <td colspan="6" class="empty">Loading...</td>
                     </tr>
                 </tbody>
             </table>
