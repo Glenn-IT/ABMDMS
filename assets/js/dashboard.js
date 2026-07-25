@@ -38,6 +38,10 @@
         cardToday:   document.getElementById('card-today'),
         cardLast:    document.getElementById('card-last'),
 
+        smsToday:    document.getElementById('sms-today'),
+        smsLast:     document.getElementById('sms-last'),
+        smsBody:     document.getElementById('sms-body'),
+
         historyBody: document.getElementById('history-body'),
         recordCount: document.getElementById('record-count'),
 
@@ -152,10 +156,13 @@
         // ---- 2c. Per-zone status cards ----
         renderZones(data.zones);
 
-        // ---- 2d. The history table ----
+        // ---- 2d. The SMS alert panel ----
+        renderSms(data);
+
+        // ---- 2e. The history table ----
         renderTable(data.logs);
 
-        // ---- 2e. Record count + pagination ----
+        // ---- 2f. Record count + pagination ----
         el.recordCount.textContent = data.total_rows + (data.total_rows === 1 ? ' record' : ' records');
 
         currentPage = data.page;
@@ -195,6 +202,53 @@
             card.className   = 'zone-card ' + (isMotion ? 'zone-motion' : 'zone-none');
             valueEl.textContent = isMotion ? 'MOTION DETECTED' : 'NO MOTION';
         }
+    }
+
+
+    // --------------------------------------------------------
+    // STEP 3b - UPDATE THE SMS ALERT PANEL
+    // --------------------------------------------------------
+    // The Arduino sends the text messages itself through the
+    // SIM800L. These rows are its report of what happened, so you
+    // can prove on screen that the alert really went out.
+    function renderSms(data) {
+
+        if (!el.smsBody) {
+            return;   // page does not have the SMS panel
+        }
+
+        el.smsToday.textContent = data.sms_today;
+        el.smsLast.textContent  = data.sms_last;
+
+        var alerts = data.sms_logs;
+
+        if (!alerts || alerts.length === 0) {
+            el.smsBody.innerHTML =
+                '<tr><td colspan="6" class="empty">' +
+                'No SMS alerts yet.<br>' +
+                'They appear here once the SIM800L sends its first message.' +
+                '</td></tr>';
+            return;
+        }
+
+        var rows = '';
+
+        for (var i = 0; i < alerts.length; i++) {
+            var alert = alerts[i];
+
+            var pillClass = 'pill sms-status-' + String(alert.status).toLowerCase();
+
+            rows += '<tr>' +
+                        '<td>' + alert.id + '</td>' +
+                        '<td><span class="' + pillClass + '">' + escapeHtml(alert.status) + '</span></td>' +
+                        '<td>' + escapeHtml(alert.zone_label || alert.zone) + '</td>' +
+                        '<td>' + escapeHtml(alert.detail || '-') + '</td>' +
+                        '<td>' + escapeHtml(alert.date) + '</td>' +
+                        '<td>' + escapeHtml(alert.time) + '</td>' +
+                    '</tr>';
+        }
+
+        el.smsBody.innerHTML = rows;
     }
 
 

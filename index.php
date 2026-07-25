@@ -128,6 +128,55 @@ $dbCheck = testDBConnection();
 
 
     <!-- ========================================================
+         SMS ALERTS  (sent by the Arduino through the SIM800L)
+         ======================================================== -->
+    <section class="panel">
+
+        <div class="panel-head">
+            <h2>SMS Alerts</h2>
+            <span class="muted">Sent to <?= htmlspecialchars(SMS_RECIPIENT_DISPLAY) ?></span>
+        </div>
+
+        <div class="cards">
+
+            <article class="card">
+                <span class="card-label">Alerts Today</span>
+                <span id="sms-today" class="card-value">0</span>
+                <span class="card-hint">Text messages sent today</span>
+            </article>
+
+            <article class="card">
+                <span class="card-label">Last Alert</span>
+                <span id="sms-last" class="card-value card-value-small">No alerts yet</span>
+                <span class="card-hint">Most recent message sent</span>
+            </article>
+
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Status</th>
+                        <th>Zone</th>
+                        <th>Detail</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody id="sms-body">
+                    <tr>
+                        <td colspan="6" class="empty">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </section>
+
+
+    <!-- ========================================================
          MOTION HISTORY TABLE
          ======================================================== -->
     <section class="panel">
@@ -168,7 +217,7 @@ $dbCheck = testDBConnection();
 
 
     <footer class="footer">
-        ABMDMS &middot; Arduino Uno + HC-SR501 PIR &middot; XAMPP / PHP / MySQL
+        ABMDMS &middot; Arduino Uno + HC-SR501 PIR + SIM800L SMS &middot; XAMPP / PHP / MySQL
     </footer>
 
 </main>

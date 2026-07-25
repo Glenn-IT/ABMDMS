@@ -16,6 +16,11 @@
  * into zone=ROOMA + event_type=MOTION_DETECTED and sends both to
  * the PHP API, which saves it in the database.
  *
+ * The Arduino also texts your phone through its SIM800L module and
+ * reports the result as "SMS_SENT:ROOMA" / "SMS_FAIL:ROOMB:TIMEOUT" /
+ * "SMS_SKIP:ROOMC:COOLDOWN". Those lines are sent to api/record_sms.php
+ * so the dashboard can show them. This script never sends a text itself.
+ *
  * HOW TO RUN IT
  * -------------
  * Just double-click:   start_reader.bat
@@ -38,7 +43,8 @@
 
 $COM_PORT  = 'COM5';   // <-- Your Arduino port. Run list_ports.bat to find it.
 $BAUD_RATE = 9600;     // <-- Must match Serial.begin(9600) in the Arduino code.
-$API_URL   = 'http://localhost/ABMDMS/api/record_motion.php';
+$API_URL     = 'http://localhost/ABMDMS/api/record_motion.php';
+$SMS_API_URL = 'http://localhost/ABMDMS/api/record_sms.php';
 
 $SOURCE            = 'ARDUINO_PIR';  // Label saved with every event
 $DUPLICATE_WINDOW  = 2;              // Ignore the same event repeated within N seconds
@@ -97,21 +103,18 @@ function buildPortPath(string $port): string
 
 
 /**
- * Sends one motion event to the PHP API using cURL.
+ * Sends one set of values to a PHP API using cURL.
+ * Both the motion events and the SMS reports go through here.
  *
  * @return array{ok: bool, message: string}
  */
-function sendToApi(string $apiUrl, string $eventType, string $zone, string $source): array
+function postToApi(string $apiUrl, array $fields, string $idLabel): array
 {
     $ch = curl_init($apiUrl);
 
     curl_setopt_array($ch, [
         CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => http_build_query([
-            'event_type' => $eventType,
-            'zone'       => $zone,
-            'source'     => $source,
-        ]),
+        CURLOPT_POSTFIELDS     => http_build_query($fields),
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 5,
         CURLOPT_CONNECTTIMEOUT => 3,
@@ -138,7 +141,38 @@ function sendToApi(string $apiUrl, string $eventType, string $zone, string $sour
         return ['ok' => false, 'message' => $json['message'] ?? 'API refused the event.'];
     }
 
-    return ['ok' => true, 'message' => 'saved as record #' . ($json['id'] ?? '?')];
+    return ['ok' => true, 'message' => 'saved as ' . $idLabel . ' #' . ($json['id'] ?? '?')];
+}
+
+
+/**
+ * Sends one motion event to the PHP API.
+ *
+ * @return array{ok: bool, message: string}
+ */
+function sendToApi(string $apiUrl, string $eventType, string $zone, string $source): array
+{
+    return postToApi($apiUrl, [
+        'event_type' => $eventType,
+        'zone'       => $zone,
+        'source'     => $source,
+    ], 'record');
+}
+
+
+/**
+ * Sends one SMS alert report to the PHP API.
+ * The Arduino already sent the text itself - this only records it.
+ *
+ * @return array{ok: bool, message: string}
+ */
+function sendSmsToApi(string $apiUrl, string $zone, string $status, string $detail): array
+{
+    return postToApi($apiUrl, [
+        'zone'   => $zone,
+        'status' => $status,
+        'detail' => $detail,
+    ], 'alert');
 }
 
 
@@ -240,6 +274,39 @@ while (true) {
         // Show EVERYTHING the Arduino says, so you can see the
         // warm-up countdown and the "System Ready" message too.
         echo '    Arduino: ' . $message . PHP_EOL;
+
+        // ----------------------------------------------------
+        // SMS ALERT REPORTS  (from the SIM800L on the Arduino)
+        // ----------------------------------------------------
+        // e.g. "SMS_SENT:ROOMA", "SMS_FAIL:ROOMB:TIMEOUT",
+        //      "SMS_SKIP:ROOMC:COOLDOWN"
+        //
+        // These skip the duplicate-guard below on purpose: that guard
+        // exists to calm down PIR chatter. SMS reports are already
+        // rate-limited by the Arduino's per-zone cooldown, and each
+        // one is a genuinely separate alert.
+        if (preg_match('/^SMS_(SENT|FAIL|SKIP):(ROOMA|ROOMB|ROOMC|ROOMD)(?::(.+))?$/', $message, $s)) {
+
+            $smsZone   = $s[2];
+            $smsDetail = $s[3] ?? '';
+
+            $statusMap = [
+                'SENT' => 'SENT',
+                'FAIL' => 'FAILED',
+                'SKIP' => 'SKIPPED',
+            ];
+            $smsStatus = $statusMap[$s[1]];
+
+            $smsResult = sendSmsToApi($SMS_API_URL, $smsZone, $smsStatus, $smsDetail);
+
+            if ($smsResult['ok']) {
+                say("[SMS {$smsStatus}] {$smsZone} -> " . $smsResult['message']);
+            } else {
+                say("[SMS FAIL] {$message} -> " . $smsResult['message']);
+            }
+
+            continue;
+        }
 
         // Is this line a zone-tagged motion token, e.g. ROOMA_MOTION_DETECTED?
         if (!preg_match('/^(ROOMA|ROOMB|ROOMC|ROOMD)_(MOTION_DETECTED|MOTION_STOPPED)$/', $message, $m)) {

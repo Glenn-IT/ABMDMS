@@ -20,6 +20,14 @@
 #  zone=ROOMA and event_type=MOTION_DETECTED before POSTing,
 #  so each zone is saved and tracked independently.
 #
+#  SMS ALERT REPORTS
+#  -----------------
+#  The Arduino also texts your phone through the SIM800L module.
+#  It reports the result as "SMS_SENT:ROOMA", "SMS_FAIL:ROOMB:TIMEOUT"
+#  or "SMS_SKIP:ROOMC:COOLDOWN". Those lines are sent to
+#  api/record_sms.php instead, so the dashboard can show them.
+#  This script does NOT send any text messages itself.
+#
 #  HOW TO RUN IT
 #  -------------
 #  Just double-click:  start_reader.bat
@@ -35,7 +43,8 @@
 
 $ComPort   = "COM5"                                                # Your Arduino port
 $BaudRate  = 9600                                                  # Must match Serial.begin(9600)
-$ApiUrl    = "http://localhost/ABMDMS/api/record_motion.php"       # PHP API
+$ApiUrl    = "http://localhost/ABMDMS/api/record_motion.php"       # PHP API (motion)
+$SmsApiUrl = "http://localhost/ABMDMS/api/record_sms.php"          # PHP API (SMS alerts)
 $Source    = "ARDUINO_PIR"                                         # Saved with every event
 
 $DuplicateWindow = 2     # Ignore the same event repeated within N seconds
@@ -43,6 +52,10 @@ $ReconnectDelay  = 3     # Seconds to wait before retrying a lost connection
 
 # Matches tokens like "ROOMA_MOTION_DETECTED" -> zone=ROOMA, event=MOTION_DETECTED
 $ZonePattern = '^(ROOMA|ROOMB|ROOMC|ROOMD)_(MOTION_DETECTED|MOTION_STOPPED)$'
+
+# Matches tokens like "SMS_SENT:ROOMA" or "SMS_FAIL:ROOMB:TIMEOUT"
+# -> result=SENT/FAIL/SKIP, zone=ROOMA, detail=TIMEOUT (detail is optional)
+$SmsPattern = '^SMS_(SENT|FAIL|SKIP):(ROOMA|ROOMB|ROOMC|ROOMD)(?::(.+))?$'
 
 # ============================================================
 #  You do not need to change anything below this line.
@@ -135,6 +148,51 @@ while ($true) {
 
         # Show everything the Arduino says (warm-up, System Ready, etc.)
         Write-Host ("    Arduino: " + $msg)
+
+        # ----------------------------------------------------
+        #  SMS ALERT REPORTS  (from the SIM800L on the Arduino)
+        # ----------------------------------------------------
+        #  The Arduino sends the text itself; it only TELLS us what
+        #  happened. We save that report so the dashboard can show
+        #  the alert really went out.
+        #
+        #  These deliberately skip the duplicate-guard further down:
+        #  that guard exists to calm down PIR chatter. SMS reports
+        #  are already rate-limited by the Arduino's per-zone
+        #  cooldown, and each one is a genuinely separate alert.
+        if ($msg -match $SmsPattern) {
+
+            $smsResult = $Matches[1]
+            $smsZone   = $Matches[2]
+            $smsDetail = if ($Matches[3]) { $Matches[3] } else { "" }
+
+            switch ($smsResult) {
+                "SENT"  { $smsStatus = "SENT" }
+                "FAIL"  { $smsStatus = "FAILED" }
+                "SKIP"  { $smsStatus = "SKIPPED" }
+                default { $smsStatus = "FAILED" }
+            }
+
+            try {
+                $smsResponse = Invoke-RestMethod -Uri $SmsApiUrl -Method Post -TimeoutSec 5 -Body @{
+                    zone   = $smsZone
+                    status = $smsStatus
+                    detail = $smsDetail
+                }
+
+                if ($smsResponse.success) {
+                    Say ("[SMS " + $smsStatus + "] " + $smsZone + " -> saved as alert #" + $smsResponse.id)
+                }
+                else {
+                    Say ("[SMS FAIL] " + $msg + " -> " + $smsResponse.message)
+                }
+            }
+            catch {
+                Say ("[SMS FAIL] " + $msg + " -> Cannot reach the API. Is Apache running? (" + $_.Exception.Message + ")")
+            }
+
+            continue
+        }
 
         # Only zone-tagged motion tokens are real events we want to save
         if ($msg -notmatch $ZonePattern) {

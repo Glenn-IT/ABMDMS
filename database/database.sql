@@ -65,6 +65,47 @@ CREATE TABLE IF NOT EXISTS `motion_logs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
+-- ------------------------------------------------------------
+-- STEP 4: Create the table that stores every SMS alert
+-- ------------------------------------------------------------
+-- When a PIR sensor fires, the Arduino also texts your phone
+-- through the SIM800L module. It then reports what happened
+-- back over USB, and that report is stored here so the
+-- dashboard can prove the alert really went out.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `sms_logs` (
+
+    -- Automatic ID number: 1, 2, 3, 4 ...
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+
+    -- Which zone the alert was about: 'ROOMA', 'ROOMB', 'ROOMC', or 'ROOMD'
+    `zone` VARCHAR(20) NOT NULL,
+
+    -- The phone number the alert was sent to (for your records)
+    `recipient` VARCHAR(20) NOT NULL DEFAULT '',
+
+    -- How it went: 'SENT', 'FAILED', or 'SKIPPED' (blocked by the cooldown)
+    `status` VARCHAR(20) NOT NULL,
+
+    -- Extra explanation, e.g. 'TIMEOUT', 'NONETWORK', 'COOLDOWN'
+    `detail` VARCHAR(100) NOT NULL DEFAULT '',
+
+    -- The date and time the alert happened
+    `sent_at` DATETIME NOT NULL,
+
+    -- The date and time the row was saved (filled in automatically)
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (`id`),
+
+    -- Indexes make searching and sorting much faster
+    KEY `idx_sent_at` (`sent_at`),
+    KEY `idx_zone`    (`zone`),
+    KEY `idx_status`  (`status`)
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
 -- ============================================================
 -- UPGRADE: already imported this file before the 3-zone change?
 -- ------------------------------------------------------------
@@ -76,6 +117,17 @@ CREATE TABLE IF NOT EXISTS `motion_logs` (
 
 -- ALTER TABLE `motion_logs` ADD COLUMN `zone` VARCHAR(20) NOT NULL DEFAULT 'ROOMC' AFTER `event_type`;
 -- ALTER TABLE `motion_logs` ADD KEY `idx_zone` (`zone`);
+
+
+-- ============================================================
+-- UPGRADE: adding SMS alerts to a database you already have?
+-- ------------------------------------------------------------
+-- You do NOT need to re-import this whole file, and you do NOT
+-- lose any of your recorded motion events. The `sms_logs` table
+-- in STEP 4 is brand new and does not touch `motion_logs`, so
+-- just copy the whole CREATE TABLE `sms_logs` block above into
+-- the phpMyAdmin "SQL" tab and run it once.
+-- ============================================================
 
 
 -- ============================================================
@@ -101,4 +153,13 @@ CREATE TABLE IF NOT EXISTS `motion_logs` (
 --
 -- Delete all records and start over from id 1:
 --     TRUNCATE TABLE motion_logs;
+--
+-- See every SMS alert that was sent:
+--     SELECT * FROM sms_logs ORDER BY id DESC;
+--
+-- Count only the alerts that really went out today:
+--     SELECT COUNT(*) FROM sms_logs WHERE status = 'SENT' AND DATE(sent_at) = CURDATE();
+--
+-- Delete all SMS records and start over from id 1:
+--     TRUNCATE TABLE sms_logs;
 -- ============================================================

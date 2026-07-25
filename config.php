@@ -59,6 +59,30 @@ define('ZONE_LABELS', [
 
 
 // ------------------------------------------------------------
+// SMS ALERT SETTINGS  (SIM800L EVB)
+// ------------------------------------------------------------
+// IMPORTANT: the Arduino sends the text messages itself, straight
+// through the SIM800L module. PHP never sends anything - it only
+// RECORDS what the Arduino reports, so the dashboard can show it.
+//
+// To change the phone number that receives alerts you must edit
+// SMS_RECIPIENT inside arduino/motion_sensor/motion_sensor.ino
+// and upload the sketch again. The setting below is only the
+// number shown on the dashboard.
+
+define('SMS_RECIPIENT_DISPLAY', '+639171234567');
+
+// The API will REFUSE to save an SMS status that is not in this list.
+//   SENT    = the network accepted the message
+//   FAILED  = the module could not send it
+//   SKIPPED = blocked on purpose by the Arduino's per-zone cooldown
+define('ALLOWED_SMS_STATUSES', ['SENT', 'FAILED', 'SKIPPED']);
+
+// How many recent alerts the dashboard's "SMS Alerts" panel shows.
+define('SMS_RECENT_LIMIT', 10);
+
+
+// ------------------------------------------------------------
 // DASHBOARD SETTINGS
 // ------------------------------------------------------------
 

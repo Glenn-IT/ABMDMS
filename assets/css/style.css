@@ -477,6 +477,26 @@ body {
 }
 
 
+/* SMS alert statuses (same pill shape, different colours)
+   SENT    = the network accepted the text
+   FAILED  = the module could not send it
+   SKIPPED = held back on purpose by the per-zone cooldown */
+.sms-status-sent {
+    background: var(--green-soft);
+    color: #86efac;
+}
+
+.sms-status-failed {
+    background: var(--red-soft);
+    color: #fca5a5;
+}
+
+.sms-status-skipped {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fcd34d;
+}
+
+
 /* ------------------------------------------------------------
    PAGINATION + BUTTONS
    ------------------------------------------------------------ */
