@@ -3,9 +3,10 @@
 **Module:** SIM800L V2.2 (UNV), 5 V board
 **Board:** Arduino Uno
 **Recipient tested:** `+639169751409`
-**Date tested:** 30–31 July 2026
+**Date tested:** 30 July – 1 August 2026
 **Tested by:** Glenn
 **Room / location:** ____________ *(fill in — 2G coverage is location-specific)*
+**Supply:** 5 V 2 A wall adapter · **Capacitor:** 1000 µF 16 V *(second one — the first failed, Fault 7)*
 
 ---
 
@@ -23,7 +24,10 @@ That single success proves, all at once:
 - the **logic levels** work with no level shifter (V2.2 is 5 V-logic)
 - the module itself is **not faulty**
 
-Everything that remains is power stability and software.
+**Power stability solved on 1 August 2026.** A failed capacitor was causing the module to
+restart after every transmit (Fault 7). With it replaced, the integrated `pir_sms_test`
+rig ran **10 minutes continuously with no restart**, detecting motion and sending texts
+throughout — the first sustained clean run of the whole chain.
 
 ---
 
@@ -34,8 +38,9 @@ Everything that remains is power stability and software.
 | Pre-check | SIM works on 2G in a normal phone | ☐ not formally done — proven indirectly by the successful send |
 | **A** — power + status LED | Module alive, joined the network | ✅ **PASS** — settled to one blink every ~3 s |
 | **B** — manual AT commands | Arduino can drive it; it can send | ✅ **PASS** — real text received, `+CMGS: 184` |
-| **C** — automatic self-test | Same, hands-free, repeatable | ⬜ **NOT YET RUN** — next step |
+| **C** — automatic self-test | Same, hands-free, repeatable | ⬜ **NOT YET RUN** — superseded in practice by the `pir_sms_test` rig |
 | **D** — battery / laptop off | Alerts work with no computer | ⬜ **NOT YET RUN** — blocked on the power-bank cutoff |
+| **Integrated** — PIR triggers a real text | The whole chain, unattended | ✅ **PASS** — 1 Aug 2026, 10 min clean run on `pir_sms_test` |
 
 ---
 
@@ -46,14 +51,17 @@ reliable or merely lucky:
 
 | Item | Value |
 |---|---|
-| Wall adapter **amp rating** | ____________ ⚠️ **need 2 A minimum** |
+| Wall adapter **amp rating** | ✅ **5 V 2 A** — meets the minimum |
 | Network (Globe / TM / Smart / TNT) | ____________ |
-| `AT+CSQ` reading | `+CSQ: ______` *(want above 10)* |
+| `AT+CSQ` reading | `+CSQ: ______` *(want above 10 — the sketch now prints this at start-up)* |
 | `AT+CREG?` reading | ____________ *(want `0,1` or `0,5`)* |
 | `AT+CSCA?` reading | ____________ |
-| Capacitor **voltage rating** fitted | ______ V *(want ≥ 10 V)* |
-| Capacitance fitted | ______ µF |
+| Capacitor **voltage rating** fitted | ✅ **16 V** — comfortably above the 10 V minimum |
+| Capacitance fitted | ✅ **1000 µF** |
 | Is module power still routed through the breadboard? | ☐ yes ☐ no — **should be no** |
+
+The `AT+CSQ` blank is now easy to fill: since `ATE0` was added, the sketch prints a real
+signal number on every start-up instead of the echo of its own question.
 
 ---
 
@@ -162,15 +170,85 @@ A supply that cannot hold 5 V under that load creates a self-feeding trap:
 It never stayed alive long enough to re-register. Before the send it was already
 registered and sipping ~20 mA, so the weak supply had never been tested.
 
-**Status: resolved in practice — sends now succeed.** But it is not proven fixed. If it
-recovered because conditions were briefly favourable rather than because the supply path
-changed, **it will come back**, most likely during the demo.
+**Status: it came back, exactly as predicted below. See Fault 7 — the cause was a failed
+capacitor.**
 
-**Do before the demo.** Run `5Vin` and `GND` as a **short, thick, direct pair from the
-adapter to the module**, bypassing the breadboard. Breadboard spring contacts are rated
-~1 A each and dupont wire is thin — at 2 A the voltage is lost before it reaches the
-module. Capacitor twisted or soldered onto the module's own terminals, and more bulk
-capacitance (2200 µF, or a second 1000 µF in parallel) costs nothing and buys headroom.
+The original note read: *"resolved in practice, but not proven fixed — if it recovered
+because conditions were briefly favourable rather than because the supply path changed,
+it will come back."* It came back on the integrated rig two days later. Writing that
+prediction down is what made the second occurrence quick to recognise.
+
+**Still worth doing before the demo.** Run `5Vin` and `GND` as a **short, thick, direct
+pair from the adapter to the module**, bypassing the breadboard. Breadboard spring
+contacts are rated ~1 A each and dupont wire is thin — at 2 A the voltage is lost before
+it reaches the module. Capacitor twisted or soldered onto the module's own terminals, and
+more bulk capacitance (2200 µF, or a second 1000 µF in parallel) costs nothing and buys
+headroom. Fault 7 was fixed by replacing the capacitor, not by hardening the path, so
+this margin has still never been added.
+
+---
+
+## Fault 7 — module restarted after every send on the integrated rig
+
+**Date: 1 August 2026. Found on `pir_sms_test`, the 1-PIR + SIM800L rig.**
+
+**Symptom.** The first text sent successfully. After that, every triggered send killed the
+module: LED dark, then a fast ~1 s blink for about 10 seconds, then settling to one blink
+every ~3 seconds — and the next wave of the hand repeated the whole cycle. In the serial
+log it appeared as a **`TIMEOUT` immediately followed by an `ERROR`**, twice over:
+
+```
+SMS_SENT:ROOM1             <- the one that worked
+...
+SMS_FAIL:ROOM1:TIMEOUT     <- module died mid-send, never returned +CMGS
+SMS_FAIL:ROOM1:ERROR       <- it rebooted; a reboot forgets AT+CMGF=1
+SIM_RESET                  <- three fails in a row triggered the sketch's own recovery
+```
+
+**Cause.** **The 1000 µF capacitor had failed.** Not reversed this time — correct value,
+correct 16 V rating, correct polarity, physically fitted. It had simply stopped working.
+
+**Why it took two days.** Every visible fact pointed away from the capacitor. The supply
+was a 5 V 2 A wall adapter, so Fault 2's power-bank cutoff was ruled out. The capacitor
+was the right part, fitted the right way round, and looked fine. Suspicion went to the
+supply path, the adapter, and the sketch before it came back to the component that was
+sitting there apparently doing its job.
+
+**How it was found.** Testing the capacitor directly rather than trusting its appearance.
+The full procedure is now written up in `POWER_TROUBLESHOOTING.md` — visual check,
+capacitance mode, resistance-climb test, and the remove-it isolation test.
+
+**Fix.** Replaced the capacitor. The rig then ran **10 minutes with no restart at all**,
+detecting motion and sending texts throughout.
+
+**Raw evidence.** The captured serial log is kept at `pir_sms_test/Issues.md`.
+
+**Lesson.** *Present, correct and correctly fitted* is not the same as *functional*. A
+capacitor is the cheapest and fastest thing in the whole chain to test, so it should be
+the first thing tested, not the fourth. This is the second time on this build that the
+capacitor was the answer (see Fault 1) and the second time it was suspected late.
+
+---
+
+## Fault 8 — four robustness bugs in the sketch, exposed by Fault 7 *(software)*
+
+The brownout did not cause these, but it made them visible: once one send failed, the
+sketch turned a single failure into a cascade instead of recovering.
+
+| Bug | Effect | Fix |
+|---|---|---|
+| Command **echo never turned off** | The module repeats each command back, so `AT+CSQ` matched as its own answer. The start-up line printed `Signal: )-5?AT+CSQ` — the question, not the reading | `ATE0` during start-up |
+| **No ESC on failure** | A timed-out send left the module sitting at its `>` prompt, where it swallows the next `AT+CMGS` — so one failure bred the next | Send ESC (27) on any failure to abandon the half-typed message |
+| **No rest between sends** | A retry fired the instant the previous one failed, before the module had finished tidying up | Restored a 5 s `SMS_MIN_GAP_MS` |
+| **`simReset()` lost its settings** | A reset forgets `ATE0` and `AT+CMGF=1`; the recovered module was left in the wrong mode | Re-issue both after every reset |
+
+`AT+CMEE=2` was also added so failures report a real `+CMS ERROR` code rather than a bare
+`ERROR` — the same lesson as Fault 3, now applied to the production sketch instead of only
+the bench tools.
+
+**Lesson.** These were all *recovery* bugs. They cost nothing while the hardware behaved
+and cost a great deal the moment it did not. Error paths deserve the same attention as the
+happy path, and the only way to find out whether they work is to make something fail.
 
 ---
 
@@ -198,9 +276,17 @@ sends per Enter, so one keypress is never read as two lines.
 | 4 · `>` prompt | Interface | Know how to *exit* a mode before you enter it |
 | 5 · brownout | Power | Ratings on paper ≠ voltage at the pin. Measure at the load |
 | 6 · sketch bug | Tooling | When debugging, suspect the test rig as well as the thing under test |
+| 7 · failed capacitor | Power | *Present and correct* ≠ *functional*. Test the cheap part first |
+| 8 · recovery bugs | Software | Error paths only get tested when something actually fails |
 
-**Overall:** five of six were power or interface issues. **Zero** were faults in the
-ABMDMS application code.
+**Overall:** six of eight were power or interface issues. The two software faults were both
+in **recovery paths**, not in the application logic — no motion event was ever mis-recorded,
+no bad data ever reached the database.
+
+**The pattern across all eight:** the fault was almost never where the symptom pointed.
+A dying capacitor presented as a network problem, a working power bank presented as a
+broken module, and a reboot presented as a text-mode error. The habit that shortened each
+hunt was writing down what was *observed* separately from what it was *assumed to mean*.
 
 ---
 
@@ -226,7 +312,24 @@ ABMDMS application code.
 2026-07-31  TEST B PASS - real SMS received on +639169751409, +CMGS: 184, OK.
 2026-07-31  Module then entered a restart loop (1s blink, ~10s cycle) - brownout.
             Sends succeeding again, but the supply path has NOT been hardened yet.
+2026-08-01  Built pir_sms_test - 1 PIR + SIM800L, own database and dashboard.
+            PIR half worked first try. First SMS sent successfully.
+2026-08-01  Then the restart loop came back on every send. Serial showed
+            TIMEOUT followed immediately by ERROR, repeating. Wall adapter
+            5V 2A, so the power-bank cutoff (Fault 2) was ruled out.
+2026-08-01  Fixed four recovery bugs in the sketch: ATE0 (echo was on and
+            was corrupting every reply), ESC on failure, 5s gap between
+            sends, re-init after reset. Recovers cleanly now, but the
+            restarts continued - so the hardware was still the real fault.
+2026-08-01  FOUND IT: the 1000uF capacitor had failed. Right value, right
+            16V rating, right polarity, looked perfect - simply dead.
+            Two days lost because it was the last thing suspected.
+2026-08-01  Capacitor replaced. RIG RAN 10 MINUTES WITH NO RESTART.
+            Motion detected and texts sending throughout. Fault 7 closed.
 
-(next)      Fill in the blanks above. Run Test C three times. Then Test D.
+(next)      Harden the supply path anyway - 5Vin/GND direct, off the
+            breadboard - so the margin exists before the demo.
+            Fill in the CSQ / CREG / network blanks above.
+            Run Test C three times. Then Test D on battery.
 
 ```

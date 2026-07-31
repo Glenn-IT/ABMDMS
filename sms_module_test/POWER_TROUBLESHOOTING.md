@@ -54,6 +54,66 @@ will **power up and stay powered**. That is the difference you are looking for.
 
 ---
 
+## How to test a capacitor — the full procedure
+
+Written up on 1 August 2026, after a failed capacitor cost two days of debugging on
+the integrated rig. **Test the capacitor early.** It is a two-minute check that rules
+out the single most common cause of every symptom in this file.
+
+### Step 1 — look at it
+
+This catches most dead capacitors in seconds. Any one of these means **scrap it**:
+
+- bulging or domed top
+- crust, residue or wetness around the legs
+- a split in the X / K score mark on the top
+- a sharp chemical smell
+- it got hot in use
+
+Capacitors that have vented, bulged or leaked do not recover.
+
+### Step 2 — take it out of the circuit
+
+Measuring it in place reads the whole rest of the board, not the capacitor. Then
+**discharge it**: short the two legs with a screwdriver or wire for a second. At
+1000 µF / 5 V it holds about 12 mJ — completely safe, no meaningful spark.
+
+### Step 3a — if the meter has a capacitance mode (`µF`, `nF`, or `-|(-`)
+
+| Reading | Verdict |
+|---|---|
+| 800–1200 µF | Healthy — ±20% is normal for electrolytics |
+| 500–800 µF | Aged and weak — replace it |
+| Under 500 µF, or 0 | **Dead** |
+| Will not settle, jumps around | **Dead** |
+
+### Step 3b — if it does not, use resistance mode
+
+Set to **20 kΩ or 200 kΩ**, red probe on `+`, black on the stripe leg, and *watch the
+number move*. At 1000 µF the change takes a few visible seconds, so this works well.
+
+| Behaviour | Verdict |
+|---|---|
+| Starts low, **climbs steadily** toward `OL` / infinity | Healthy — you are watching it charge |
+| Sits at a low value (a few hundred Ω) and stays there | **Shorted / leaky.** This is what causes on/off/on cycling |
+| Jumps straight to `OL` with no climb at all | **Open circuit — dead** |
+
+Discharge it again before re-testing, or swapping the probes.
+
+### Step 4 — the isolation test (no meter needed)
+
+Remove the capacitor completely and power the module with `5Vin` + `GND` + antenna only:
+
+| Result | Meaning |
+|---|---|
+| Powers up and **stays up** at idle | The capacitor was the fault |
+| Still cycles on/off/on | Something else loads the rail — a short, or `VDD` wrongly connected |
+
+Without a capacitor the module may still brown out *while transmitting*, but it will
+**power up and stay powered when idle**. That is the difference you are looking for.
+
+---
+
 ## Symptom 2 — everything works, then the power bank switches itself off
 
 **Status on this build: this is the current issue.**
@@ -112,14 +172,34 @@ the wall adapter and get the SMS actually sending first.
 
 ---
 
-## Symptom 3 — brownout during transmit (watch for this one next)
+## Symptom 3 — module restarts on every transmit
 
-Not yet seen on this build, but it is the next thing power can do to you.
+**Status on this build: SEEN, AND SOLVED — the capacitor had failed.**
+Confirmed on the `pir_sms_test` rig, 1 August 2026. See "How it was actually fixed" below.
 
 ### What it looks like
 
 Everything passes until `AT+CMGS` and Ctrl+Z, then the module resets mid-message.
 Or the self-test passes once and fails the next two runs.
+
+On the integrated rig it looked like this: the first text sends fine, then the status
+LED goes dark, blinks fast for about 10 seconds, settles to one blink every ~3 seconds
+— and the moment motion triggers another send, the whole cycle repeats. The module is
+rebooting and re-registering after every transmit attempt.
+
+### The serial fingerprint
+
+In the log it shows up as a **`TIMEOUT` immediately followed by an `ERROR`**:
+
+```
+SMS_FAIL:ROOM1:TIMEOUT     <- module died mid-send, never returned +CMGS
+SMS_FAIL:ROOM1:ERROR       <- it rebooted, and a reboot forgets AT+CMGF=1,
+                              so the very next AT+CMGS is rejected outright
+```
+
+That pair, repeating, is close to conclusive. The `ERROR` is not a second, separate
+fault — it is the *consequence* of the reset in the line above it. Text mode does not
+survive a reboot, and nothing you typed turned it off.
 
 ### The cause
 
@@ -149,7 +229,28 @@ Multimeter on DC volts at the **module's own pins**, not at the supply, while it
 | Steady ~5 V | power is fine, look at antenna / SIM / coverage |
 | Dips at each transmit | brownout confirmed — shorten and thicken the supply path |
 
-`AT+CBC` also reports the module's own supply voltage in millivolts (the last number).
+`AT+CBC` also reports the module's own supply voltage in millivolts (the last number),
+measured *inside* the chip. A cheap meter is often too slow to catch a 577 µs dip, so
+`AT+CBC` is the better instrument here. Healthy is roughly 4000 and up.
+
+### How it was actually fixed on this build
+
+**The capacitor had failed.** Not the adapter, not the wiring, not the code.
+
+Two days were spent on this because the supply looked beyond suspicion — a 5 V **2 A
+wall adapter**, and a **1000 µF 16 V** capacitor of the correct value, correct voltage
+rating and correct polarity, physically present on the board. Everything was right on
+paper. The capacitor had simply stopped working, and a dead capacitor is invisible
+until you test it.
+
+With the capacitor replaced, the rig ran **10 minutes with no restart at all** —
+motion detected, texts going out, module staying registered throughout.
+
+**The lesson worth keeping:** a component being *present, correct and correctly fitted*
+is not the same as it being *functional*. The capacitor was the fourth thing suspected
+when it should have been the first, because it is the cheapest and fastest thing in the
+whole chain to test. Do Step 3 of the capacitor procedure above **before** rewiring
+anything.
 
 ---
 
@@ -157,12 +258,21 @@ Multimeter on DC volts at the **module's own pins**, not at the supply, while it
 
 | Symptom | First suspect |
 |---|---|
-| On / off / on repeating | Capacitor reversed, or a short |
+| On / off / on repeating | Capacitor reversed, dead, or a short |
 | Dead / bulging / hot capacitor | Reversed polarity, or rated under 10 V |
 | Works, then the bank cuts out | Low-current auto-cutoff — load is too small |
-| Resets during `AT+CMGS` | Brownout — supply path too thin |
+| Resets during `AT+CMGS` | **Test the capacitor first**, then the supply path |
+| `TIMEOUT` then `ERROR`, repeating | The module is rebooting — a reboot forgets `AT+CMGF=1` |
+| Restarts about 10 s after each send | Brownout on the transmit burst |
+| `Signal:` prints garbage | Command echo is on — send `ATE0` at start-up |
 | Nothing at all from `AT` | Not power — no common ground, or TX/RX swapped |
 | LED blinks once per second forever | Not power — antenna, SIM, or no 2G coverage |
 
-The last two rows matter: not every fault is a power fault, and chasing power when the
-problem is a missing ground wire wastes a lot of an afternoon.
+Two things this table is trying to teach:
+
+**Test the capacitor before you rewire anything.** It is the cheapest and fastest check
+in the whole chain, and on this build it was the answer twice — once reversed, once
+simply failed. Both times it was suspected late.
+
+**Not every fault is a power fault.** The last two rows cost nothing to check and chasing
+power when the problem is a missing ground wire wastes a lot of an afternoon.

@@ -10,9 +10,18 @@ Mirrors `PIN5_ROOMD_CHECKLIST.md` in style.
 Full wiring instructions: `arduino/SIM800L_WIRING.md`.
 Bench test, fault history and diagrams: **`sms_module_test/`**.
 
-> **✅ 31 July 2026 — Phases 1–3 are done. The module sends real 2G SMS**
-> (`+CMGS: 184`, received on `+639169751409`). Next: Phase 4, upload the real sketch.
-> Two power items still open — see `sms_module_test/README.md` under "not yet fixed".
+> **✅ 1 August 2026 — the whole chain works, unattended.**
+> Motion on a PIR now triggers a real 2G SMS, and the event and the SMS result both land
+> in MySQL and show on a dashboard. Proven on the **`pir_sms_test/`** rig (1 PIR + 1
+> SIM800L, its own database) with a **10-minute continuous run and no module restarts**.
+>
+> The restarts that blocked this were a **failed 1000 µF capacitor** — right value, right
+> voltage, right polarity, simply dead. Written up as Fault 7 in
+> `sms_module_test/RESULTS.md`, with a full capacitor test procedure in
+> `sms_module_test/POWER_TROUBLESHOOTING.md`.
+>
+> **Next:** apply the same to the 4-zone sketch, then harden the supply path
+> (`5Vin`/`GND` direct, off the breadboard) so the margin exists before the demo.
 
 > Tip: in most Markdown editors you tick a box by changing `[ ]` to `[x]`.
 
@@ -23,10 +32,10 @@ Bench test, fault history and diagrams: **`sms_module_test/`**.
 Do not buy parts or wire anything until this passes. SIM800L is **2G only**, and
 2G is being switched off in many parts of the Philippines.
 
-- [ ] Put the SIM in a normal phone, force it to 2G, and confirm it can send a text **from the room where the system will run**
-- [ ] Confirm the SIM has load / credit
-- [ ] Turn the SIM's **PIN lock OFF** (Settings → SIM lock)
-- [ ] Confirm the SIM is regular size (2FF), the size the module's holder takes
+- [x] Put the SIM in a normal phone, force it to 2G, and confirm it can send a text **from the room where the system will run**
+- [x] Confirm the SIM has load / credit
+- [x] Turn the SIM's **PIN lock OFF** (Settings → SIM lock)
+- [x] Confirm the SIM is regular size (2FF), the size the module's holder takes
 
 ---
 

@@ -100,9 +100,16 @@ const unsigned long SIM_BAUD_RATE   = 9600;   // SIM800L default speed
 // stops one person walking around from draining your load.
 const unsigned long SMS_COOLDOWN_MS = 60000;  // 60 seconds
 
+// Rest between any two sends. The module needs a moment to finish
+// tidying up after one message before it will accept the next -
+// without this, a failed send is followed instantly by another that
+// fails for no reason except that it was too early.
+const unsigned long SMS_MIN_GAP_MS  = 5000;   // 5 seconds
+
 const unsigned long AT_TIMEOUT_MS   = 10000;  // wait for a normal AT reply
 const unsigned long CMGS_TIMEOUT_MS = 30000;  // wait for the network to accept the SMS
 const int SMS_MAX_FAILS_BEFORE_RESET = 3;     // hard-reset the module after this many fails
+const int MIN_SIGNAL = 10;                    // below this, sending is unreliable
 
 
 // ============================================================
@@ -130,8 +137,9 @@ enum SmsState {
   SMS_WAIT_CONFIRM   // sent the message text, waiting for "+CMGS:"
 };
 
-SmsState      smsState      = SMS_IDLE;
-unsigned long smsStateSince = 0;      // when the current step started
+SmsState      smsState        = SMS_IDLE;
+unsigned long smsStateSince   = 0;    // when the current step started
+unsigned long smsLastFinished = 0;    // when the last send ended (for SMS_MIN_GAP_MS)
 
 // A small box to collect whatever the SIM800L says back to us.
 const int SIM_BUF_SIZE = 64;
@@ -302,6 +310,11 @@ void smsTick() {
         return;
       }
 
+      // Give the module its rest before starting another message.
+      if (smsLastFinished != 0 && (millis() - smsLastFinished < SMS_MIN_GAP_MS)) {
+        return;   // the request stays pending; we will come back to it
+      }
+
       smsPending = false;
 
       // Tell the module who we are texting. It should answer ">".
@@ -375,6 +388,16 @@ void smsTick() {
 // be hammered with a retry on every single movement).
 void smsFinish(bool ok, const char* reason) {
 
+  // If we are giving up part-way through, the module may still be
+  // sitting at its ">" prompt waiting for more message text. ESC
+  // abandons that half-typed message. Without this the module stays
+  // in text-entry mode and swallows the NEXT AT+CMGS, so one failure
+  // turns into an endless run of them.
+  if (!ok) {
+    sim.write((char) 27);   // ESC = throw this message away
+    sim.print("\r");
+  }
+
   lastSmsAt   = millis();
   smsEverSent = true;
 
@@ -390,7 +413,8 @@ void smsFinish(bool ok, const char* reason) {
 
   smsFailRun = ok ? 0 : (smsFailRun + 1);
 
-  smsState = SMS_IDLE;
+  smsState        = SMS_IDLE;
+  smsLastFinished = millis();
   simBufClear();
 
   // Too many failures in a row usually means the module is stuck.
@@ -432,6 +456,17 @@ void simDrain() {
     simBuf[simBufLen++] = c;
     simBuf[simBufLen]   = '\0';
   }
+}
+
+
+// Pull the number out of a "+CSQ: 18,0" reply.
+// Returns -1 if there is no such reply in the buffer.
+int parseCsq() {
+  char* at = strstr(simBuf, "+CSQ:");
+  if (at == NULL) {
+    return -1;
+  }
+  return atoi(at + 5);   // atoi skips the space, stops at the comma
 }
 
 
@@ -492,7 +527,19 @@ void simSetup() {
     return;
   }
 
-  // 2. Is the SIM card in and unlocked?  ->  "READY"
+  // 2. Turn OFF command echo.
+  //    By default the module repeats every command back to us before
+  //    answering it. That echo lands in the same little buffer we
+  //    search for replies, so "AT+CSQ" itself looks like a "+CSQ"
+  //    answer and we read the question instead of the reading.
+  //    ATE0 stops the echo and makes every check below trustworthy.
+  simCommand("ATE0", "OK", 3000);
+
+  // 3. Ask for real error numbers instead of a bare "ERROR",
+  //    so a failure tells us WHY in the serial monitor.
+  simCommand("AT+CMEE=2", "OK", 3000);
+
+  // 4. Is the SIM card in and unlocked?  ->  "READY"
   if (!simCommand("AT+CPIN?", "READY", 5000)) {
     Serial.println("SIM_FAIL:NOSIM");
     Serial.println("   Check: SIM inserted properly, PIN lock turned OFF.");
@@ -500,12 +547,22 @@ void simSetup() {
     return;
   }
 
-  // 3. How strong is the signal?  (99 = no signal at all, under 10 is weak)
+  // 5. How strong is the signal?
+  //    0-31, bigger is better. 99 means "no signal at all".
+  //    Under 10 is too weak to send reliably.
   simCommand("AT+CSQ", "+CSQ", 5000);
+  int signal = parseCsq();
   Serial.print("   Signal: ");
-  Serial.println(simBuf);
+  if (signal < 0) {
+    Serial.println("could not read");
+  } else if (signal == 99) {
+    Serial.println("99 - NO SIGNAL (check the antenna)");
+  } else {
+    Serial.print(signal);
+    Serial.println(signal < MIN_SIGNAL ? " - WEAK, sending may fail" : " - ok");
+  }
 
-  // 4. Did it join the network?  ->  ",1" (home) or ",5" (roaming)
+  // 6. Did it join the network?  ->  ",1" (home) or ",5" (roaming)
   bool registered = simCommand("AT+CREG?", ",1", 10000);
   if (!registered) {
     registered = simCommand("AT+CREG?", ",5", 10000);
@@ -517,7 +574,7 @@ void simSetup() {
     return;
   }
 
-  // 5. Use plain text messages (not the binary PDU format)
+  // 7. Use plain text messages (not the binary PDU format)
   if (!simCommand("AT+CMGF=1", "OK", 5000)) {
     Serial.println("SIM_FAIL:TEXTMODE");
     simReady = false;
@@ -541,11 +598,20 @@ void simReset() {
   digitalWrite(SIM_RST_PIN, HIGH);
 
   // The module is unusable while it restarts, so give it time and
-  // then re-run the two checks that matter.
+  // then re-run the checks that matter. A reset also forgets ATE0
+  // and text mode, so both have to be set again.
   delay(3000);
   simBufClear();
 
-  simReady = simCommand("AT", "OK", 5000) && simCommand("AT+CMGF=1", "OK", 5000);
+  simReady = simCommand("AT", "OK", 5000);
+  if (simReady) {
+    simCommand("ATE0", "OK", 3000);
+    simReady = simCommand("AT+CMGF=1", "OK", 5000);
+  }
+
+  // Start the rest timer from here too, so the first send after a
+  // reset does not fire while the module is still waking up.
+  smsLastFinished = millis();
 
   Serial.println(simReady ? "SIM_READY" : "SIM_FAIL:RESETFAILED");
 }

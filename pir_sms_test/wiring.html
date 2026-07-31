@@ -1034,6 +1034,16 @@
             <td>Capacitor closer to the module; short thick wires for <code>5Vin</code>/<code>GND</code>; a wall adapter, not a bank.</td>
           </tr>
           <tr>
+            <td>First text sends, then <code>TIMEOUT</code> followed by <code>ERROR</code>, over and over</td>
+            <td>Brownout, confirmed. The <code>TIMEOUT</code> is the module dying mid-send; it reboots, which forgets <code>AT+CMGF=1</code>, so the next send gets <code>ERROR</code> straight away.</td>
+            <td>Fix the power &mdash; no sketch change cures this. Watch the status LED: if it goes dark and re-blinks after each attempt, the module is resetting.</td>
+          </tr>
+          <tr>
+            <td><code>Signal:</code> prints garbage like <code>)-5?AT+CSQ</code></td>
+            <td>Command echo is on, so the module's repeat of your own question is read as the answer</td>
+            <td>Send <code>ATE0</code> during start-up. The sketch does this from the start.</td>
+          </tr>
+          <tr>
             <td>Module switches on and off in a loop</td>
             <td>Capacitor in backwards</td>
             <td>Stripe leg goes to GND. Replace the capacitor if it got hot.</td>

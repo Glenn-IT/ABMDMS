@@ -13,6 +13,18 @@ Nothing in this folder touches the main system. It has its own database
 (`pir_sms_test`), its own API, and its own dashboard. Break it, wipe it, or
 delete the whole folder — the real ABMDMS data is untouched.
 
+> **✅ 1 August 2026 — working end to end.** Motion triggers a real SMS, and both the
+> event and the SMS result land in MySQL. Ran **10 minutes continuously with no module
+> restarts**.
+>
+> Getting there cost two days to a **failed 1000 µF capacitor** — correct value, correct
+> 16 V rating, correct polarity, and simply dead. If this rig starts restarting after
+> every send, **test the capacitor first**: the procedure is in
+> `../sms_module_test/POWER_TROUBLESHOOTING.md`, and the full story is Fault 7 in
+> `../sms_module_test/RESULTS.md`. The raw serial log from the fault is in `Issues.md`.
+>
+> Known-good setup: 5 V 2 A wall adapter, 1000 µF 16 V across the module's `5Vin`/`GND`.
+
 | | Main ABMDMS | This rig |
 |---|---|---|
 | Database | `motion_monitoring` | `pir_sms_test` |
