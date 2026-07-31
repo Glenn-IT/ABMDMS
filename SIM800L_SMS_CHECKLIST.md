@@ -8,6 +8,11 @@ Work through the phases **in order** — each depends on the one before it.
 Mirrors `PIN5_ROOMD_CHECKLIST.md` in style.
 
 Full wiring instructions: `arduino/SIM800L_WIRING.md`.
+Bench test, fault history and diagrams: **`sms_module_test/`**.
+
+> **✅ 31 July 2026 — Phases 1–3 are done. The module sends real 2G SMS**
+> (`+CMGS: 184`, received on `+639169751409`). Next: Phase 4, upload the real sketch.
+> Two power items still open — see `sms_module_test/README.md` under "not yet fixed".
 
 > Tip: in most Markdown editors you tick a box by changing `[ ]` to `[x]`.
 
@@ -33,28 +38,36 @@ Do not buy parts or wire anything until this passes. SIM800L is **2G only**, and
 - [x] Board identified: **SIM800L V2.2 by UNV**, the 5 V version → 5 V direct, no buck
 - [x] ~~Decide the supply: 5 V board → direct · 3.7–4.2 V board → LM2596 buck at 4.0 V~~ (5 V board — direct)
 - [x] ~~If using a buck: set it to 4.0 V with a multimeter before connecting~~ (no buck)
-- [ ] Wire only **`5Vin` / `GND`** for now, plus the **1000 µF capacitor** across them (stripe = negative)
-- [ ] Measure the voltage at the module — ~5 V, and it does not collapse
-- [ ] Leave it powered for 2 minutes — confirm the power bank does **not** switch itself off (low-current cut-off)
-- [ ] Antenna connected **before** power was applied
-- [ ] Confirm the module is powered from the **power bank's `5Vin`**, NOT the Arduino's 5V pin or DC jack
+- [x] Wire only **`5Vin` / `GND`** for now, plus the **1000 µF capacitor** across them (stripe = negative)
+      — ⚠ first attempt had the cap **reversed**: it killed the cap and caused a reboot loop. See `sms_module_test/RESULTS.md` Fault 1
+- [ ] Measure the voltage at the module — ~5 V, and it does not collapse *(still not measured)*
+- [x] ~~Leave it powered for 2 minutes — confirm the power bank does **not** switch itself off~~
+      — **it DID cut off.** 5 V 3 A bank, low-current auto-cutoff. Bench testing moved to a **wall adapter**. Must be solved before Phase 9's battery demo — see `POWER_TROUBLESHOOTING.md` Symptom 2
+- [x] Antenna connected **before** power was applied
+- [x] Confirm the module is powered from the external supply's `5Vin`, NOT the Arduino's 5V pin or DC jack
+- [ ] **Still to do:** move `5Vin`/`GND` off the breadboard onto a short thick direct pair (brownout risk — Fault 5)
 
 ---
 
 ## PHASE 3 — VERIFY THE MODULE ALONE (no Arduino code yet)
 
-- [ ] Status LED blinks **once every ~3 seconds** = joined the network (once per second = still searching → fix before continuing)
-- [ ] Wire the data pins: `TXD` → Pin 10 (direct), `RXD` → Pin 11 (**direct — V2.2 is 5 V-logic, no divider**), `RST` → Pin 12
-- [ ] Leave **`VDD` unconnected** — it is a 2.8 V reference output, not a power pin; do not feed 5 V into it
-- [ ] Confirm the external supply GND, the module GND, and the Arduino GND are all joined
-- [ ] Upload the throwaway passthrough sketch from `arduino/SIM800L_WIRING.md`
-- [ ] Serial Monitor at 9600, line ending **"Both NL & CR"**
-- [ ] `AT` → `OK`
-- [ ] `AT+CPIN?` → `+CPIN: READY`
-- [ ] `AT+CSQ` → signal above 10 (99 = no signal at all)
-- [ ] `AT+CREG?` → `0,1` or `0,5`
-- [ ] `AT+CMGF=1` → `OK`
-- [ ] Full manual send with `AT+CMGS` + Ctrl+Z → **a real text arrives on your phone**
+- [x] Status LED blinks **once every ~3 seconds** = joined the network
+- [x] Wire the data pins: `TXD` → Pin 10 (direct), `RXD` → Pin 11 (**direct — V2.2 is 5 V-logic, no divider**), `RST` → Pin 12
+- [x] Leave **`VDD` unconnected** — it is a 2.8 V reference output, not a power pin
+- [x] Confirm the external supply GND, the module GND, and the Arduino GND are all joined
+- [x] Upload the passthrough sketch — now a proper file: `sms_module_test/sim800l_passthrough/`
+- [x] Serial Monitor at 9600, line ending **"Both NL & CR"**
+- [x] `AT` → `OK`
+- [x] `AT+CPIN?` → `+CPIN: READY`
+- [ ] `AT+CSQ` → signal above 10 *(worked, but the number was never written down — record it)*
+- [ ] `AT+CREG?` → `0,1` or `0,5` *(worked, but never written down — record it)*
+- [x] `AT+CMGF=1` → `OK`
+- [x] ✅ **Full manual send with `AT+CMGS` + Ctrl+Z → a real text arrived on the phone.**
+      `+CMGS: 184`, 31 July 2026, to `+639169751409`
+
+> **Phase 3 is passed.** Full fault history in `sms_module_test/RESULTS.md`.
+> Also useful: `AT+CMEE=2` for real error codes instead of a bare `ERROR`, and `AT&W`
+> to make `CMGF=1` survive a reset.
 
 > Do not go past this line until a text actually arrives. Everything after this
 > is software, and software cannot fix a hardware or coverage problem.
@@ -69,7 +82,7 @@ Do not buy parts or wire anything until this passes. SIM800L is **2G only**, and
 - [x] `motion_sensor.ino`: `smsTick()` sends the message in small steps with **no `delay()`**, so motion detection never pauses during a send
 - [x] `motion_sensor.ino`: `simSetup()` checks the module during the PIR warm-up and prints `SIM_READY` or `SIM_FAIL:<reason>`
 - [x] `motion_sensor.ino`: prints `SMS_SENT:` / `SMS_FAIL:` / `SMS_SKIP:` tokens for the laptop to log
-- [ ] **Put your own phone number in `SMS_RECIPIENT`** near the top of the sketch (international format, e.g. `+639171234567`)
+- [x] **Put your own phone number in `SMS_RECIPIENT`** — set to `+639169751409`
 - [ ] Upload and wait for **"Done uploading"**
 - [ ] Serial Monitor: `SIM_READY` appears before the warm-up countdown finishes
 - [ ] Wave at Room A → `ROOMA_MOTION_DETECTED`, then `SMS_SENT:ROOMA`, and a text arrives
@@ -93,7 +106,7 @@ Do not buy parts or wire anything until this passes. SIM800L is **2G only**, and
 - [x] `config.php`: added `SMS_RECIPIENT_DISPLAY`, `ALLOWED_SMS_STATUSES`, `SMS_RECENT_LIMIT`
 - [x] `api/record_sms.php`: new endpoint, built the same way as `record_motion.php` (POST only, whitelist validation, prepared statement)
 - [x] `api/get_motion_logs.php`: returns `sms_today`, `sms_last`, `sms_recipient`, `sms_logs`, and `last_sms` per zone — all in the **same single response**, no extra endpoint
-- [ ] Set `SMS_RECIPIENT_DISPLAY` in `config.php` to the same number you put in the sketch (this one is display only)
+- [x] Set `SMS_RECIPIENT_DISPLAY` in `config.php` — set to `+639169751409`
 - [ ] Test with `Invoke-RestMethod`: valid `zone` + `status` inserts a row
 - [ ] Test that a bogus `status` is rejected with HTTP 400
 - [ ] Delete the test rows afterwards

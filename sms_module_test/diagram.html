@@ -1,0 +1,788 @@
+<title>SIM800L Bench Test Rig — ABMDMS</title>
+
+<style>
+  :root {
+    --bg:        #EDEEF0;
+    --surface:   #FFFFFF;
+    --surface-2: #F6F7F8;
+    --ink:       #14181C;
+    --ink-2:     #4A535C;
+    --ink-3:     #7B858F;
+    --line:      #D3D7DC;
+    --line-2:    #B9BFC6;
+    --accent:    #B8720F;
+    --accent-bg: #FBF0DA;
+    --pass:      #14663F;
+    --pass-bg:   #E3F1E9;
+    --fail:      #A32218;
+    --fail-bg:   #FBE7E4;
+
+    --wire-data: #14181C;
+    --wire-gnd:  #6B757E;
+    --wire-pwr:  #B8720F;
+
+    --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:        #101418;
+      --surface:   #171C21;
+      --surface-2: #1D242A;
+      --ink:       #E7EBEE;
+      --ink-2:     #A9B3BC;
+      --ink-3:     #78838D;
+      --line:      #2A3138;
+      --line-2:    #3B444C;
+      --accent:    #E5A33F;
+      --accent-bg: #29200F;
+      --pass:      #55C08D;
+      --pass-bg:   #10261C;
+      --fail:      #F2796B;
+      --fail-bg:   #2A1512;
+
+      --wire-data: #C6CFD6;
+      --wire-gnd:  #79848D;
+      --wire-pwr:  #E5A33F;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg:        #101418;
+    --surface:   #171C21;
+    --surface-2: #1D242A;
+    --ink:       #E7EBEE;
+    --ink-2:     #A9B3BC;
+    --ink-3:     #78838D;
+    --line:      #2A3138;
+    --line-2:    #3B444C;
+    --accent:    #E5A33F;
+    --accent-bg: #29200F;
+    --pass:      #55C08D;
+    --pass-bg:   #10261C;
+    --fail:      #F2796B;
+    --fail-bg:   #2A1512;
+
+    --wire-data: #C6CFD6;
+    --wire-gnd:  #79848D;
+    --wire-pwr:  #E5A33F;
+  }
+
+  :root[data-theme="light"] {
+    --bg:        #EDEEF0;
+    --surface:   #FFFFFF;
+    --surface-2: #F6F7F8;
+    --ink:       #14181C;
+    --ink-2:     #4A535C;
+    --ink-3:     #7B858F;
+    --line:      #D3D7DC;
+    --line-2:    #B9BFC6;
+    --accent:    #B8720F;
+    --accent-bg: #FBF0DA;
+    --pass:      #14663F;
+    --pass-bg:   #E3F1E9;
+    --fail:      #A32218;
+    --fail-bg:   #FBE7E4;
+
+    --wire-data: #14181C;
+    --wire-gnd:  #6B757E;
+    --wire-pwr:  #B8720F;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    padding: 0 20px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+  }
+
+  .col {
+    max-width: 68ch;
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 56px 0 0;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .eyebrow::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+    max-width: 320px;
+  }
+
+  h1 {
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 650;
+    text-wrap: balance;
+    max-width: 20ch;
+  }
+
+  .standfirst {
+    font-size: 18px;
+    color: var(--ink-2);
+    max-width: 60ch;
+  }
+
+  .scope {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .chip {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    padding: 5px 10px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    color: var(--ink-2);
+    background: var(--surface);
+  }
+
+  .chip.out {
+    color: var(--ink-3);
+    text-decoration: line-through;
+    text-decoration-color: var(--line-2);
+    background: transparent;
+  }
+
+  /* ---------- sections ---------- */
+
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  h2 {
+    font-size: 24px;
+    letter-spacing: -0.01em;
+    font-weight: 640;
+    text-wrap: balance;
+  }
+
+  h2 .num {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    margin-right: 12px;
+    vertical-align: 3px;
+  }
+
+  h3 {
+    font-size: 15px;
+    font-weight: 640;
+    letter-spacing: 0.01em;
+  }
+
+  p { max-width: 68ch; }
+
+  strong { font-weight: 640; }
+
+  code, .mono { font-family: var(--font-mono); }
+
+  code {
+    font-size: 0.88em;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 1px 5px;
+    white-space: nowrap;
+  }
+
+  /* ---------- diagram panel ---------- */
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow-x: auto;
+  }
+
+  .panel svg {
+    display: block;
+    min-width: 860px;
+    width: 100%;
+    height: auto;
+  }
+
+  .caption {
+    font-size: 13.5px;
+    color: var(--ink-3);
+    max-width: 68ch;
+  }
+
+  /* svg element styling */
+  .board      { fill: var(--surface-2); stroke: var(--line-2); stroke-width: 1.5; }
+  .board-sub  { fill: none; stroke: var(--line-2); stroke-width: 1; }
+  .w-data     { stroke: var(--wire-data); stroke-width: 2; fill: none; }
+  .w-gnd      { stroke: var(--wire-gnd);  stroke-width: 2.5; fill: none; }
+  .w-pwr      { stroke: var(--wire-pwr);  stroke-width: 2.5; fill: none; }
+  .node-data  { fill: var(--wire-data); }
+  .node-gnd   { fill: var(--wire-gnd); }
+  .node-pwr   { fill: var(--wire-pwr); }
+  .t          { font-family: var(--font-mono); font-size: 12px; fill: var(--ink); }
+  .t-sm       { font-family: var(--font-mono); font-size: 10.5px; fill: var(--ink-3); }
+  .t-lbl      { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-2); letter-spacing: 0.06em; }
+  .t-hd       { font-family: var(--font-mono); font-size: 12.5px; fill: var(--ink); letter-spacing: 0.1em; }
+  .t-pwr      { font-family: var(--font-mono); font-size: 11px; fill: var(--wire-pwr); }
+
+  /* ---------- tables ---------- */
+
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 520px;
+    font-size: 14.5px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+
+  th {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 500;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-2);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+    color: var(--ink-2);
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  td.pin {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- LED decoder ---------- */
+
+  .leds {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 12px;
+  }
+
+  .led {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--line-2);
+    border-radius: 3px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .led.good { border-left-color: var(--pass); }
+  .led.bad  { border-left-color: var(--fail); }
+
+  .led .rate {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink);
+  }
+
+  .dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--ink-3);
+    flex: none;
+  }
+
+  .led.good .dot { background: var(--pass); animation: blink 3s steps(1, end) infinite; }
+  .led.bad  .dot { background: var(--fail); animation: blink 1s steps(1, end) infinite; }
+  .led.dead .dot { background: transparent; border: 1px solid var(--line-2); }
+
+  @keyframes blink { 0%, 12% { opacity: 1; } 13%, 100% { opacity: 0.18; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .led .dot { animation: none !important; }
+  }
+
+  .led .verdict {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .led.good .verdict { color: var(--pass); }
+  .led.bad  .verdict, .led.dead .verdict { color: var(--fail); }
+  .led p { font-size: 13.5px; color: var(--ink-2); margin: 0; }
+
+  /* ---------- test ladder ---------- */
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .step {
+    background: var(--surface);
+    padding: 18px 20px;
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 4px 16px;
+    align-items: baseline;
+  }
+
+  .step .key {
+    font-family: var(--font-mono);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--accent);
+    grid-row: span 3;
+  }
+
+  .step .name { font-weight: 640; font-size: 15.5px; }
+  .step .desc { font-size: 14px; color: var(--ink-2); }
+
+  .step .gate {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--pass);
+    background: var(--pass-bg);
+    border-radius: 2px;
+    padding: 5px 9px;
+    justify-self: start;
+    margin-top: 4px;
+  }
+
+  /* ---------- warnings ---------- */
+
+  .warns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 14px;
+  }
+
+  .warn {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-top: 2px solid var(--fail);
+    border-radius: 3px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .warn .tag {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--fail);
+  }
+
+  .warn p { font-size: 14px; color: var(--ink-2); margin: 0; }
+
+  /* ---------- AT ladder ---------- */
+
+  .at {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    overflow-x: auto;
+  }
+
+  .at-row {
+    display: grid;
+    grid-template-columns: 26px minmax(200px, 1fr) minmax(150px, 1fr);
+    gap: 16px;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--line);
+    min-width: 520px;
+    align-items: baseline;
+  }
+
+  .at-row:last-child { border-bottom: none; }
+  .at-row .n { color: var(--ink-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .at-row .cmd { color: var(--ink); }
+  .at-row .res { color: var(--pass); }
+  .at-row.final { background: var(--accent-bg); }
+  .at-row.final .res { color: var(--accent); font-weight: 600; }
+
+  /* ---------- footer ---------- */
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+    font-size: 14px;
+    color: var(--ink-3);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, .panel:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  @media (max-width: 600px) {
+    .step { grid-template-columns: 1fr; }
+    .step .key { grid-row: auto; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">ABMDMS &nbsp;·&nbsp; sms_module_test &nbsp;·&nbsp; bench rig</div>
+    <h1>Can this SIM800L actually send a text?</h1>
+    <p class="standfirst">
+      One question, four tests, on a rig with nothing else attached. The motion system
+      already has its SMS code written — but code cannot fix a module that has no 2G
+      signal, no load, or not enough current. So the module gets proven on its own first.
+    </p>
+    <div class="scope">
+      <span class="chip">Arduino Uno</span>
+      <span class="chip">SIM800L V2.2 (UNV) · 5 V</span>
+      <span class="chip">external 5 V supply</span>
+      <span class="chip">1000 µF</span>
+      <span class="chip out">4× PIR sensors</span>
+      <span class="chip out">XAMPP · MySQL</span>
+      <span class="chip out">dashboard</span>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="num">01</span>The rig</h2>
+    <p class="col">
+      Five wires and a capacitor. The module never touches the Arduino's 5 V pin —
+      it draws up to <strong>2 A</strong> in bursts while transmitting and the Uno's
+      regulator can give about a quarter of that.
+    </p>
+
+    <div class="panel" tabindex="0">
+      <svg viewBox="0 0 900 570" role="img" aria-label="Wiring diagram: Arduino Uno pins 10, 11 and 12 connect to the SIM800L TXD, RXD and RST. The module's 5Vin comes from an external power bank, not the Arduino. A 1000 microfarad capacitor sits across the module's 5Vin and GND. All three grounds join on one bus.">
+
+        <!-- ============ ARDUINO ============ -->
+        <rect class="board" x="40" y="60" width="230" height="300" rx="4" />
+        <text class="t-hd" x="60" y="92">ARDUINO UNO</text>
+        <text class="t-sm" x="60" y="110">powered over USB</text>
+        <line class="board-sub" x1="40" y1="124" x2="270" y2="124" />
+
+        <text class="t" x="196" y="145" text-anchor="end">PIN 10</text>
+        <text class="t" x="196" y="185" text-anchor="end">PIN 11</text>
+        <text class="t" x="196" y="225" text-anchor="end">PIN 12</text>
+        <text class="t" x="196" y="305" text-anchor="end">GND</text>
+        <text class="t-sm" x="60" y="345">pins 2–5 (PIRs) unused in this test</text>
+
+        <circle class="node-data" cx="266" cy="140" r="4" />
+        <circle class="node-data" cx="266" cy="180" r="4" />
+        <circle class="node-data" cx="266" cy="220" r="4" />
+        <circle class="node-gnd"  cx="266" cy="300" r="4" />
+
+        <!-- ============ SIM800L ============ -->
+        <rect class="board" x="560" y="60" width="290" height="230" rx="4" />
+        <text class="t-hd" x="580" y="92">SIM800L V2.2</text>
+        <text class="t-sm" x="580" y="110">5 V board · 2G only</text>
+        <line class="board-sub" x1="560" y1="124" x2="850" y2="124" />
+
+        <text class="t" x="576" y="145">TXD</text>
+        <text class="t" x="576" y="185">RXD</text>
+        <text class="t" x="576" y="225">RST</text>
+
+        <circle class="node-data" cx="564" cy="140" r="4" />
+        <circle class="node-data" cx="564" cy="180" r="4" />
+        <circle class="node-data" cx="564" cy="220" r="4" />
+
+        <!-- SIM holder -->
+        <rect class="board-sub" x="672" y="140" width="72" height="46" rx="3" />
+        <text class="t-sm" x="708" y="167" text-anchor="middle">SIM 2FF</text>
+
+        <!-- antenna -->
+        <line class="w-data" x1="800" y1="150" x2="800" y2="188" />
+        <line class="w-data" x1="788" y1="150" x2="812" y2="150" />
+        <text class="t-sm" x="800" y="204" text-anchor="middle">antenna</text>
+        <text class="t-sm" x="800" y="218" text-anchor="middle">ON BEFORE POWER</text>
+
+        <!-- status LED -->
+        <circle class="node-pwr" cx="600" cy="252" r="5" />
+        <text class="t-sm" x="614" y="256">status LED — blinks every ~3 s = joined</text>
+
+        <!-- VDD note -->
+        <text class="t-sm" x="576" y="278">VDD ✕ leave unconnected (2.8 V output)</text>
+
+        <!-- module power pins on the bottom edge -->
+        <circle class="node-gnd" cx="700" cy="290" r="4" />
+        <circle class="node-pwr" cx="790" cy="290" r="4" />
+        <text class="t-lbl" x="694" y="308" text-anchor="end">GND</text>
+        <text class="t-pwr" x="800" y="308">5Vin</text>
+
+        <!-- ============ DATA WIRES ============ -->
+        <line class="w-data" x1="266" y1="140" x2="564" y2="140" />
+        <line class="w-data" x1="266" y1="180" x2="564" y2="180" />
+        <line class="w-data" x1="266" y1="220" x2="564" y2="220" />
+
+        <polygon class="node-data" points="286,140 300,134 300,146" />
+        <polygon class="node-data" points="544,180 530,174 530,186" />
+        <polygon class="node-data" points="544,220 530,214 530,226" />
+
+        <text class="t-sm" x="415" y="132" text-anchor="middle">module talks back</text>
+        <text class="t-sm" x="415" y="172" text-anchor="middle">Arduino sends commands</text>
+        <text class="t-sm" x="415" y="212" text-anchor="middle">reset (optional)</text>
+        <text class="t-sm" x="415" y="246" text-anchor="middle">TX and RX cross over — this is the pair people swap</text>
+
+        <!-- ============ GROUND BUS ============ -->
+        <path class="w-gnd" d="M266 300 H340 V392" />
+        <path class="w-gnd" d="M700 290 V392" />
+        <line class="w-gnd" x1="336" y1="392" x2="704" y2="392" />
+        <path class="w-gnd" d="M430 500 H380 V392" />
+
+        <circle class="node-gnd" cx="340" cy="392" r="4.5" />
+        <circle class="node-gnd" cx="380" cy="392" r="4.5" />
+        <circle class="node-gnd" cx="700" cy="392" r="4.5" />
+
+        <text class="t-lbl" x="470" y="412">COMMON GROUND — all three meet here</text>
+        <text class="t-sm" x="470" y="428">Arduino GND · module GND · supply −</text>
+
+        <!-- ============ POWER ============ -->
+        <rect class="board" x="430" y="440" width="250" height="90" rx="4" />
+        <text class="t-hd" x="450" y="470">EXTERNAL 5 V</text>
+        <text class="t-sm" x="450" y="488">power bank or 5 V 2 A adapter</text>
+        <text class="t-sm" x="450" y="504">never the Arduino 5V pin or DC jack</text>
+
+        <circle class="node-gnd" cx="430" cy="500" r="4" />
+        <circle class="node-pwr" cx="680" cy="470" r="4" />
+        <text class="t-lbl" x="422" y="522" text-anchor="end">−</text>
+        <text class="t-pwr" x="688" y="462">+</text>
+
+        <path class="w-pwr" d="M680 470 H790 V290" />
+
+        <!-- ============ CAPACITOR ============ -->
+        <path class="w-pwr" d="M700 340 H744" />
+        <path class="w-pwr" d="M766 340 H790" />
+        <line class="w-pwr" x1="744" y1="322" x2="744" y2="358" />
+        <line class="w-pwr" x1="766" y1="322" x2="766" y2="358" />
+        <text class="t-pwr" x="737" y="316" text-anchor="end">−</text>
+        <text class="t-pwr" x="773" y="316">+</text>
+        <text class="t-pwr" x="755" y="376" text-anchor="middle">1000 µF</text>
+        <text class="t-sm" x="755" y="392" text-anchor="middle">across the rails, not in line</text>
+
+      </svg>
+    </div>
+
+    <p class="caption">
+      Amber is power, grey is ground, dark is data. The capacitor has two legs bridging
+      the two power rails — drawn or built <em>inline</em> on the 5 V wire it blocks DC and
+      the module never powers up at all.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <caption class="caption" style="text-align:left; padding: 0 0 10px;">
+          Every connection in the rig. Same pins as <code>motion_sensor.ino</code>, on purpose.
+        </caption>
+        <thead>
+          <tr><th>SIM800L</th><th>Goes to</th><th>Why</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="pin">TXD</td><td class="pin">Arduino Pin 10</td><td>Module → Arduino. Direct wire.</td></tr>
+          <tr><td class="pin">RXD</td><td class="pin">Arduino Pin 11</td><td>Arduino → module. Direct — V2.2 is 5 V-logic, so no divider.</td></tr>
+          <tr><td class="pin">RST</td><td class="pin">Arduino Pin 12</td><td>Optional. Lets the sketch restart the module without unplugging it.</td></tr>
+          <tr><td class="pin">5Vin</td><td class="pin">supply +</td><td>External only. 2 A transmit bursts would brown out the Uno.</td></tr>
+          <tr><td class="pin">GND</td><td class="pin">supply − <em>and</em> Arduino GND</td><td>Serial needs a shared 0 V reference. This is the wire people forget.</td></tr>
+          <tr><td class="pin">VDD</td><td class="pin">nothing</td><td>A 2.8 V reference <em>output</em>, not a power input. Feeding it 5 V damages the board.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>Three faults that imitate a dead module</h2>
+    <p class="col">
+      Nearly every "the SIM800L is broken" story is one of these. All three produce the
+      same symptom — total silence from <code>AT</code> — which is why they are worth
+      ruling out before anything else.
+    </p>
+    <div class="warns">
+      <div class="warn">
+        <span class="tag">Power</span>
+        <h3>Fed from the Arduino</h3>
+        <p>The Uno's regulator manages about 0.5 A. The module wants 2 A in bursts, browns out, and reboots mid-message — often after appearing to work at idle.</p>
+      </div>
+      <div class="warn">
+        <span class="tag">Ground</span>
+        <h3>No common ground</h3>
+        <p>Both halves are powered, both look alive, and neither can hear the other. Serial data has no shared reference. Join all three grounds at one point.</p>
+      </div>
+      <div class="warn">
+        <span class="tag">Capacitor</span>
+        <h3>Cap wired in series</h3>
+        <p>It belongs <em>across</em> 5Vin and GND, storing energy for the transmit burst. Placed in line with the 5 V wire it blocks DC entirely — nothing powers up.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span>Test A — read the status LED</h2>
+    <p class="col">
+      Power and antenna only, no data wires yet. The blink rate is the module telling you
+      whether it found a 2G network. Nothing after this can pass until this does.
+    </p>
+    <div class="leds">
+      <div class="led good">
+        <div class="rate"><span class="dot"></span> one blink · every ~3 s</div>
+        <span class="verdict">joined the network</span>
+        <p>Registered on 2G. Wire the data pins and go to Test B.</p>
+      </div>
+      <div class="led bad">
+        <div class="rate"><span class="dot"></span> one blink · every ~1 s</div>
+        <span class="verdict">still searching</span>
+        <p>No antenna, no coverage, or a SIM problem. Retest the SIM in a phone forced to 2G, in this same room.</p>
+      </div>
+      <div class="led dead">
+        <div class="rate"><span class="dot"></span> nothing at all</div>
+        <span class="verdict">no power</span>
+        <p>Measure at the module: ~5 V and steady. Check the capacitor is across the rails, and that the power bank has not cut out.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">04</span>The four tests</h2>
+    <p class="col">
+      Each one depends on the one before it. A failure tells you which layer is at fault,
+      which is the whole reason for running them separately.
+    </p>
+    <div class="steps">
+      <div class="step">
+        <div class="key">A</div>
+        <div class="name">Power and status LED</div>
+        <div class="desc">Multimeter and eyes. Proves the supply holds up and a 2G network accepted the SIM.</div>
+        <div class="gate">gate: ~3 s blink, 5 V steady for 2 min</div>
+      </div>
+      <div class="step">
+        <div class="key">B</div>
+        <div class="name">Manual AT commands <span class="mono" style="color:var(--ink-3); font-size:12px;">sim800l_passthrough.ino</span></div>
+        <div class="desc">You type, the module answers. Proves the wiring is right and that it can send a message.</div>
+        <div class="gate">gate: a real text arrives on your phone</div>
+      </div>
+      <div class="step">
+        <div class="key">C</div>
+        <div class="name">Automatic self-test <span class="mono" style="color:var(--ink-3); font-size:12px;">sim800l_selftest.ino</span></div>
+        <div class="desc">The same six checks, hands-free, with a verdict. Run it three times — a module that passes once and fails twice has a power problem.</div>
+        <div class="gate">gate: ALL PASS, repeatably</div>
+      </div>
+      <div class="step">
+        <div class="key">D</div>
+        <div class="name">Laptop off</div>
+        <div class="desc">Arduino on the power bank, USB unplugged. This is the point of the whole feature: the Arduino sends the SMS, the website only records it.</div>
+        <div class="gate">gate: text arrives with no computer involved</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">05</span>Test B, command by command</h2>
+    <p class="col">
+      Serial Monitor at <strong>9600</strong>, line ending set to <strong>“Both NL &amp; CR”</strong>.
+      Get that dropdown wrong and the module ignores everything you type — the most common
+      false alarm of the whole build.
+    </p>
+    <div class="at">
+      <div class="at-row"><span class="n">1</span><span class="cmd">AT</span><span class="res">OK</span></div>
+      <div class="at-row"><span class="n">2</span><span class="cmd">AT+CPIN?</span><span class="res">+CPIN: READY</span></div>
+      <div class="at-row"><span class="n">3</span><span class="cmd">AT+CSQ</span><span class="res">+CSQ: 17,0 &nbsp;<span style="color:var(--ink-3)">(&gt;10; 99 = none)</span></span></div>
+      <div class="at-row"><span class="n">4</span><span class="cmd">AT+CREG?</span><span class="res">+CREG: 0,1</span></div>
+      <div class="at-row"><span class="n">5</span><span class="cmd">AT+CMGF=1</span><span class="res">OK</span></div>
+      <div class="at-row"><span class="n">6</span><span class="cmd">AT+CMGS="+639XXXXXXXXX"</span><span class="res">&gt;</span></div>
+      <div class="at-row"><span class="n">7</span><span class="cmd">your message, then END</span><span class="res">sends Ctrl+Z</span></div>
+      <div class="at-row final"><span class="n">8</span><span class="cmd">—</span><span class="res">+CMGS: 42 → phone buzzes</span></div>
+    </div>
+    <p class="caption">
+      The Arduino IDE cannot type Ctrl+Z, so the passthrough sketch converts the word
+      <code>END</code> into it. Type <code>RESET</code> to pulse the module's reset pin.
+    </p>
+  </section>
+
+  <section>
+    <h2><span class="num">06</span>When it fails</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Symptom</th><th>Almost always</th><th>Fix</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="pin">silence from AT</td><td>ground, TX/RX, or power</td><td>Join all three grounds; TXD→10 and RXD→11 cross over; external supply only.</td></tr>
+          <tr><td class="pin">CSQ = 99</td><td>no 2G signal</td><td>Antenna on. Then retest the SIM in a 2G-forced phone in this exact room.</td></tr>
+          <tr><td class="pin">CREG = 0,3</td><td>registration denied</td><td>SIM barred, expired, or out of load.</td></tr>
+          <tr><td class="pin">reboots on Ctrl+Z</td><td>brownout on the transmit burst</td><td>1000 µF across the rails; a supply that holds 5 V under 2 A.</td></tr>
+          <tr><td class="pin">CMGS → ERROR</td><td>no load, or number format</td><td>Top up. Write the number as <code>+639XXXXXXXXX</code>.</td></tr>
+          <tr><td class="pin">passes, no text</td><td>wrong recipient</td><td>Check it digit by digit, including the <code>+63</code>.</td></tr>
+          <tr><td class="pin">random failures</td><td>SoftwareSerial dropping bytes</td><td>Works, but an Arduino Mega's real second port removes it entirely.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <p><strong>All four pass →</strong> back to <code>SIM800L_SMS_CHECKLIST.md</code> Phase 4: put your number in <code>SMS_RECIPIENT</code> in <code>motion_sensor.ino</code> and upload the real sketch.</p>
+    <p>Full plan in <code>sms_module_test/README.md</code> · commands in <code>AT_COMMANDS.md</code> · record what you saw in <code>RESULTS.md</code>.</p>
+  </footer>
+
+</div>

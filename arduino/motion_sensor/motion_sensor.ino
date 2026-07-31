@@ -81,7 +81,7 @@ const unsigned long STOP_CONFIRM_MS  = 2000; // Wait this long before saying mot
 
 // >>> PUT YOUR OWN PHONE NUMBER HERE, in international format. <<<
 // Philippines example: 0917 123 4567  ->  "+639171234567"
-const char* SMS_RECIPIENT = "+639171234567";
+const char* SMS_RECIPIENT = "+639169751409";
 
 // Set this to false to run the system with NO GSM module attached
 // (everything else still works exactly like before).

@@ -70,7 +70,7 @@ define('ZONE_LABELS', [
 // and upload the sketch again. The setting below is only the
 // number shown on the dashboard.
 
-define('SMS_RECIPIENT_DISPLAY', '+639171234567');
+define('SMS_RECIPIENT_DISPLAY', '+639169751409');
 
 // The API will REFUSE to save an SMS status that is not in this list.
 //   SENT    = the network accepted the message

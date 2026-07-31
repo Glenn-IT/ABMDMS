@@ -1,0 +1,794 @@
+<title>Breadboard Layout — ABMDMS SIM800L</title>
+
+<style>
+  :root {
+    --bg:        #EDEEF0;
+    --surface:   #FFFFFF;
+    --surface-2: #F6F7F8;
+    --ink:       #14181C;
+    --ink-2:     #4A535C;
+    --ink-3:     #7B858F;
+    --line:      #D3D7DC;
+    --line-2:    #B9BFC6;
+    --accent:    #B8720F;
+    --accent-bg: #FBF0DA;
+    --pass:      #14663F;
+    --pass-bg:   #E3F1E9;
+    --fail:      #A32218;
+    --fail-bg:   #FBE7E4;
+
+    --board:     #EFEFEA;
+    --board-ln:  #C9CAC3;
+    --hole:      #9BA0A5;
+    --channel:   #DFDFD8;
+    --rail-pos:  #C2352A;
+    --rail-neg:  #2F5FA8;
+    --wire-data: #14181C;
+    --wire-gnd:  #6B757E;
+    --wire-pwr:  #B8720F;
+
+    --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:        #101418;
+      --surface:   #171C21;
+      --surface-2: #1D242A;
+      --ink:       #E7EBEE;
+      --ink-2:     #A9B3BC;
+      --ink-3:     #78838D;
+      --line:      #2A3138;
+      --line-2:    #3B444C;
+      --accent:    #E5A33F;
+      --accent-bg: #29200F;
+      --pass:      #55C08D;
+      --pass-bg:   #10261C;
+      --fail:      #F2796B;
+      --fail-bg:   #2A1512;
+
+      --board:     #23282C;
+      --board-ln:  #3B444C;
+      --hole:      #0C1013;
+      --channel:   #1A1E22;
+      --rail-pos:  #E0685A;
+      --rail-neg:  #6E9BD6;
+      --wire-data: #C6CFD6;
+      --wire-gnd:  #8C97A0;
+      --wire-pwr:  #E5A33F;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg:        #101418;
+    --surface:   #171C21;
+    --surface-2: #1D242A;
+    --ink:       #E7EBEE;
+    --ink-2:     #A9B3BC;
+    --ink-3:     #78838D;
+    --line:      #2A3138;
+    --line-2:    #3B444C;
+    --accent:    #E5A33F;
+    --accent-bg: #29200F;
+    --pass:      #55C08D;
+    --pass-bg:   #10261C;
+    --fail:      #F2796B;
+    --fail-bg:   #2A1512;
+
+    --board:     #23282C;
+    --board-ln:  #3B444C;
+    --hole:      #0C1013;
+    --channel:   #1A1E22;
+    --rail-pos:  #E0685A;
+    --rail-neg:  #6E9BD6;
+    --wire-data: #C6CFD6;
+    --wire-gnd:  #8C97A0;
+    --wire-pwr:  #E5A33F;
+  }
+
+  :root[data-theme="light"] {
+    --bg:        #EDEEF0;
+    --surface:   #FFFFFF;
+    --surface-2: #F6F7F8;
+    --ink:       #14181C;
+    --ink-2:     #4A535C;
+    --ink-3:     #7B858F;
+    --line:      #D3D7DC;
+    --line-2:    #B9BFC6;
+    --accent:    #B8720F;
+    --accent-bg: #FBF0DA;
+    --pass:      #14663F;
+    --pass-bg:   #E3F1E9;
+    --fail:      #A32218;
+    --fail-bg:   #FBE7E4;
+
+    --board:     #EFEFEA;
+    --board-ln:  #C9CAC3;
+    --hole:      #9BA0A5;
+    --channel:   #DFDFD8;
+    --rail-pos:  #C2352A;
+    --rail-neg:  #2F5FA8;
+    --wire-data: #14181C;
+    --wire-gnd:  #6B757E;
+    --wire-pwr:  #B8720F;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    padding: 0 20px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+  }
+
+  .col { max-width: 68ch; }
+
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 56px 0 0;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .eyebrow::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+    max-width: 320px;
+  }
+
+  h1 {
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 650;
+    text-wrap: balance;
+    max-width: 20ch;
+  }
+
+  .standfirst { font-size: 18px; color: var(--ink-2); max-width: 60ch; }
+
+  section { display: flex; flex-direction: column; gap: 20px; }
+
+  h2 { font-size: 24px; letter-spacing: -0.01em; font-weight: 640; text-wrap: balance; }
+
+  h2 .num {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    margin-right: 12px;
+    vertical-align: 3px;
+  }
+
+  h3 { font-size: 15px; font-weight: 640; }
+
+  p { max-width: 68ch; }
+  strong { font-weight: 640; }
+
+  code, .mono { font-family: var(--font-mono); }
+
+  code {
+    font-size: 0.88em;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 1px 5px;
+    white-space: nowrap;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow-x: auto;
+  }
+
+  .panel svg { display: block; min-width: 900px; width: 100%; height: auto; }
+
+  .caption { font-size: 13.5px; color: var(--ink-3); max-width: 68ch; }
+
+  /* ---- svg element classes ---- */
+  .bb-body   { fill: var(--board); stroke: var(--board-ln); stroke-width: 1.5; }
+  .bb-chan   { fill: var(--channel); stroke: var(--board-ln); stroke-width: 1; }
+  .bb-hole   { fill: var(--hole); }
+  .bb-pos    { stroke: var(--rail-pos); stroke-width: 1.5; }
+  .bb-neg    { stroke: var(--rail-neg); stroke-width: 1.5; }
+  .t-pos     { font-family: var(--font-mono); font-size: 11px; fill: var(--rail-pos); }
+  .t-neg     { font-family: var(--font-mono); font-size: 11px; fill: var(--rail-neg); }
+  .box       { fill: var(--surface-2); stroke: var(--line-2); stroke-width: 1.5; }
+  .box-sub   { fill: none; stroke: var(--line-2); stroke-width: 1; }
+  .w-gnd     { stroke: var(--wire-gnd); stroke-width: 2.5; fill: none; stroke-linecap: round; }
+  .w-pwr     { stroke: var(--wire-pwr); stroke-width: 2.5; fill: none; stroke-linecap: round; }
+  .w-ard     { stroke: var(--rail-pos); stroke-width: 2.5; fill: none; stroke-linecap: round; }
+  .w-bad     { stroke: var(--fail); stroke-width: 2.5; fill: none; stroke-dasharray: 7 5; opacity: 0.75; }
+  .n-gnd     { fill: var(--wire-gnd); }
+  .n-pwr     { fill: var(--wire-pwr); }
+  .n-ard     { fill: var(--rail-pos); }
+  .t         { font-family: var(--font-mono); font-size: 12px; fill: var(--ink); }
+  .t-sm      { font-family: var(--font-mono); font-size: 10px; fill: var(--ink-3); }
+  .t-col     { font-family: var(--font-mono); font-size: 9px; fill: var(--ink-3); }
+  .t-lbl     { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-2); letter-spacing: 0.05em; }
+  .t-hd      { font-family: var(--font-mono); font-size: 12.5px; fill: var(--ink); letter-spacing: 0.1em; }
+  .t-bad     { font-family: var(--font-mono); font-size: 11.5px; fill: var(--fail); letter-spacing: 0.04em; }
+  .t-pwrc    { font-family: var(--font-mono); font-size: 11px; fill: var(--wire-pwr); }
+
+  /* ---- rail contract ---- */
+  .rails { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+
+  .rail {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--line-2);
+    border-radius: 3px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .rail.pos { border-left-color: var(--rail-pos); }
+  .rail.neg { border-left-color: var(--rail-neg); }
+  .rail.off { border-left-color: var(--line-2); }
+
+  .rail .id {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .rail .src {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .rail p { font-size: 13.5px; color: var(--ink-2); margin: 0; }
+
+  /* ---- the one rule ---- */
+  .rule {
+    background: var(--fail-bg);
+    border: 1px solid var(--fail);
+    border-radius: 3px;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .rule .tag {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--fail);
+  }
+
+  .rule p { margin: 0; font-size: 14.5px; color: var(--ink-2); }
+  .rule strong { color: var(--ink); }
+
+  /* ---- tables ---- */
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 560px;
+    font-size: 14.5px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+
+  th {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 500;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-2);
+    white-space: nowrap;
+  }
+
+  td { padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-2); }
+  tr:last-child td { border-bottom: none; }
+
+  td.pin, td.hole {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  td.hole { color: var(--accent); }
+
+  .checks { display: flex; flex-direction: column; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+  .check { background: var(--surface); padding: 14px 18px; display: flex; gap: 14px; align-items: baseline; }
+  .check .mark { font-family: var(--font-mono); color: var(--accent); font-size: 13px; flex: none; }
+  .check span:last-child { font-size: 14.5px; color: var(--ink-2); }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+    font-size: 14px;
+    color: var(--ink-3);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  a { color: var(--accent); text-underline-offset: 2px; }
+  a:focus-visible, .panel:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">ABMDMS &nbsp;·&nbsp; sms_module_test &nbsp;·&nbsp; board layout</div>
+    <h1>The breadboard, hole by hole</h1>
+    <p class="standfirst">
+      Drawn as a full-size 830-point board — 63 columns, rows A–J, four power rails.
+      Column numbers are a suggestion; the rail each wire lands in is not. If yours is a
+      half-size 400-point board, use the same rails and shift the columns down to fit.
+    </p>
+  </header>
+
+  <section>
+    <h2><span class="num">01</span>The four rails, and who owns them</h2>
+    <p class="col">
+      This build has <strong>two separate 5 V supplies</strong> that must never meet, and
+      <strong>one ground</strong> that must be shared by everything. Getting that right is
+      most of the wiring.
+    </p>
+    <div class="rails">
+      <div class="rail pos">
+        <span class="id">TOP + rail</span>
+        <span class="src">external supply only</span>
+        <p>Power bank / 5 V 2 A adapter → the SIM800L's <code>5Vin</code>. The Arduino's 5 V pin never touches this rail.</p>
+      </div>
+      <div class="rail neg">
+        <span class="id">TOP − rail</span>
+        <span class="src">common ground</span>
+        <p>Supply −, module <code>GND</code>, and — through the bridge jumper — the Arduino's ground.</p>
+      </div>
+      <div class="rail neg">
+        <span class="id">BOTTOM − rail</span>
+        <span class="src">common ground</span>
+        <p>Arduino <code>GND</code> and the four PIR grounds. Bridged to the top − rail so it is all one net.</p>
+      </div>
+      <div class="rail pos">
+        <span class="id">BOTTOM + rail</span>
+        <span class="src">arduino 5 V — pirs only</span>
+        <p>Feeds the four HC-SR501 sensors. Unused during the SMS bench test.</p>
+      </div>
+    </div>
+
+    <div class="rule">
+      <span class="tag">The one rule</span>
+      <p>
+        <strong>Bridge the two − rails. Never bridge the two + rails.</strong>
+        Ground must be one continuous net or the serial link cannot work at all.
+        The two 5 V rails come from different supplies — joining them back-feeds the
+        Arduino's regulator from the power bank, and puts the module's 2 A transmit
+        burst onto a rail that can give 0.5 A.
+      </p>
+      <p>
+        Most full-size boards also <strong>split each rail in the middle</strong> (look for a
+        break in the red and blue lines near column 30). If your wires sit on opposite sides
+        of that break they are not connected — bridge the two halves of the rail you are using.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>Bench-test layout — SMS module only</h2>
+    <p class="col">
+      This is the rig for Tests B and C: no PIR sensors, no Arduino 5 V. Only the
+      right-hand end of the board is used, because the capacitor has to sit
+      <strong>near the module</strong> where the current burst happens.
+    </p>
+
+    <div class="panel" tabindex="0">
+      <svg viewBox="0 0 970 580" role="img" aria-label="Breadboard layout for the SMS bench test. The external 5 volt supply feeds the top plus rail at column 3. The 1000 microfarad capacitor bridges the top plus rail at column 50 and the top minus rail at column 52. The SIM800L 5Vin goes to the top plus rail at column 56 and its ground to the top minus rail at column 59. The Arduino ground goes to the bottom minus rail at column 12, and a bridge jumper at column 62 joins the bottom minus rail to the top minus rail.">
+
+        <defs>
+          <pattern id="holesA" width="13.6" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(57.2, 7)">
+            <circle class="bb-hole" cx="6.8" cy="7" r="2.1" />
+          </pattern>
+        </defs>
+
+        <!-- ===== external supply ===== -->
+        <rect class="box" x="52" y="18" width="240" height="92" rx="4" />
+        <text class="t-hd" x="70" y="46">EXTERNAL 5 V</text>
+        <text class="t-sm" x="70" y="64">power bank or 5 V 2 A adapter</text>
+        <text class="t-sm" x="70" y="80">never the Arduino 5V pin</text>
+        <text class="t-pwrc" x="91" y="102" text-anchor="middle">+</text>
+        <text class="t-lbl" x="140" y="102" text-anchor="middle">−</text>
+
+        <!-- ===== capacitor ===== -->
+        <rect class="box" x="716" y="96" width="52" height="42" rx="6" />
+        <text class="t-sm" x="742" y="114" text-anchor="middle">1000</text>
+        <text class="t-sm" x="742" y="128" text-anchor="middle">µF</text>
+        <text class="t-pwrc" x="724" y="90" text-anchor="middle">+</text>
+        <text class="t-lbl" x="762" y="90" text-anchor="middle">− stripe</text>
+
+        <!-- ===== SIM800L ===== -->
+        <rect class="box" x="790" y="18" width="168" height="92" rx="4" />
+        <text class="t-hd" x="806" y="44">SIM800L</text>
+        <text class="t-sm" x="806" y="60">V2.2 · 5 V board</text>
+        <text class="t-pwrc" x="812" y="100" text-anchor="middle">5Vin</text>
+        <text class="t-lbl" x="866" y="100" text-anchor="middle">GND</text>
+
+        <!-- ===== BREADBOARD ===== -->
+        <rect class="bb-body" x="44" y="154" width="886" height="280" rx="5" />
+
+        <!-- rail bands -->
+        <rect x="57.2" y="161" width="856.8" height="28" fill="url(#holesA)" />
+        <rect x="57.2" y="399" width="856.8" height="28" fill="url(#holesA)" />
+        <!-- terminal strips -->
+        <rect x="57.2" y="217" width="856.8" height="70" fill="url(#holesA)" />
+        <rect x="57.2" y="301" width="856.8" height="70" fill="url(#holesA)" />
+        <!-- centre channel -->
+        <rect class="bb-chan" x="44" y="287" width="886" height="14" />
+
+        <!-- rail marker lines -->
+        <line class="bb-pos" x1="56" y1="157" x2="918" y2="157" />
+        <line class="bb-neg" x1="56" y1="193" x2="918" y2="193" />
+        <line class="bb-neg" x1="56" y1="395" x2="918" y2="395" />
+        <line class="bb-pos" x1="56" y1="431" x2="918" y2="431" />
+
+        <text class="t-pos" x="48" y="171" text-anchor="end">+</text>
+        <text class="t-neg" x="48" y="186" text-anchor="end">−</text>
+        <text class="t-neg" x="48" y="410" text-anchor="end">−</text>
+        <text class="t-pos" x="48" y="424" text-anchor="end">+</text>
+
+        <!-- rail ownership labels -->
+        <text class="t-pwrc" x="300" y="172">TOP + — EXTERNAL 5 V ONLY</text>
+        <text class="t-lbl"  x="300" y="187">TOP − — COMMON GROUND</text>
+        <text class="t-lbl"  x="300" y="411">BOTTOM − — COMMON GROUND</text>
+        <text class="t-sm"   x="300" y="425">BOTTOM + — unused in this test (Arduino 5 V / PIRs)</text>
+
+        <!-- row letters -->
+        <text class="t-col" x="52" y="227" text-anchor="middle">J</text>
+        <text class="t-col" x="52" y="241" text-anchor="middle">I</text>
+        <text class="t-col" x="52" y="255" text-anchor="middle">H</text>
+        <text class="t-col" x="52" y="269" text-anchor="middle">G</text>
+        <text class="t-col" x="52" y="283" text-anchor="middle">F</text>
+        <text class="t-col" x="52" y="311" text-anchor="middle">E</text>
+        <text class="t-col" x="52" y="325" text-anchor="middle">D</text>
+        <text class="t-col" x="52" y="339" text-anchor="middle">C</text>
+        <text class="t-col" x="52" y="353" text-anchor="middle">B</text>
+        <text class="t-col" x="52" y="367" text-anchor="middle">A</text>
+
+        <!-- column numbers -->
+        <text class="t-col" x="64"    y="210" text-anchor="middle">1</text>
+        <text class="t-col" x="118.4" y="210" text-anchor="middle">5</text>
+        <text class="t-col" x="186.4" y="210" text-anchor="middle">10</text>
+        <text class="t-col" x="254.4" y="210" text-anchor="middle">15</text>
+        <text class="t-col" x="322.4" y="210" text-anchor="middle">20</text>
+        <text class="t-col" x="390.4" y="210" text-anchor="middle">25</text>
+        <text class="t-col" x="458.4" y="210" text-anchor="middle">30</text>
+        <text class="t-col" x="526.4" y="210" text-anchor="middle">35</text>
+        <text class="t-col" x="594.4" y="210" text-anchor="middle">40</text>
+        <text class="t-col" x="662.4" y="210" text-anchor="middle">45</text>
+        <text class="t-col" x="730.4" y="210" text-anchor="middle">50</text>
+        <text class="t-col" x="798.4" y="210" text-anchor="middle">55</text>
+        <text class="t-col" x="866.4" y="210" text-anchor="middle">60</text>
+
+        <!-- ===== WIRES ===== -->
+
+        <!-- supply + -> top + rail, column 3 -->
+        <path class="w-pwr" d="M91.2 106 V168" />
+        <circle class="n-pwr" cx="91.2" cy="168" r="4" />
+
+        <!-- supply - -> top - rail, column 6 (routed round the left edge) -->
+        <path class="w-gnd" d="M140 106 V132 H30 V182 H132" />
+        <circle class="n-gnd" cx="132" cy="182" r="4" />
+
+        <!-- capacitor + leg -> top + rail, column 50 -->
+        <path class="w-pwr" d="M726 138 L730.4 168" />
+        <circle class="n-pwr" cx="730.4" cy="168" r="4" />
+
+        <!-- capacitor - leg -> top - rail, column 52, hopping over the + rail -->
+        <path class="w-gnd" d="M758 138 L757.6 161 A7 7 0 0 1 757.6 175 V182" />
+        <circle class="n-gnd" cx="757.6" cy="182" r="4" />
+
+        <!-- module 5Vin -> top + rail, column 56 -->
+        <path class="w-pwr" d="M812 106 V168" />
+        <circle class="n-pwr" cx="812" cy="168" r="4" />
+
+        <!-- module GND -> top - rail, column 59, hopping over the + rail -->
+        <path class="w-gnd" d="M866 106 V161 A7 7 0 0 1 866 175 V182" />
+        <circle class="n-gnd" cx="866" cy="182" r="4" />
+
+        <!-- Arduino GND -> bottom - rail, column 12, hopping over the + rail -->
+        <path class="w-gnd" d="M213.6 470 V427 A7 7 0 0 1 213.6 413 V406" />
+        <circle class="n-gnd" cx="213.6" cy="406" r="4" />
+
+        <!-- ground bridge: bottom - rail -> top - rail, column 62, round the right edge -->
+        <path class="w-gnd" d="M893.6 406 H948 V182 H893.6" />
+        <circle class="n-gnd" cx="893.6" cy="406" r="4" />
+        <circle class="n-gnd" cx="893.6" cy="182" r="4" />
+
+        <!-- ===== ARDUINO ===== -->
+        <rect class="box" x="120" y="470" width="300" height="92" rx="4" />
+        <text class="t-hd" x="138" y="498">ARDUINO UNO</text>
+        <text class="t-sm" x="138" y="514">powered over USB</text>
+        <text class="t-sm" x="138" y="530">5V pin: not used in this test</text>
+        <text class="t-lbl" x="213.6" y="484" text-anchor="middle">GND</text>
+
+        <!-- data note -->
+        <rect class="box-sub" x="500" y="470" width="440" height="92" rx="4" />
+        <text class="t-lbl" x="518" y="494">THREE DATA JUMPERS — module straight to Arduino</text>
+        <text class="t-sm"  x="518" y="514">TXD → Pin 10 &nbsp;·&nbsp; RXD → Pin 11 &nbsp;·&nbsp; RST → Pin 12</text>
+        <text class="t-sm"  x="518" y="530">these never touch the breadboard — male-to-female jumpers,</text>
+        <text class="t-sm"  x="518" y="544">module header into the Arduino's digital header</text>
+
+        <!-- bridge label -->
+        <text class="t-lbl" x="700" y="470">GROUND BRIDGE — col 62 →</text>
+
+      </svg>
+    </div>
+
+    <p class="caption">
+      The little semicircular bumps are wire hops: that wire passes <em>over</em> the rail it
+      arches across and does not connect to it. Only the filled dots are connections.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Wire</th><th>From</th><th>Lands in</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="pin">supply +</td><td>power bank / adapter</td><td class="hole">TOP + rail · col 3</td></tr>
+          <tr><td class="pin">supply −</td><td>power bank / adapter</td><td class="hole">TOP − rail · col 6</td></tr>
+          <tr><td class="pin">cap + leg</td><td>1000 µF</td><td class="hole">TOP + rail · col 50</td></tr>
+          <tr><td class="pin">cap − leg</td><td>1000 µF (stripe side)</td><td class="hole">TOP − rail · col 52</td></tr>
+          <tr><td class="pin">5Vin</td><td>SIM800L</td><td class="hole">TOP + rail · col 56</td></tr>
+          <tr><td class="pin">GND</td><td>SIM800L</td><td class="hole">TOP − rail · col 59</td></tr>
+          <tr><td class="pin">GND</td><td>Arduino</td><td class="hole">BOTTOM − rail · col 12</td></tr>
+          <tr><td class="pin">bridge</td><td>BOTTOM − rail · col 62</td><td class="hole">TOP − rail · col 62</td></tr>
+          <tr><td class="pin">TXD / RXD / RST</td><td>SIM800L</td><td class="hole">Arduino pins 10 / 11 / 12 — direct</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="caption">
+      Columns 50–59 are chosen so the capacitor sits beside the module's own power wires.
+      Put the cap at the far end of a long rail and the wire resistance between them
+      cancels most of what it is there to do.
+    </p>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span>Full build — 4 PIRs plus the module</h2>
+    <p class="col">
+      Once the module passes its tests, the sensors come back onto the bottom half. The top
+      half of the board is untouched from the layout above — that is the point of keeping the
+      supplies on separate rails.
+    </p>
+
+    <div class="panel" tabindex="0">
+      <svg viewBox="0 0 970 620" role="img" aria-label="Full build breadboard layout. The top rails carry the external 5 volt supply and common ground for the SIM800L. The bottom plus rail carries Arduino 5 volts to the four PIR sensors, the bottom minus rail is common ground, and a bridge jumper joins the two ground rails. A crossed-out dashed line marks that the two plus rails must never be joined.">
+
+        <defs>
+          <pattern id="holesB" width="13.6" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(57.2, 7)">
+            <circle class="bb-hole" cx="6.8" cy="7" r="2.1" />
+          </pattern>
+        </defs>
+
+        <!-- ===== top: supply, cap, module (condensed) ===== -->
+        <rect class="box" x="52" y="18" width="200" height="76" rx="4" />
+        <text class="t-hd" x="68" y="44">EXTERNAL 5 V</text>
+        <text class="t-sm" x="68" y="62">module only</text>
+        <text class="t-pwrc" x="91" y="88" text-anchor="middle">+</text>
+        <text class="t-lbl" x="140" y="88" text-anchor="middle">−</text>
+
+        <rect class="box" x="716" y="52" width="52" height="42" rx="6" />
+        <text class="t-sm" x="742" y="70" text-anchor="middle">1000</text>
+        <text class="t-sm" x="742" y="84" text-anchor="middle">µF</text>
+
+        <rect class="box" x="790" y="18" width="168" height="76" rx="4" />
+        <text class="t-hd" x="806" y="44">SIM800L</text>
+        <text class="t-pwrc" x="812" y="84" text-anchor="middle">5Vin</text>
+        <text class="t-lbl" x="866" y="84" text-anchor="middle">GND</text>
+
+        <!-- ===== BREADBOARD ===== -->
+        <rect class="bb-body" x="44" y="154" width="886" height="280" rx="5" />
+        <rect x="57.2" y="161" width="856.8" height="28" fill="url(#holesB)" />
+        <rect x="57.2" y="399" width="856.8" height="28" fill="url(#holesB)" />
+        <rect x="57.2" y="217" width="856.8" height="70" fill="url(#holesB)" />
+        <rect x="57.2" y="301" width="856.8" height="70" fill="url(#holesB)" />
+        <rect class="bb-chan" x="44" y="287" width="886" height="14" />
+
+        <line class="bb-pos" x1="56" y1="157" x2="918" y2="157" />
+        <line class="bb-neg" x1="56" y1="193" x2="918" y2="193" />
+        <line class="bb-neg" x1="56" y1="395" x2="918" y2="395" />
+        <line class="bb-pos" x1="56" y1="431" x2="918" y2="431" />
+
+        <text class="t-pos" x="48" y="171" text-anchor="end">+</text>
+        <text class="t-neg" x="48" y="186" text-anchor="end">−</text>
+        <text class="t-neg" x="48" y="410" text-anchor="end">−</text>
+        <text class="t-pos" x="48" y="424" text-anchor="end">+</text>
+
+        <text class="t-pwrc" x="300" y="172">TOP + — EXTERNAL 5 V → SIM800L</text>
+        <text class="t-lbl"  x="300" y="187">TOP − — COMMON GROUND</text>
+        <text class="t-lbl"  x="560" y="411">BOTTOM − — COMMON GROUND</text>
+        <text class="t-pos"  x="560" y="425">BOTTOM + — ARDUINO 5 V → PIRs only</text>
+
+        <!-- column numbers -->
+        <text class="t-col" x="64"    y="210" text-anchor="middle">1</text>
+        <text class="t-col" x="118.4" y="210" text-anchor="middle">5</text>
+        <text class="t-col" x="186.4" y="210" text-anchor="middle">10</text>
+        <text class="t-col" x="254.4" y="210" text-anchor="middle">15</text>
+        <text class="t-col" x="322.4" y="210" text-anchor="middle">20</text>
+        <text class="t-col" x="390.4" y="210" text-anchor="middle">25</text>
+        <text class="t-col" x="458.4" y="210" text-anchor="middle">30</text>
+        <text class="t-col" x="526.4" y="210" text-anchor="middle">35</text>
+        <text class="t-col" x="594.4" y="210" text-anchor="middle">40</text>
+        <text class="t-col" x="662.4" y="210" text-anchor="middle">45</text>
+        <text class="t-col" x="730.4" y="210" text-anchor="middle">50</text>
+        <text class="t-col" x="798.4" y="210" text-anchor="middle">55</text>
+        <text class="t-col" x="866.4" y="210" text-anchor="middle">60</text>
+
+        <!-- ===== top-half wires (unchanged from the bench rig) ===== -->
+        <path class="w-pwr" d="M91.2 90 V168" />
+        <circle class="n-pwr" cx="91.2" cy="168" r="4" />
+        <path class="w-gnd" d="M140 90 V132 H30 V182 H132" />
+        <circle class="n-gnd" cx="132" cy="182" r="4" />
+        <path class="w-pwr" d="M726 94 L730.4 168" />
+        <circle class="n-pwr" cx="730.4" cy="168" r="4" />
+        <path class="w-gnd" d="M758 94 L757.6 161 A7 7 0 0 1 757.6 175 V182" />
+        <circle class="n-gnd" cx="757.6" cy="182" r="4" />
+        <path class="w-pwr" d="M812 90 V168" />
+        <circle class="n-pwr" cx="812" cy="168" r="4" />
+        <path class="w-gnd" d="M866 90 V161 A7 7 0 0 1 866 175 V182" />
+        <circle class="n-gnd" cx="866" cy="182" r="4" />
+
+        <!-- ===== the forbidden link ===== -->
+        <path class="w-bad" d="M281.6 168 V420" />
+        <circle cx="281.6" cy="294" r="15" fill="var(--fail-bg)" stroke="var(--fail)" stroke-width="2" />
+        <path d="M274.6 287 L288.6 301 M288.6 287 L274.6 301" stroke="var(--fail)" stroke-width="2.5" fill="none" />
+        <text class="t-bad" x="305" y="290">NEVER join the two + rails</text>
+        <text class="t-sm"  x="305" y="305">two different supplies — one of them cannot survive it</text>
+
+        <!-- ===== ground bridge ===== -->
+        <path class="w-gnd" d="M893.6 406 H948 V182 H893.6" />
+        <circle class="n-gnd" cx="893.6" cy="406" r="4" />
+        <circle class="n-gnd" cx="893.6" cy="182" r="4" />
+        <text class="t-lbl" x="700" y="452">GROUND BRIDGE col 62 — always join the two − rails</text>
+
+        <!-- ===== Arduino ===== -->
+        <rect class="box" x="52" y="500" width="188" height="100" rx="4" />
+        <text class="t-hd" x="68" y="528">ARDUINO</text>
+        <text class="t-sm" x="68" y="546">UNO</text>
+        <text class="t-pos" x="91.2" y="516" text-anchor="middle">5V</text>
+        <text class="t-lbl" x="132" y="516" text-anchor="middle">GND</text>
+
+        <path class="w-ard" d="M91.2 500 V420" />
+        <circle class="n-ard" cx="91.2" cy="420" r="4" />
+        <path class="w-gnd" d="M132 500 V427 A7 7 0 0 1 132 413 V406" />
+        <circle class="n-gnd" cx="132" cy="406" r="4" />
+
+        <!-- ===== PIR sensors ===== -->
+        <!-- Room C, pin 2 -->
+        <rect class="box" x="268" y="500" width="128" height="100" rx="4" />
+        <text class="t-hd" x="282" y="528">ROOM C</text>
+        <text class="t-sm" x="282" y="544">OUT → Pin 2</text>
+        <text class="t-pos" x="322.4" y="516" text-anchor="middle">V</text>
+        <text class="t-lbl" x="363" y="516" text-anchor="middle">G</text>
+        <path class="w-ard" d="M322.4 500 V420" />
+        <circle class="n-ard" cx="322.4" cy="420" r="4" />
+        <path class="w-gnd" d="M363.2 500 V427 A7 7 0 0 1 363.2 413 V406" />
+        <circle class="n-gnd" cx="363.2" cy="406" r="4" />
+
+        <!-- Room A, pin 3 -->
+        <rect class="box" x="418" y="500" width="128" height="100" rx="4" />
+        <text class="t-hd" x="432" y="528">ROOM A</text>
+        <text class="t-sm" x="432" y="544">OUT → Pin 3</text>
+        <text class="t-pos" x="458.4" y="516" text-anchor="middle">V</text>
+        <text class="t-lbl" x="499" y="516" text-anchor="middle">G</text>
+        <path class="w-ard" d="M458.4 500 V420" />
+        <circle class="n-ard" cx="458.4" cy="420" r="4" />
+        <path class="w-gnd" d="M499.2 500 V427 A7 7 0 0 1 499.2 413 V406" />
+        <circle class="n-gnd" cx="499.2" cy="406" r="4" />
+
+        <!-- Room B, pin 4 -->
+        <rect class="box" x="568" y="500" width="128" height="100" rx="4" />
+        <text class="t-hd" x="582" y="528">ROOM B</text>
+        <text class="t-sm" x="582" y="544">OUT → Pin 4</text>
+        <text class="t-pos" x="594.4" y="516" text-anchor="middle">V</text>
+        <text class="t-lbl" x="635" y="516" text-anchor="middle">G</text>
+        <path class="w-ard" d="M594.4 500 V420" />
+        <circle class="n-ard" cx="594.4" cy="420" r="4" />
+        <path class="w-gnd" d="M635.2 500 V427 A7 7 0 0 1 635.2 413 V406" />
+        <circle class="n-gnd" cx="635.2" cy="406" r="4" />
+
+        <!-- Room D, pin 5 -->
+        <rect class="box" x="718" y="500" width="128" height="100" rx="4" />
+        <text class="t-hd" x="732" y="528">ROOM D</text>
+        <text class="t-sm" x="732" y="544">OUT → Pin 5</text>
+        <text class="t-pos" x="730.4" y="516" text-anchor="middle">V</text>
+        <text class="t-lbl" x="771" y="516" text-anchor="middle">G</text>
+        <path class="w-ard" d="M730.4 500 V420" />
+        <circle class="n-ard" cx="730.4" cy="420" r="4" />
+        <path class="w-gnd" d="M771.2 500 V427 A7 7 0 0 1 771.2 413 V406" />
+        <circle class="n-gnd" cx="771.2" cy="406" r="4" />
+
+        <text class="t-sm" x="52" y="616">each PIR's OUT wire runs straight to its own Arduino digital pin — never through a rail</text>
+
+      </svg>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Sensor</th><th>VCC</th><th>GND</th><th>OUT</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="pin">Room C</td><td class="hole">BOTTOM + · col 20</td><td class="hole">BOTTOM − · col 23</td><td class="pin">Arduino Pin 2</td></tr>
+          <tr><td class="pin">Room A</td><td class="hole">BOTTOM + · col 30</td><td class="hole">BOTTOM − · col 33</td><td class="pin">Arduino Pin 3</td></tr>
+          <tr><td class="pin">Room B</td><td class="hole">BOTTOM + · col 40</td><td class="hole">BOTTOM − · col 43</td><td class="pin">Arduino Pin 4</td></tr>
+          <tr><td class="pin">Room D</td><td class="hole">BOTTOM + · col 50</td><td class="hole">BOTTOM − · col 53</td><td class="pin">Arduino Pin 5</td></tr>
+          <tr><td class="pin">Arduino 5V</td><td class="hole">BOTTOM + · col 3</td><td>—</td><td>—</td></tr>
+          <tr><td class="pin">Arduino GND</td><td>—</td><td class="hole">BOTTOM − · col 6</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="caption">
+      Pin order under the HC-SR501 dome varies between batches — read the letters printed on
+      your own sensor before wiring, don't copy the order from any diagram, including this one.
+    </p>
+  </section>
+
+  <section>
+    <h2><span class="num">04</span>Check the board before you power it</h2>
+    <div class="checks">
+      <div class="check"><span class="mark">01</span><span>Set the multimeter to continuity. Probe the <strong>two + rails</strong> — it must <em>not</em> beep. If it does, you have bridged them somewhere.</span></div>
+      <div class="check"><span class="mark">02</span><span>Probe the <strong>two − rails</strong> — it <em>must</em> beep. That is the bridge jumper doing its job.</span></div>
+      <div class="check"><span class="mark">03</span><span>Probe each rail end to end. Silence in the middle means your board's rails are split at column 30 — bridge the halves.</span></div>
+      <div class="check"><span class="mark">04</span><span>Probe the module's <code>5Vin</code> wire against the Arduino's 5 V pin — it must <em>not</em> beep.</span></div>
+      <div class="check"><span class="mark">05</span><span>Check the capacitor is across two <em>different</em> rails, not two holes in the same one. Same rail = a short across your supply.</span></div>
+      <div class="check"><span class="mark">06</span><span>Confirm the stripe leg of the capacitor is the one in the − rail. Backwards, it vents.</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Companion to the schematic view · plan in <code>sms_module_test/README.md</code> · wiring reference in <code>arduino/SIM800L_WIRING.md</code>.</p>
+    <p>Board drawn as 830-point, 63 columns. Rails matter, column numbers don't — shift them to fit whatever board is on your desk.</p>
+  </footer>
+
+</div>
