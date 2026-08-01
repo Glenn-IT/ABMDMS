@@ -10,7 +10,7 @@
  * The twin of record_motion.php, but for SMS alerts.
  *
  * The Arduino sends the text itself through the SIM800L. It
- * then prints a short report over USB, e.g. "SMS_SENT:ROOM1".
+ * then prints a short report over USB, e.g. "SMS_SENT:ROOMA".
  * The serial reader passes that to THIS file, which writes it
  * down so the dashboard can prove the alert really went out.
  *
@@ -20,7 +20,7 @@
  * --------------
  * POST http://localhost/ABMDMS/pir_sms_test/api/record_sms.php
  *
- *     zone      = ROOM1
+ *     zone      = ROOMA / ROOMB / ROOMC   (whatever ALLOWED_ZONES says)
  *     status    = SENT       (SENT, FAILED, or SKIPPED)
  *     detail    = TIMEOUT    (optional short reason, may be empty)
  *     recipient = +639...    (optional, defaults to config)
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // STEP 2 - Read the incoming data
 // ------------------------------------------------------------
 
-$zone      = isset($_POST['zone'])      ? trim((string) $_POST['zone'])      : 'ROOM1';
+$zone      = isset($_POST['zone'])      ? trim((string) $_POST['zone'])      : 'ROOMC';
 $status    = isset($_POST['status'])    ? trim((string) $_POST['status'])    : '';
 $detail    = isset($_POST['detail'])    ? trim((string) $_POST['detail'])    : '';
 $recipient = isset($_POST['recipient']) ? trim((string) $_POST['recipient']) : SMS_RECIPIENT_DISPLAY;

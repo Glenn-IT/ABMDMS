@@ -34,7 +34,7 @@ $dbCheck = testDBConnection();
         <span class="dot"></span>
         <div>
             <strong>PIR + SMS Test Rig</strong>
-            <small>1 motion sensor &middot; 1 SIM800L &middot; isolated from the main system</small>
+            <small>4 motion sensors &middot; 1 SIM800L &middot; isolated from the main system</small>
         </div>
     </div>
     <nav>
@@ -60,13 +60,40 @@ $dbCheck = testDBConnection();
 
 
     <!-- ============ BIG STATUS BANNER ============ -->
+    <!-- Covers the whole rig: it reads MOTION if ANY room is busy. -->
     <section class="status" id="status-panel">
         <div class="status-label">Current Status</div>
         <div class="status-value" id="status-value">Loading&hellip;</div>
         <div class="status-meta">
-            Zone <strong>Room 1</strong> (PIR on Pin 2)
+            <?php echo count(ALLOWED_ZONES); ?> sensors on Arduino pins 2&ndash;5
             &middot; last updated <span id="last-updated">&mdash;</span>
         </div>
+    </section>
+
+
+    <!-- ============ ONE CARD PER ROOM ============ -->
+    <!--
+        Built from ALLOWED_ZONES in config.php, so adding a room
+        there makes a card appear here on its own - nothing below
+        is hardcoded to four. dashboard.js finds each card by its
+        id ("zone-rooma") and switches its colour every 3 seconds.
+    -->
+    <section class="zones">
+    <?php foreach (ALLOWED_ZONES as $zoneCode): ?>
+        <article id="zone-<?php echo strtolower($zoneCode); ?>" class="zone-card zone-none">
+            <div class="zone-head">
+                <span class="zone-dot"></span>
+                <span class="zone-label">
+                    <?php echo htmlspecialchars(ZONE_LABELS[$zoneCode] ?? $zoneCode, ENT_QUOTES, 'UTF-8'); ?>
+                </span>
+            </div>
+            <div class="zone-status">&mdash;</div>
+            <div class="zone-meta">
+                Last motion: <span class="zone-last">&mdash;</span><br>
+                Last alert: <span class="zone-sms">&mdash;</span>
+            </div>
+        </article>
+    <?php endforeach; ?>
     </section>
 
 
@@ -108,11 +135,11 @@ $dbCheck = testDBConnection();
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th><th>Status</th><th>Detail</th><th>Date</th><th>Time</th>
+                        <th>ID</th><th>Status</th><th>Zone</th><th>Detail</th><th>Date</th><th>Time</th>
                     </tr>
                 </thead>
                 <tbody id="sms-body">
-                    <tr><td colspan="5" class="empty">Loading&hellip;</td></tr>
+                    <tr><td colspan="6" class="empty">Loading&hellip;</td></tr>
                 </tbody>
             </table>
         </div>
@@ -120,6 +147,8 @@ $dbCheck = testDBConnection();
             The Arduino sends the text itself through the SIM800L. This website
             never sends an SMS &mdash; it only records what the Arduino reports.
             <strong>SKIPPED</strong> means the 60-second cooldown blocked it on purpose.
+            That cooldown is counted <strong>per room</strong>, so movement in a
+            second room still texts you straight away.
         </p>
     </section>
 

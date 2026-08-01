@@ -7,7 +7,7 @@
  *
  * WHAT THIS DOES
  * --------------
- * The Arduino prints a line like "ROOM1_MOTION_DETECTED" over
+ * The Arduino prints a line like "ROOMA_MOTION_DETECTED" over
  * USB. The PowerShell serial reader turns that into a request
  * to THIS file, and this file saves it into MySQL.
  *
@@ -16,7 +16,7 @@
  * POST http://localhost/ABMDMS/pir_sms_test/api/record_motion.php
  *
  *     event_type = MOTION_DETECTED   (or MOTION_STOPPED)
- *     zone       = ROOM1
+ *     zone       = ROOMA / ROOMB / ROOMC   (whatever ALLOWED_ZONES says)
  *     source     = ARDUINO_PIR       (optional)
  *
  * ANSWER
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // ------------------------------------------------------------
 
 $eventType = isset($_POST['event_type']) ? trim((string) $_POST['event_type']) : '';
-$zone      = isset($_POST['zone'])       ? trim((string) $_POST['zone'])       : 'ROOM1';
+$zone      = isset($_POST['zone'])       ? trim((string) $_POST['zone'])       : 'ROOMC';
 $source    = isset($_POST['source'])     ? trim((string) $_POST['source'])     : 'ARDUINO_PIR';
 
 
@@ -77,7 +77,9 @@ if (!in_array($eventType, ALLOWED_EVENT_TYPES, true)) {
     respond(false, 'Unable to record motion: invalid event_type.', [], 400);
 }
 
-// 3b. The zone must be one we allow (this rig only knows ROOM1).
+// 3b. The zone must be one of the four rooms in ALLOWED_ZONES.
+//     Nothing here lists them by hand - add a room in config.php
+//     and this check follows automatically.
 $zone = strtoupper($zone);
 
 if (!in_array($zone, ALLOWED_ZONES, true)) {

@@ -1,4 +1,4 @@
-<title>Wiring &amp; Breadboard &mdash; PIR + SMS Test Rig</title>
+<title>4-Sensor Wiring &amp; Breadboard &mdash; PIR + SMS Test Rig</title>
 
 <style>
   :root {
@@ -462,12 +462,29 @@
 
   <header class="masthead">
     <div class="eyebrow">ABMDMS &nbsp;&middot;&nbsp; pir_sms_test &nbsp;&middot;&nbsp; build sheet</div>
-    <h1>One sensor, one modem, one wire at a time</h1>
+    <h1>Three rooms, one modem, one wire at a time</h1>
     <p class="standfirst">
-      The smallest rig that proves the whole idea: a single PIR sensor on Pin&nbsp;2 that texts
-      your phone through a SIM800L and writes every event into MySQL. Build this before
-      the four-room version &mdash; when something breaks here, there is only one of everything to check.
+      Three PIR sensors on Arduino pins 2&ndash;4, each watching its own room, all texting through
+      a single SIM800L and writing into MySQL. The single-sensor rig proved the chain works;
+      this sheet is the same build with more sensors hung off the same two power rails.
+      Add them <strong>one at a time</strong> &mdash; section&nbsp;05 says why.
     </p>
+
+    <div class="rule">
+      <span class="tag">Pin 5 / Room D is retired</span>
+      <p>
+        This sheet used to describe a fourth sensor on <strong>Pin&nbsp;5</strong>, zone
+        <code>ROOMD</code>. During bring-up that pin would not respond to <strong>two different
+        sensors</strong>, so Room&nbsp;D was taken out of the system and the drawings below now
+        show three.
+      </p>
+      <p>
+        Two sensors failing on the same pin points at the <strong>pin, the OUT wire, or that
+        sensor's rail tap</strong> &mdash; not the sensors. To chase it, move the suspect sensor to
+        pin 6 or 7 and retest; if it works there, Pin&nbsp;5 or its wiring is the fault. Restoring
+        Room&nbsp;D afterwards is four small edits, listed in <code>README.md</code>.
+      </p>
+    </div>
   </header>
 
   <section>
@@ -485,8 +502,8 @@
       </div>
       <div class="part key">
         <span class="id">HC-SR501 PIR</span>
-        <span class="qty">&times;1 &middot; zone ROOM1</span>
-        <p>Three pins: VCC, OUT, GND. The order under the dome varies between batches &mdash; read yours.</p>
+        <span class="qty">&times;3 &middot; ROOMA / ROOMB / ROOMC</span>
+        <p>Three pins: VCC, OUT, GND. The order under the dome varies between batches &mdash; read each one.</p>
       </div>
       <div class="part">
         <span class="id">1000 &micro;F capacitor</span>
@@ -500,17 +517,39 @@
       </div>
       <div class="part">
         <span class="id">Breadboard + jumpers</span>
-        <span class="qty">830-point &middot; M-M and M-F</span>
-        <p>Male-to-female jumpers for the module and sensor headers; male-to-male for the rails.</p>
+        <span class="qty">830-point &middot; 15&times; M-F, 8&times; M-M</span>
+        <p>Male-to-female for the module and the twelve sensor pins; male-to-male for the rails and the ground bridge.</p>
       </div>
     </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Sensor</th><th>OUT goes to</th><th>Zone in the code</th><th>Shown on the dashboard as</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="pin">PIR 1</td><td class="pin">Arduino Pin 2</td><td class="tok">ROOMC</td><td>Room C</td></tr>
+          <tr><td class="pin">PIR 2</td><td class="pin">Arduino Pin 3</td><td class="tok">ROOMA</td><td>Room A</td></tr>
+          <tr><td class="pin">PIR 3</td><td class="pin">Arduino Pin 4</td><td class="tok">ROOMB</td><td>Room B</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="caption">
+      Pin&nbsp;2 being Room&nbsp;C looks like a mistake and is not. Pin&nbsp;2 held the very first sensor
+      ever built, that sensor was Room&nbsp;C, and the main system still maps it that way. This rig copies
+      the mapping exactly so the two systems always agree. If you change it here, change
+      <code>ZONE_NAME[]</code> in the sketch to match.
+    </p>
   </section>
 
   <section>
     <h2><span class="num">02</span>Every connection, once</h2>
     <p class="col">
-      Eight wires and three jumpers. The three in the <span class="mono" style="color:var(--fail)">warning</span>
-      column are the ones that destroy hardware or waste an evening, so they are called out rather than buried.
+      Twenty wires. Adding three sensors adds nine of them and changes nothing else &mdash; the
+      SIM800L half is untouched from the one-sensor build. The rows in the
+      <span class="mono" style="color:var(--fail)">warning</span> colour are the ones that destroy
+      hardware or waste an evening, so they are called out rather than buried.
     </p>
 
     <div class="table-wrap">
@@ -520,17 +559,32 @@
         </thead>
         <tbody>
           <tr>
-            <td class="pin">PIR OUT</td>
+            <td class="pin">PIR 1 OUT (ROOMC)</td>
             <td class="pin">Arduino Pin 2</td>
-            <td>Goes straight to the pin, never through a rail.</td>
+            <td>Its own wire, straight to the pin, never through a rail.</td>
           </tr>
           <tr>
-            <td class="pin">PIR VCC</td>
+            <td class="pin">PIR 2 OUT (ROOMA)</td>
+            <td class="pin">Arduino Pin 3</td>
+            <td class="warn">Its own wire. Two sensors sharing one pin is not "both rooms" &mdash; it is one useless mixed signal.</td>
+          </tr>
+          <tr>
+            <td class="pin">PIR 3 OUT (ROOMB)</td>
+            <td class="pin">Arduino Pin 4</td>
+            <td>Its own wire.</td>
+          </tr>
+          <tr>
+            <td class="pin warn">PIR 4 OUT (ROOMD)</td>
+            <td class="pin warn">&mdash; not wired &mdash;</td>
+            <td class="warn">Retired. Pin 5 would not respond to two different sensors, so Room D is out of the system. Suspect the pin, the wire or the rail tap &mdash; not the sensors.</td>
+          </tr>
+          <tr>
+            <td class="pin">All three PIR VCC</td>
             <td class="pin">Arduino 5V (via bottom + rail)</td>
-            <td>The sensor draws almost nothing &mdash; the Arduino can feed it happily.</td>
+            <td>About 45&nbsp;mA for all three together &mdash; the Arduino feeds them happily. The rail exists because the Uno has only one 5V pin.</td>
           </tr>
           <tr>
-            <td class="pin">PIR GND</td>
+            <td class="pin">All three PIR GND</td>
             <td class="pin">common ground</td>
             <td>Bottom &minus; rail.</td>
           </tr>
@@ -579,112 +633,151 @@
     </div>
 
     <div class="panel" tabindex="0">
-      <svg viewBox="0 0 960 520" role="img" aria-label="Schematic view. An external 5 volt supply feeds the SIM800L's 5Vin pin, with a 1000 microfarad capacitor in parallel across the module's power pins. The SIM800L's TXD, RXD and RST connect directly to Arduino pins 10, 11 and 12, and its VDD is left unconnected. The PIR sensor takes 5 volts from the Arduino and sends its OUT signal to Arduino pin 2. A single common ground bus joins the supply minus, the module, the sensor and the Arduino.">
+      <svg viewBox="0 0 980 700" role="img" aria-label="Schematic view. An external 5 volt supply feeds the SIM800L's 5Vin pin, with a 1000 microfarad capacitor in parallel across the module's power pins. The SIM800L's TXD, RXD and RST connect directly to Arduino pins 10, 11 and 12, and its VDD is left unconnected. Three HC-SR501 PIR sensors are stacked in a column; all three take 5 volts from one shared power bus fed by the Arduino's 5V pin, all three share one ground bus, and each sensor's OUT wire runs on its own to Arduino pin 2, 3 or 4 for zones ROOMC, ROOMA and ROOMB. One common ground bus joins the supply minus, the module, all three sensors and the Arduino.">
 
         <!-- ===== external supply ===== -->
-        <rect class="box" x="30" y="30" width="196" height="88" rx="4" />
+        <rect class="box" x="30" y="30" width="190" height="86" rx="4" />
         <text class="t-hd" x="46" y="56">EXTERNAL 5 V</text>
         <text class="t-sm" x="46" y="74">2 A wall adapter</text>
         <text class="t-sm" x="46" y="90">module power only</text>
-        <text class="t-pwrc" x="220" y="70" text-anchor="end">+</text>
-        <text class="t-lbl"  x="220" y="112" text-anchor="end">&minus;</text>
+        <text class="t-pwrc" x="214" y="90" text-anchor="end">+</text>
+        <text class="t-lbl"  x="214" y="118" text-anchor="end">&minus;</text>
 
         <!-- ===== SIM800L ===== -->
-        <rect class="box" x="340" y="30" width="236" height="152" rx="4" />
-        <text class="t-hd" x="358" y="56">SIM800L V2.2</text>
-        <text class="t-sm" x="358" y="72">UNV &middot; 5 V logic board</text>
-        <text class="t-pwrc" x="350" y="100">5Vin</text>
-        <text class="t-lbl"  x="350" y="128">GND</text>
-        <text class="t-lbl" x="566" y="100" text-anchor="end">TXD</text>
-        <text class="t-lbl" x="566" y="120" text-anchor="end">RXD</text>
-        <text class="t-lbl" x="566" y="140" text-anchor="end">RST</text>
-        <text class="t-bad" x="350" y="154">VDD &#10005; leave unconnected</text>
-        <text class="t-sm"  x="350" y="170">2.8 V output &mdash; never feed it 5 V</text>
+        <rect class="box" x="330" y="30" width="240" height="155" rx="4" />
+        <text class="t-hd" x="348" y="56">SIM800L V2.2</text>
+        <text class="t-sm" x="348" y="72">UNV &middot; 5 V logic board</text>
+        <text class="t-pwrc" x="340" y="100">5Vin</text>
+        <text class="t-lbl"  x="340" y="128">GND</text>
+        <text class="t-lbl" x="560" y="100" text-anchor="end">TXD</text>
+        <text class="t-lbl" x="560" y="124" text-anchor="end">RXD</text>
+        <text class="t-lbl" x="560" y="148" text-anchor="end">RST</text>
+        <text class="t-bad" x="340" y="158">VDD &#10005; leave unconnected</text>
+        <text class="t-sm"  x="340" y="174">2.8 V output &mdash; never feed it 5 V</text>
 
-        <!-- supply + -> module 5Vin -->
-        <path class="w-pwr" d="M226 74 H286 V96 H334" />
-        <circle class="n-pwr" cx="334" cy="96" r="4" />
-        <text class="t-pwrc" x="236" y="66">5 V</text>
-
-        <!-- supply - -> module GND -->
-        <path class="w-gnd" d="M226 104 H262 V124 H334" />
-        <circle class="n-gnd" cx="334" cy="124" r="4" />
+        <!-- supply + -> module 5Vin, and supply - -> module GND -->
+        <path class="w-pwr" d="M220 96 H330" />
+        <circle class="n-pwr" cx="330" cy="96" r="4" />
+        <text class="t-pwrc" x="232" y="88">5 V</text>
+        <path class="w-gnd" d="M220 112 H228 V124 H330" />
+        <circle class="n-gnd" cx="330" cy="124" r="4" />
 
         <!-- ===== capacitor, in parallel across the module's power pins ===== -->
-        <path class="w-pwr" d="M286 96 V240" />
-        <path class="w-gnd" d="M262 124 V240" />
-        <rect class="box" x="248" y="240" width="52" height="42" rx="6" />
-        <text class="t-sm" x="274" y="258" text-anchor="middle">1000</text>
-        <text class="t-sm" x="274" y="272" text-anchor="middle">&micro;F</text>
-        <text class="t-pwrc" x="292" y="234" text-anchor="middle">+</text>
-        <text class="t-lbl"  x="256" y="234" text-anchor="middle">&minus;</text>
-        <text class="t-sm" x="130" y="306">IN PARALLEL across 5Vin / GND</text>
-        <text class="t-sm" x="130" y="322">stripe leg to ground</text>
+        <!-- minus leg stops at the ground line; plus leg hops over it -->
+        <path class="w-gnd" d="M262 170 V124" />
+        <circle class="n-gnd" cx="262" cy="124" r="4" />
+        <path class="w-pwr" d="M300 170 V131 A7 7 0 0 1 300 117 V96" />
+        <circle class="n-pwr" cx="300" cy="96" r="4" />
+        <rect class="box" x="248" y="170" width="66" height="44" rx="6" />
+        <text class="t-sm" x="281" y="188" text-anchor="middle">1000</text>
+        <text class="t-sm" x="281" y="204" text-anchor="middle">&micro;F</text>
+        <text class="t-lbl"  x="258" y="164">&minus;</text>
+        <text class="t-pwrc" x="304" y="164">+</text>
+        <text class="t-sm" x="36" y="188">IN PARALLEL across 5Vin / GND</text>
+        <text class="t-sm" x="36" y="204">stripe leg to ground</text>
 
         <!-- ===== Arduino ===== -->
-        <rect class="box" x="660" y="30" width="270" height="246" rx="4" />
+        <rect class="box" x="660" y="30" width="290" height="560" rx="4" />
         <text class="t-hd" x="678" y="56">ARDUINO UNO</text>
         <text class="t-sm" x="678" y="72">powered over USB from the laptop</text>
-        <text class="t-lbl" x="670" y="100">Pin 10</text>
-        <text class="t-lbl" x="670" y="120">Pin 11</text>
-        <text class="t-lbl" x="670" y="140">Pin 12</text>
-        <text class="t-lbl" x="670" y="188">Pin 2</text>
-        <text class="t-pos" x="670" y="216">5V</text>
-        <text class="t-sm" x="800" y="100">&larr; SIM TXD</text>
-        <text class="t-sm" x="800" y="120">&rarr; SIM RXD</text>
-        <text class="t-sm" x="800" y="140">&rarr; SIM RST</text>
-        <text class="t-sm" x="800" y="188">&larr; PIR OUT</text>
-        <text class="t-sm" x="800" y="216">&rarr; PIR VCC</text>
-        <text class="t-lbl" x="880" y="266" text-anchor="middle">GND</text>
+        <text class="t-lbl" x="670" y="104">Pin 10</text>
+        <text class="t-lbl" x="670" y="128">Pin 11</text>
+        <text class="t-lbl" x="670" y="152">Pin 12</text>
+        <text class="t-pos" x="670" y="200">5V</text>
+        <text class="t-sm" x="790" y="104">&larr; SIM TXD</text>
+        <text class="t-sm" x="790" y="128">&rarr; SIM RXD</text>
+        <text class="t-sm" x="790" y="152">&rarr; SIM RST</text>
+        <text class="t-sm" x="790" y="200">&rarr; feeds all three PIRs</text>
+
+        <text class="t-lbl" x="670" y="304">Pin 2</text>
+        <text class="t-lbl" x="670" y="348">Pin 3</text>
+        <text class="t-lbl" x="670" y="392">Pin 4</text>
+        <text class="t-sig" x="790" y="304">&larr; ROOMC</text>
+        <text class="t-sig" x="790" y="348">&larr; ROOMA</text>
+        <text class="t-sig" x="790" y="392">&larr; ROOMB</text>
+        <text class="t-bad" x="670" y="440">Pin 5 &#10005; retired &mdash; would not respond</text>
+        <text class="t-sm"  x="670" y="456">to two different sensors. Room D is out.</text>
+        <text class="t-sm"  x="678" y="496">One pin per room. That is the whole</text>
+        <text class="t-sm"  x="678" y="512">reason the dashboard can tell them apart.</text>
+        <text class="t-lbl" x="670" y="564">GND</text>
 
         <!-- data wires: module <-> Arduino -->
-        <path class="w-sig" d="M582 96 H654" />
-        <circle class="n-sig" cx="582" cy="96" r="4" />
-        <circle class="n-sig" cx="654" cy="96" r="4" />
-        <path class="w-sig" d="M582 116 H654" />
-        <circle class="n-sig" cx="582" cy="116" r="4" />
-        <circle class="n-sig" cx="654" cy="116" r="4" />
-        <path class="w-sig" d="M582 136 H654" />
-        <circle class="n-sig" cx="582" cy="136" r="4" />
-        <circle class="n-sig" cx="654" cy="136" r="4" />
-        <text class="t-sig" x="350" y="212">RXD needs NO divider &mdash; V2.2 is 5 V logic</text>
+        <path class="w-sig" d="M570 100 H654" />
+        <circle class="n-sig" cx="570" cy="100" r="4" />
+        <circle class="n-sig" cx="654" cy="100" r="4" />
+        <path class="w-sig" d="M570 124 H600 V128 H654" />
+        <circle class="n-sig" cx="570" cy="124" r="4" />
+        <circle class="n-sig" cx="654" cy="128" r="4" />
+        <path class="w-sig" d="M570 148 H612 V152 H654" />
+        <circle class="n-sig" cx="570" cy="148" r="4" />
+        <circle class="n-sig" cx="654" cy="152" r="4" />
+        <text class="t-sig" x="340" y="212">RXD needs NO divider &mdash; V2.2 is 5 V logic</text>
 
-        <!-- ===== PIR ===== -->
-        <rect class="box" x="340" y="330" width="236" height="104" rx="4" />
-        <text class="t-hd" x="358" y="356">HC-SR501 PIR</text>
-        <text class="t-sm" x="358" y="372">zone ROOM1</text>
-        <text class="t-lbl" x="350" y="404">GND</text>
-        <text class="t-sig" x="566" y="382" text-anchor="end">OUT</text>
-        <text class="t-pos" x="566" y="406" text-anchor="end">VCC</text>
+        <!-- ===== the PIR sensors ===== -->
+        <rect class="box" x="330" y="278" width="220" height="54" rx="4" />
+        <text class="t-hd"  x="346" y="300">HC-SR501</text>
+        <text class="t-sig" x="346" y="320">ROOMC &rarr; Pin 2</text>
+        <text class="t-pos" x="322" y="300" text-anchor="end">V</text>
+        <text class="t-lbl" x="322" y="322" text-anchor="end">G</text>
+        <text class="t-sig" x="560" y="302" text-anchor="end">OUT</text>
 
-        <!-- PIR OUT -> Arduino Pin 2 -->
-        <path class="w-sig" d="M582 378 H612 V184 H654" />
-        <circle class="n-sig" cx="582" cy="378" r="4" />
-        <circle class="n-sig" cx="654" cy="184" r="4" />
+        <rect class="box" x="330" y="344" width="220" height="54" rx="4" />
+        <text class="t-hd"  x="346" y="366">HC-SR501</text>
+        <text class="t-sig" x="346" y="386">ROOMA &rarr; Pin 3</text>
+        <text class="t-pos" x="322" y="366" text-anchor="end">V</text>
+        <text class="t-lbl" x="322" y="388" text-anchor="end">G</text>
+        <text class="t-sig" x="560" y="368" text-anchor="end">OUT</text>
 
-        <!-- Arduino 5V -> PIR VCC -->
-        <path class="w-ard" d="M582 402 H630 V212 H654" />
-        <circle class="n-ard" cx="582" cy="402" r="4" />
-        <circle class="n-ard" cx="654" cy="212" r="4" />
+        <rect class="box" x="330" y="410" width="220" height="54" rx="4" />
+        <text class="t-hd"  x="346" y="432">HC-SR501</text>
+        <text class="t-sig" x="346" y="452">ROOMB &rarr; Pin 4</text>
+        <text class="t-pos" x="322" y="432" text-anchor="end">V</text>
+        <text class="t-lbl" x="322" y="454" text-anchor="end">G</text>
+        <text class="t-sig" x="560" y="434" text-anchor="end">OUT</text>
+
+        <!-- each OUT to its own Arduino pin -->
+        <path class="w-sig" d="M550 296 H600 V304 H654" />
+        <circle class="n-sig" cx="550" cy="296" r="4" />
+        <circle class="n-sig" cx="654" cy="304" r="4" />
+        <path class="w-sig" d="M550 362 H612 V348 H654" />
+        <circle class="n-sig" cx="550" cy="362" r="4" />
+        <circle class="n-sig" cx="654" cy="348" r="4" />
+        <path class="w-sig" d="M550 428 H624 V392 H654" />
+        <circle class="n-sig" cx="550" cy="428" r="4" />
+        <circle class="n-sig" cx="654" cy="392" r="4" />
+
+        <!-- ===== shared 5 V bus: Arduino 5V feeds every sensor ===== -->
+        <path class="w-ard" d="M252 252 V428" />
+        <path class="w-ard" d="M252 252 H630 V200 H654" />
+        <path class="w-ard" d="M252 296 H322 M252 362 H322 M252 428 H322" />
+        <circle class="n-ard" cx="322" cy="296" r="4" />
+        <circle class="n-ard" cx="322" cy="362" r="4" />
+        <circle class="n-ard" cx="322" cy="428" r="4" />
+        <circle class="n-ard" cx="654" cy="200" r="4" />
+        <text class="t-pos" x="60" y="246">ONE 5 V BUS &mdash; the bottom + rail</text>
+        <text class="t-sm"  x="60" y="262">all three sensors, ~45 mA together</text>
 
         <!-- ===== one common ground bus ===== -->
-        <path class="w-gnd" d="M310 124 V460 H880 V276" />
-        <path class="w-gnd" d="M334 400 H310" />
-        <circle class="n-gnd" cx="334" cy="400" r="4" />
-        <circle class="n-gnd" cx="310" cy="400" r="4" />
-        <circle class="n-gnd" cx="310" cy="124" r="4" />
-        <circle class="n-gnd" cx="880" cy="276" r="4" />
-        <text class="t-lbl" x="360" y="452">COMMON GROUND &mdash; supply &minus;, module, sensor, Arduino, all one net</text>
+        <path class="w-gnd" d="M228 124 V600 H640 V564 H654" />
+        <path class="w-gnd" d="M228 318 H322 M228 384 H322 M228 450 H322" />
+        <circle class="n-gnd" cx="322" cy="318" r="4" />
+        <circle class="n-gnd" cx="322" cy="384" r="4" />
+        <circle class="n-gnd" cx="322" cy="450" r="4" />
+        <circle class="n-gnd" cx="228" cy="124" r="4" />
+        <circle class="n-gnd" cx="654" cy="564" r="4" />
+        <text class="t-lbl" x="270" y="622">COMMON GROUND &mdash; supply &minus;, module, all three sensors, Arduino: one net</text>
 
-        <text class="t-bad" x="360" y="494">The Arduino's 5 V pin feeds the PIR and nothing else. It never reaches the module.</text>
+        <text class="t-bad" x="270" y="662">The Arduino's 5 V pin feeds the sensors and nothing else. It never reaches the module.</text>
 
       </svg>
     </div>
 
     <p class="caption">
-      Filled dots are connections. The capacitor hangs across the module's own power pins,
-      as close to them as the wires allow &mdash; put it at the far end of a long rail and the
-      wire resistance between cancels most of what it is there to do.
+      Filled dots are connections; the small arch near the capacitor is a wire hop, crossing over
+      without joining. Three sensors were added to this drawing and the SIM800L half did not move:
+      the extra sensors hang off the same 5&nbsp;V bus and the same ground, and only their OUT wires
+      are individual. The capacitor still belongs beside the module's own power pins &mdash; put it at
+      the far end of a long rail and the wire resistance between cancels most of what it is there to do.
     </p>
   </section>
 
@@ -709,14 +802,20 @@
       <div class="rail neg">
         <span class="id">BOTTOM &minus; rail</span>
         <span class="src">common ground</span>
-        <p>Arduino <code>GND</code> and the PIR's ground. Bridged to the top &minus; rail so it is all one net.</p>
+        <p>Arduino <code>GND</code> and all three PIR grounds. Bridged to the top &minus; rail so it is all one net.</p>
       </div>
       <div class="rail pos">
         <span class="id">BOTTOM + rail</span>
-        <span class="src">arduino 5 V &mdash; pir only</span>
-        <p>Feeds the one HC-SR501. Nothing else belongs on it.</p>
+        <span class="src">arduino 5 V &mdash; pirs only</span>
+        <p>Feeds all three HC-SR501s. Nothing else belongs on it &mdash; especially not the module.</p>
       </div>
     </div>
+
+    <p class="col">
+      Adding sensors does not add a rail. All three VCC pins land in the same
+      bottom&nbsp;+ rail and all three GND pins in the same bottom&nbsp;&minus; rail, just in different
+      columns. The only thing each sensor keeps to itself is its OUT wire.
+    </p>
 
     <div class="rule">
       <span class="tag">The one rule</span>
@@ -739,11 +838,13 @@
     <p class="col">
       Drawn as a full-size 830-point board: 63 columns, rows A&ndash;J, four power rails. The column
       numbers are a suggestion; the rail each wire lands in is not. On a half-size 400-point board,
-      keep the rails and shift the columns down to fit.
+      keep the rails and shift the columns down to fit. Spread the sensors out as shown &mdash;
+      not because the electricity cares, but because you will be probing and re-seating these wires,
+      and crowded taps are what turn a loose OUT wire into an hour of guessing.
     </p>
 
     <div class="panel" tabindex="0">
-      <svg viewBox="0 0 970 660" role="img" aria-label="Breadboard layout. The external 5 volt supply feeds the top plus rail at column 3 and the top minus rail at column 6. The 1000 microfarad capacitor bridges the top plus rail at column 50 and the top minus rail at column 52. The SIM800L's 5Vin goes to the top plus rail at column 56 and its ground to the top minus rail at column 59. The Arduino's 5 volt pin feeds the bottom plus rail at column 3 and its ground the bottom minus rail at column 6. The PIR sensor takes power from the bottom plus rail at column 20 and ground from the bottom minus rail at column 23, and its OUT wire runs directly to Arduino pin 2. A bridge jumper at column 62 joins the bottom minus rail to the top minus rail. A crossed-out dashed line marks that the two plus rails must never be joined.">
+      <svg viewBox="0 0 970 710" role="img" aria-label="Breadboard layout for three sensors. The external 5 volt supply feeds the top plus rail at column 3 and the top minus rail at column 6. The 1000 microfarad capacitor bridges the top plus rail at column 50 and the top minus rail at column 52. The SIM800L's 5Vin goes to the top plus rail at column 56 and its ground to the top minus rail at column 59. The Arduino's 5 volt pin feeds the bottom plus rail at column 3 and its ground the bottom minus rail at column 6. Three PIR sensors sit along the bottom: Room C taps the bottom plus rail at column 18 and the bottom minus rail at column 21, Room A at columns 31 and 34, and Room B at columns 43 and 46. Each sensor's OUT wire runs on its own, past the breadboard entirely, into Arduino pins 2, 3 and 4 respectively. A bridge jumper at column 62 joins the bottom minus rail to the top minus rail. A crossed-out dashed line marks that the two plus rails must never be joined. A fourth position on pin 5 is marked as retired.">
 
         <defs>
           <pattern id="holes" width="13.6" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(57.2, 7)">
@@ -790,8 +891,8 @@
 
         <text class="t-pwrc" x="330" y="172">TOP + &mdash; EXTERNAL 5 V &rarr; SIM800L</text>
         <text class="t-lbl"  x="330" y="187">TOP &minus; &mdash; COMMON GROUND</text>
-        <text class="t-lbl"  x="560" y="411">BOTTOM &minus; &mdash; COMMON GROUND</text>
-        <text class="t-pos"  x="560" y="425">BOTTOM + &mdash; ARDUINO 5 V &rarr; PIR only</text>
+        <text class="t-lbl"  x="155" y="411">COMMON GROUND</text>
+        <text class="t-pos"  x="155" y="425">ARDUINO 5 V &rarr; PIRs</text>
 
         <!-- row letters -->
         <text class="t-col" x="52" y="227" text-anchor="middle">J</text>
@@ -841,11 +942,11 @@
         <circle class="n-gnd" cx="852.8" cy="182" r="4" />
 
         <!-- ===== the forbidden link ===== -->
-        <path class="w-bad" d="M281.6 168 V420" />
-        <circle cx="281.6" cy="294" r="15" fill="var(--fail-bg)" stroke="var(--fail)" stroke-width="2" />
-        <path d="M274.6 287 L288.6 301 M288.6 287 L274.6 301" stroke="var(--fail)" stroke-width="2.5" fill="none" />
-        <text class="t-bad" x="305" y="290">NEVER join the two + rails</text>
-        <text class="t-sm"  x="305" y="305">two different supplies &mdash; one of them cannot survive it</text>
+        <path class="w-bad" d="M200 168 V420" />
+        <circle cx="200" cy="294" r="15" fill="var(--fail-bg)" stroke="var(--fail)" stroke-width="2" />
+        <path d="M193 287 L207 301 M207 287 L193 301" stroke="var(--fail)" stroke-width="2.5" fill="none" />
+        <text class="t-bad" x="224" y="290">NEVER join the two + rails</text>
+        <text class="t-sm"  x="224" y="305">two different supplies &mdash; one of them cannot survive it</text>
 
         <!-- ===== ground bridge, col 62 ===== -->
         <path class="w-gnd" d="M893.6 406 H948 V182 H893.6" />
@@ -858,6 +959,7 @@
         <text class="t-hd" x="68" y="538">ARDUINO UNO</text>
         <text class="t-sm" x="68" y="554">USB power + serial</text>
         <text class="t-sm" x="68" y="570">Pins 10/11/12 &rarr; SIM800L</text>
+        <text class="t-sm" x="68" y="586">Pins 2/3/4 &rarr; the three OUTs</text>
         <text class="t-pos" x="91.2" y="503" text-anchor="middle">5V</text>
         <text class="t-lbl" x="132" y="503" text-anchor="middle">GND</text>
 
@@ -868,41 +970,80 @@
         <path class="w-gnd" d="M132 510 V427 A7 7 0 0 1 132 413 V406" />
         <circle class="n-gnd" cx="132" cy="406" r="4" />
 
-        <!-- ===== PIR ===== -->
-        <rect class="box" x="290" y="510" width="196" height="100" rx="4" />
-        <text class="t-hd" x="306" y="538">HC-SR501</text>
-        <text class="t-sm" x="306" y="554">zone ROOM1</text>
-        <text class="t-sig" x="306" y="572">OUT &rarr; Arduino Pin 2</text>
-        <text class="t-pos" x="322.4" y="503" text-anchor="middle">V</text>
-        <text class="t-lbl" x="363.2" y="503" text-anchor="middle">G</text>
-        <text class="t-sig" x="460" y="601" text-anchor="middle">OUT</text>
+        <!-- ===== the sensors ===== -->
+        <!-- ROOMC : V col 18 (x 295.2), G col 21 (x 336) -->
+        <rect class="box" x="270" y="510" width="150" height="100" rx="4" />
+        <text class="t-hd"  x="284" y="536">HC-SR501</text>
+        <text class="t-sig" x="284" y="554">ROOMC</text>
+        <text class="t-sm"  x="284" y="572">V col 18 &middot; G col 21</text>
+        <text class="t-sm"  x="284" y="588">OUT &rarr; Pin 2</text>
+        <text class="t-pos" x="295.2" y="503" text-anchor="middle">V</text>
+        <text class="t-lbl" x="336"   y="503" text-anchor="middle">G</text>
+        <path class="w-ard" d="M295.2 510 V420" />
+        <circle class="n-ard" cx="295.2" cy="420" r="4" />
+        <path class="w-gnd" d="M336 510 V427 A7 7 0 0 1 336 413 V406" />
+        <circle class="n-gnd" cx="336" cy="406" r="4" />
 
-        <!-- PIR VCC -> bottom + rail, col 20 -->
-        <path class="w-ard" d="M322.4 510 V420" />
-        <circle class="n-ard" cx="322.4" cy="420" r="4" />
-        <!-- PIR GND -> bottom - rail, col 23, hopping over the + rail -->
-        <path class="w-gnd" d="M363.2 510 V427 A7 7 0 0 1 363.2 413 V406" />
-        <circle class="n-gnd" cx="363.2" cy="406" r="4" />
+        <!-- ROOMA : V col 31 (x 472), G col 34 (x 512.8) -->
+        <rect class="box" x="440" y="510" width="150" height="100" rx="4" />
+        <text class="t-hd"  x="454" y="536">HC-SR501</text>
+        <text class="t-sig" x="454" y="554">ROOMA</text>
+        <text class="t-sm"  x="454" y="572">V col 31 &middot; G col 34</text>
+        <text class="t-sm"  x="454" y="588">OUT &rarr; Pin 3</text>
+        <text class="t-pos" x="472"   y="503" text-anchor="middle">V</text>
+        <text class="t-lbl" x="512.8" y="503" text-anchor="middle">G</text>
+        <path class="w-ard" d="M472 510 V420" />
+        <circle class="n-ard" cx="472" cy="420" r="4" />
+        <path class="w-gnd" d="M512.8 510 V427 A7 7 0 0 1 512.8 413 V406" />
+        <circle class="n-gnd" cx="512.8" cy="406" r="4" />
 
-        <!-- PIR OUT -> Arduino Pin 2, straight to the pin, never a rail -->
-        <path class="w-sig" d="M460 610 V634 H200 V610" />
-        <circle class="n-sig" cx="460" cy="610" r="4" />
-        <circle class="n-sig" cx="200" cy="610" r="4" />
-        <text class="t-sig" x="500" y="638">OUT runs straight to Pin 2 &mdash; it never touches a rail</text>
+        <!-- ROOMB : V col 43 (x 635.2), G col 46 (x 676) -->
+        <rect class="box" x="610" y="510" width="150" height="100" rx="4" />
+        <text class="t-hd"  x="624" y="536">HC-SR501</text>
+        <text class="t-sig" x="624" y="554">ROOMB</text>
+        <text class="t-sm"  x="624" y="572">V col 43 &middot; G col 46</text>
+        <text class="t-sm"  x="624" y="588">OUT &rarr; Pin 4</text>
+        <text class="t-pos" x="635.2" y="503" text-anchor="middle">V</text>
+        <text class="t-lbl" x="676"   y="503" text-anchor="middle">G</text>
+        <path class="w-ard" d="M635.2 510 V420" />
+        <circle class="n-ard" cx="635.2" cy="420" r="4" />
+        <path class="w-gnd" d="M676 510 V427 A7 7 0 0 1 676 413 V406" />
+        <circle class="n-gnd" cx="676" cy="406" r="4" />
 
-        <!-- data jumpers note -->
-        <rect class="box-sub" x="530" y="510" width="400" height="100" rx="4" />
-        <text class="t-lbl" x="548" y="534">THREE DATA JUMPERS &mdash; module straight to Arduino</text>
-        <text class="t-sm"  x="548" y="554">TXD &rarr; Pin 10 &nbsp;&middot;&nbsp; RXD &rarr; Pin 11 &nbsp;&middot;&nbsp; RST &rarr; Pin 12</text>
-        <text class="t-sm"  x="548" y="572">male-to-female jumpers from the module header</text>
-        <text class="t-sm"  x="548" y="588">into the Arduino's digital header &mdash; no breadboard</text>
+        <!-- Room D used to sit here, on Pin 5. Pin retired - drawn empty
+             so the gap is obviously deliberate, not a missing sensor. -->
+        <rect class="box-sub" x="780" y="510" width="150" height="100" rx="4" />
+        <text class="t-bad" x="794" y="540">Pin 5 &#10005;</text>
+        <text class="t-sm"  x="794" y="560">ROOMD retired &mdash;</text>
+        <text class="t-sm"  x="794" y="576">pin would not respond</text>
+        <text class="t-sm"  x="794" y="592">to two sensors</text>
+
+        <!-- ===== the OUT wires: each one straight to its own pin ===== -->
+        <path class="w-sig" d="M345 610 V634 H140 V610" />
+        <circle class="n-sig" cx="345" cy="610" r="4" />
+        <circle class="n-sig" cx="140" cy="610" r="4" />
+        <text class="t-sig" x="356" y="630">&rarr; Pin 2</text>
+
+        <path class="w-sig" d="M515 610 V656 H168 V610" />
+        <circle class="n-sig" cx="515" cy="610" r="4" />
+        <circle class="n-sig" cx="168" cy="610" r="4" />
+        <text class="t-sig" x="526" y="652">&rarr; Pin 3</text>
+
+        <path class="w-sig" d="M685 610 V678 H196 V610" />
+        <circle class="n-sig" cx="685" cy="610" r="4" />
+        <circle class="n-sig" cx="196" cy="610" r="4" />
+        <text class="t-sig" x="696" y="674">&rarr; Pin 4</text>
+
+        <text class="t-sig" x="270" y="702">Every OUT runs straight to its own pin &mdash; none of them ever touches a rail</text>
 
       </svg>
     </div>
 
     <p class="caption">
       The small semicircular bumps are wire hops: that wire passes <em>over</em> the rail it arches
-      across and does not connect to it. Only the filled dots are connections.
+      across and does not connect to it. Only the filled dots are connections. The three data jumpers
+      for the SIM800L (<code>TXD</code>&rarr;10, <code>RXD</code>&rarr;11, <code>RST</code>&rarr;12) go
+      module-header to Arduino-header and skip the breadboard entirely, the same as the OUT wires.
     </p>
 
     <div class="table-wrap">
@@ -920,37 +1061,83 @@
           <tr><td class="pin">bridge</td><td>BOTTOM &minus; rail &middot; col 62</td><td class="hole">TOP &minus; rail &middot; col 62</td></tr>
           <tr><td class="pin">5V</td><td>Arduino</td><td class="hole">BOTTOM + rail &middot; col 3</td></tr>
           <tr><td class="pin">GND</td><td>Arduino</td><td class="hole">BOTTOM &minus; rail &middot; col 6</td></tr>
-          <tr><td class="pin">VCC</td><td>HC-SR501 PIR</td><td class="hole">BOTTOM + rail &middot; col 20</td></tr>
-          <tr><td class="pin">GND</td><td>HC-SR501 PIR</td><td class="hole">BOTTOM &minus; rail &middot; col 23</td></tr>
-          <tr><td class="pin">OUT</td><td>HC-SR501 PIR</td><td class="hole">Arduino Pin 2 &mdash; direct</td></tr>
+          <tr><td class="pin">VCC</td><td>PIR ROOMC</td><td class="hole">BOTTOM + rail &middot; col 18</td></tr>
+          <tr><td class="pin">GND</td><td>PIR ROOMC</td><td class="hole">BOTTOM &minus; rail &middot; col 21</td></tr>
+          <tr><td class="pin">OUT</td><td>PIR ROOMC</td><td class="hole">Arduino Pin 2 &mdash; direct</td></tr>
+          <tr><td class="pin">VCC</td><td>PIR ROOMA</td><td class="hole">BOTTOM + rail &middot; col 31</td></tr>
+          <tr><td class="pin">GND</td><td>PIR ROOMA</td><td class="hole">BOTTOM &minus; rail &middot; col 34</td></tr>
+          <tr><td class="pin">OUT</td><td>PIR ROOMA</td><td class="hole">Arduino Pin 3 &mdash; direct</td></tr>
+          <tr><td class="pin">VCC</td><td>PIR ROOMB</td><td class="hole">BOTTOM + rail &middot; col 43</td></tr>
+          <tr><td class="pin">GND</td><td>PIR ROOMB</td><td class="hole">BOTTOM &minus; rail &middot; col 46</td></tr>
+          <tr><td class="pin">OUT</td><td>PIR ROOMB</td><td class="hole">Arduino Pin 4 &mdash; direct</td></tr>
           <tr><td class="pin">TXD / RXD / RST</td><td>SIM800L</td><td class="hole">Arduino pins 10 / 11 / 12 &mdash; direct</td></tr>
         </tbody>
       </table>
     </div>
 
     <p class="caption">
-      Columns 50&ndash;59 are chosen so the capacitor sits beside the module's own power wires.
-      Pin order under the HC-SR501 dome varies between batches &mdash; read the letters printed on
-      your own sensor before wiring, don't copy the order from any diagram, including this one.
+      Top-rail columns 50&ndash;59 are chosen so the capacitor sits beside the module's own power wires.
+      The bottom-rail columns are simply spread out to keep the sensors' taps apart; nothing
+      electrical depends on the numbers. Pin order under the HC-SR501 dome varies between batches &mdash;
+      read the letters printed on <em>each</em> of your sensors before wiring. They will not all
+      necessarily match, and they will not necessarily match this diagram.
     </p>
   </section>
 
   <section>
-    <h2><span class="num">05</span>Check the board before you power it</h2>
+    <h2><span class="num">05</span>Set each sensor, then add them one at a time</h2>
+    <p class="col">
+      Every HC-SR501 has two adjustments and a jumper, and they ship at random settings. Do them all
+      before anything is wired, while you can still turn them over easily.
+    </p>
+
     <div class="checks">
-      <div class="check"><span class="mark">01</span><span>Set the multimeter to continuity. Probe the <strong>two + rails</strong> &mdash; it must <em>not</em> beep. If it does, you have bridged them somewhere.</span></div>
-      <div class="check"><span class="mark">02</span><span>Probe the <strong>two &minus; rails</strong> &mdash; it <em>must</em> beep. That is the bridge jumper doing its job.</span></div>
-      <div class="check"><span class="mark">03</span><span>Probe each rail end to end. Silence in the middle means your board's rails are split at column 30 &mdash; bridge the halves.</span></div>
-      <div class="check"><span class="mark">04</span><span>Probe the module's <code>5Vin</code> wire against the Arduino's 5 V pin &mdash; it must <em>not</em> beep.</span></div>
-      <div class="check"><span class="mark">05</span><span>Check the capacitor is across two <em>different</em> rails, not two holes in the same one. Same rail = a short across your supply.</span></div>
-      <div class="check"><span class="mark">06</span><span>Confirm the stripe leg of the capacitor is the one in the &minus; rail. Backwards, it vents.</span></div>
-      <div class="check"><span class="mark">07</span><span>Confirm <code>VDD</code> on the module has nothing plugged into it at all.</span></div>
-      <div class="check"><span class="mark">08</span><span>Screw the antenna on <em>before</em> powering up. Transmitting without one damages the radio.</span></div>
+      <div class="check"><span class="mark">01</span><span>Move the <strong>yellow jumper to H</strong> (repeat-trigger). On L the sensor goes deaf for its whole delay period after each trigger, so someone still in the room reads as gone.</span></div>
+      <div class="check"><span class="mark">02</span><span>Turn the <strong>time-delay screw fully anti-clockwise</strong> &mdash; the shortest hold. The sketch decides when motion has stopped; the sensor holding its output high for minutes only hides that.</span></div>
+      <div class="check"><span class="mark">03</span><span>Leave the <strong>sensitivity screw</strong> mid-range to start. Turn it down later if a sensor keeps firing at nothing.</span></div>
+      <div class="check"><span class="mark">04</span><span>Read the <strong><code>V</code> / <code>O</code> / <code>G</code> letters</strong> printed under each dome. The order differs between batches &mdash; check each one separately, they may not agree with each other.</span></div>
+    </div>
+
+    <p class="col">
+      Now build up in stages. Wire <strong>one</strong> sensor, upload the sketch, open the Serial Monitor
+      at 9600, and confirm that waving at it prints the room you expect &mdash; not just <em>a</em> room.
+      Only then add the next. Several sensors wired all at once give you a pile of possible pin-to-room
+      mix-ups and no way to tell which one you have.
+    </p>
+
+    <div class="rule">
+      <span class="tag">If a sensor fires with nobody near it</span>
+      <p>
+        Unplug that sensor's OUT wire from the Arduino and <strong>jumper that pin straight to GND</strong>
+        instead. If the phantom triggers stop, the sketch is fine and that sensor's OUT wire is not
+        seated properly &mdash; a floating input picks up whatever noise is nearby and reports it as a
+        person. If they continue, the problem is in the sketch or that pin.
+      </p>
+      <p>
+        This is the fastest test in the whole build and it is worth doing before you suspect anything
+        else. Add sensors one at a time and it also tells you <em>which</em> sensor is the bad one.
+      </p>
     </div>
   </section>
 
   <section>
-    <h2><span class="num">06</span>Power up and read the status LED</h2>
+    <h2><span class="num">06</span>Check the board before you power it</h2>
+    <div class="checks">
+      <div class="check"><span class="mark">01</span><span>Set the multimeter to continuity. Probe the <strong>two + rails</strong> &mdash; it must <em>not</em> beep. If it does, you have bridged them somewhere.</span></div>
+      <div class="check"><span class="mark">02</span><span>Probe the <strong>two &minus; rails</strong> &mdash; it <em>must</em> beep. That is the bridge jumper doing its job.</span></div>
+      <div class="check"><span class="mark">03</span><span>Probe each rail end to end. Silence in the middle means your board's rails are split at column 30 &mdash; bridge the halves. With the sensors spread from column 18 to 46 this now matters: a split rail can leave one of them dead.</span></div>
+      <div class="check"><span class="mark">04</span><span>Probe the module's <code>5Vin</code> wire against the Arduino's 5 V pin &mdash; it must <em>not</em> beep.</span></div>
+      <div class="check"><span class="mark">05</span><span>Probe <strong>each OUT wire against every other</strong> &mdash; none may beep. A beep means two rooms are shorted together and will always report as one.</span></div>
+      <div class="check"><span class="mark">06</span><span>Count the OUT wires landing in the Arduino header: exactly one each in pins 2, 3, 4 and 5, and nothing in any other digital pin.</span></div>
+      <div class="check"><span class="mark">07</span><span>Check the capacitor is across two <em>different</em> rails, not two holes in the same one. Same rail = a short across your supply.</span></div>
+      <div class="check"><span class="mark">08</span><span>Confirm the stripe leg of the capacitor is the one in the &minus; rail. Backwards, it vents.</span></div>
+      <div class="check"><span class="mark">09</span><span>Confirm <code>VDD</code> on the module has nothing plugged into it at all.</span></div>
+      <div class="check"><span class="mark">10</span><span>Screw the antenna on <em>before</em> powering up. Transmitting without one damages the radio.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">07</span>Power up and read the status LED</h2>
     <p class="col">
       Power and antenna first, before you upload anything. The blink rate is the module telling you
       whether it found a 2G network &mdash; nothing after this can work until this does.
@@ -975,7 +1162,7 @@
   </section>
 
   <section>
-    <h2><span class="num">07</span>What the Arduino says, and where it goes</h2>
+    <h2><span class="num">08</span>What the Arduino says, and where it goes</h2>
 
     <div class="flow">
       <span class="tag">Two paths from one wave of the hand</span>
@@ -989,19 +1176,25 @@
       </p>
     </div>
 
+    <p class="col">
+      Every line below carries its room in the name, and that name is the <em>only</em> thing telling
+      the dashboard which sensor spoke. <code>ROOMx</code> here stands for any of
+      <code>ROOMA</code>, <code>ROOMB</code>, <code>ROOMC</code>.
+    </p>
+
     <div class="table-wrap">
       <table>
         <thead>
           <tr><th>Serial line</th><th>Meaning</th><th>Where it is saved</th></tr>
         </thead>
         <tbody>
-          <tr><td class="tok">ROOM1_MOTION_DETECTED</td><td>Movement started</td><td><code>motion_events</code></td></tr>
-          <tr><td class="tok">ROOM1_MOTION_STOPPED</td><td>Quiet for 2 seconds</td><td><code>motion_events</code></td></tr>
-          <tr><td class="tok">SMS_SENT:ROOM1</td><td>The network accepted the text</td><td><code>sms_events</code> &middot; SENT</td></tr>
-          <tr><td class="tok">SMS_FAIL:ROOM1:TIMEOUT</td><td>No <code>+CMGS</code> within 30 s</td><td><code>sms_events</code> &middot; FAILED</td></tr>
-          <tr><td class="tok">SMS_FAIL:ROOM1:NOPROMPT</td><td>The module never sent its <code>&gt;</code> prompt</td><td><code>sms_events</code> &middot; FAILED</td></tr>
-          <tr><td class="tok">SMS_FAIL:ROOM1:NOMODULE</td><td>The module failed its start-up checks</td><td><code>sms_events</code> &middot; FAILED</td></tr>
-          <tr><td class="tok">SMS_SKIP:ROOM1:COOLDOWN</td><td>Blocked on purpose &mdash; under 60 s since the last text</td><td><code>sms_events</code> &middot; SKIPPED</td></tr>
+          <tr><td class="tok">ROOMx_MOTION_DETECTED</td><td>Movement started in that room</td><td><code>motion_events</code></td></tr>
+          <tr><td class="tok">ROOMx_MOTION_STOPPED</td><td>That room quiet for 2 seconds</td><td><code>motion_events</code></td></tr>
+          <tr><td class="tok">SMS_SENT:ROOMx</td><td>The network accepted the text</td><td><code>sms_events</code> &middot; SENT</td></tr>
+          <tr><td class="tok">SMS_FAIL:ROOMx:TIMEOUT</td><td>No <code>+CMGS</code> within 30 s</td><td><code>sms_events</code> &middot; FAILED</td></tr>
+          <tr><td class="tok">SMS_FAIL:ROOMx:NOPROMPT</td><td>The module never sent its <code>&gt;</code> prompt</td><td><code>sms_events</code> &middot; FAILED</td></tr>
+          <tr><td class="tok">SMS_FAIL:ROOMx:NOMODULE</td><td>The module failed its start-up checks</td><td><code>sms_events</code> &middot; FAILED</td></tr>
+          <tr><td class="tok">SMS_SKIP:ROOMx:COOLDOWN</td><td>Blocked on purpose &mdash; under 60 s since the last text <em>for that room</em></td><td><code>sms_events</code> &middot; SKIPPED</td></tr>
           <tr><td class="tok">SIM_READY</td><td>Module answered, SIM unlocked, network joined</td><td>shown on screen only</td></tr>
           <tr><td class="tok">SIM_FAIL:NOSIM</td><td>SIM missing, seated badly, or PIN-locked</td><td>shown on screen only</td></tr>
           <tr><td class="tok">SIM_FAIL:NONETWORK</td><td>No 2G registration &mdash; antenna, coverage, or load</td><td>shown on screen only</td></tr>
@@ -1010,13 +1203,21 @@
     </div>
 
     <p class="caption">
-      Anything else the sketch prints &mdash; the warm-up countdown, <code>System Ready</code>, the signal
-      reading &mdash; appears in the reader window but is deliberately not saved.
+      The cooldown is counted per room, not for the rig as a whole. Somebody pacing around Room&nbsp;A
+      gets you one text a minute; somebody walking from Room&nbsp;A into Room&nbsp;B gets you a second
+      text immediately. Only one message can be in flight at a time, so a second room's alert queues
+      for a few seconds rather than being lost.
+    </p>
+
+    <p class="caption">
+      Anything else the sketch prints &mdash; the pin-to-room list at start-up, the warm-up countdown,
+      <code>System Ready</code>, the signal reading &mdash; appears in the reader window but is
+      deliberately not saved.
     </p>
   </section>
 
   <section>
-    <h2><span class="num">08</span>When it doesn't work</h2>
+    <h2><span class="num">09</span>When it doesn't work</h2>
     <div class="table-wrap">
       <table>
         <thead>
@@ -1054,9 +1255,44 @@
             <td>Add a 47 &Omega; 1 W bleeder across the supply, or use a wall adapter.</td>
           </tr>
           <tr>
-            <td>PIR fires constantly right after power-on</td>
-            <td>Still in its 30-second warm-up</td>
-            <td>Stay out of its view until <code>System Ready</code> prints.</td>
+            <td>A PIR fires constantly right after power-on</td>
+            <td>Still in the 30-second warm-up</td>
+            <td>They all warm up together &mdash; stay out of <em>every</em> sensor's view until <code>System Ready</code> prints.</td>
+          </tr>
+          <tr>
+            <td>Waving at Room A lights up Room B on the dashboard</td>
+            <td>Two OUT wires swapped between pins</td>
+            <td>Read the pin-to-room list the sketch prints at start-up, then move the wire &mdash; not the code. If you would rather move the code, edit <code>ZONE_NAME[]</code> in <code>pir_sms.ino</code>, keeping it in pin order 2, 3, 4, 5.</td>
+          </tr>
+          <tr>
+            <td>One room never reports anything, the other three are fine</td>
+            <td>That sensor's OUT wire is in the wrong hole, or its VCC/GND tap missed the rail</td>
+            <td>Jumper that Arduino pin straight to GND: if the room still never appears, the wire is the problem. Then check its two rail taps &mdash; a tap one row off the rail looks identical and does nothing.</td>
+          </tr>
+          <tr>
+            <td>A pin stays dead even after swapping in a known-good sensor</td>
+            <td>The pin, its OUT wire, or that position's rail taps &mdash; not the sensor</td>
+            <td>Move that sensor to a spare pin (6 or 7) and retest with <code>one_pin_test.ino</code>. If it works there, the original pin or its wiring is the fault. This is what happened to Pin 5 / Room D on this build.</td>
+          </tr>
+          <tr>
+            <td>Every room triggers when you wave at just one</td>
+            <td>Nothing is broken &mdash; the sensors all see the same room</td>
+            <td>On a bench they sit centimetres apart with ~110&deg; cones metres deep. Cover the ones you are not testing, point them apart, or turn the sensitivity down. Confirm with <code>pin_monitor.ino</code>.</td>
+          </tr>
+          <tr>
+            <td>Two rooms always trigger together</td>
+            <td>Their OUT wires are shorted, or both are in the same pin</td>
+            <td>Continuity-test the two OUT wires against each other. They must not beep.</td>
+          </tr>
+          <tr>
+            <td>Every room reports at once, constantly</td>
+            <td>The bottom &minus; rail is not reaching the Arduino's GND, so every input floats</td>
+            <td>Check the ground bridge at column 62, and that the Arduino's GND wire is in the &minus; rail and not the + rail.</td>
+          </tr>
+          <tr>
+            <td>Some rooms work, others never do &mdash; and they alternate along the board</td>
+            <td>The bottom rails are split in the middle and only one half is fed</td>
+            <td>Bridge the two halves of both bottom rails near column 30.</td>
           </tr>
           <tr>
             <td>Reader says "Cannot reach the API"</td>
@@ -1086,7 +1322,8 @@
     </p>
     <p>
       Board drawn as 830-point, 63 columns. Rails matter, column numbers don't &mdash; shift them to fit
-      whatever board is on your desk.
+      whatever board is on your desk. The sensors and their pins match the main ABMDMS system
+      exactly, so this sheet describes that build too; only the database name differs.
     </p>
   </footer>
 

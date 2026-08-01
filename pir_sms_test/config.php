@@ -5,12 +5,15 @@
  * File: config.php
  * ============================================================
  *
- * This folder is a SMALL, SELF-CONTAINED version of ABMDMS:
- * one PIR sensor + one SIM800L, its own database, its own
- * dashboard. Nothing here touches the main system.
+ * This folder is a SELF-CONTAINED copy of ABMDMS: four PIR
+ * sensors + one SIM800L, its own database, its own dashboard.
+ * Nothing here touches the main system.
  *
  * Main system      -> database "motion_monitoring", 4 zones
- * This test rig    -> database "pir_sms_test",      1 zone
+ * This test rig    -> database "pir_sms_test",      4 zones
+ *
+ * Same rooms, same pins, same serial words - only the database
+ * name differs. That is the point: it is a full rehearsal.
  *
  * That means you can break, re-import, or delete this rig
  * without losing any of the real ABMDMS data.
@@ -45,9 +48,28 @@ date_default_timezone_set('Asia/Manila');
 
 define('ALLOWED_EVENT_TYPES', ['MOTION_DETECTED', 'MOTION_STOPPED']);
 
-// Only ONE sensor in this rig: the PIR on Arduino Pin 2.
-define('ALLOWED_ZONES', ['ROOM1']);
-define('ZONE_LABELS', ['ROOM1' => 'Room 1']);
+// Three sensors:
+//   Arduino Pin 2 -> ROOMC
+//   Arduino Pin 3 -> ROOMA
+//   Arduino Pin 4 -> ROOMB
+// (Pin 2 is Room C because that was the first sensor ever built.)
+//
+// Room D / Pin 5 is REMOVED: the pin would not respond to two
+// different sensors, so it is out of the system until that is
+// fixed. To put it back, add 'ROOMD' to both lists below, restore
+// it in arduino/pir_sms/pir_sms.ino, and add it to the two regexes
+// in serial/serial_reader.ps1. Nothing else needs touching.
+//
+// These two lists drive EVERYTHING on the web side - the zone
+// cards, both APIs' validation, the table labels. Adding a room
+// here is all the PHP work there is.
+define('ALLOWED_ZONES', ['ROOMA', 'ROOMB', 'ROOMC']);
+
+define('ZONE_LABELS', [
+    'ROOMA' => 'Room A',
+    'ROOMB' => 'Room B',
+    'ROOMC' => 'Room C',
+]);
 
 define('ALLOWED_SMS_STATUSES', ['SENT', 'FAILED', 'SKIPPED']);
 
@@ -66,7 +88,10 @@ define('ALLOWED_SMS_STATUSES', ['SENT', 'FAILED', 'SKIPPED']);
 define('SMS_RECIPIENT_DISPLAY', '+639169751409');
 
 define('SMS_RECENT_LIMIT', 10);      // rows in the SMS Alerts table
-define('MOTION_RECENT_LIMIT', 20);   // rows in the Motion History table
+
+// 40, not 20: with four sensors running, twenty rows can be less
+// than a minute of history and events scroll away before you read them.
+define('MOTION_RECENT_LIMIT', 40);   // rows in the Motion History table
 
 
 // ------------------------------------------------------------

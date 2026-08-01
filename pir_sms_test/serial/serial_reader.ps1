@@ -16,11 +16,14 @@
 #
 #  WHAT IT LISTENS FOR
 #  -------------------
-#  ROOM1_MOTION_DETECTED   -> api/record_motion.php
-#  ROOM1_MOTION_STOPPED    -> api/record_motion.php
-#  SMS_SENT:ROOM1          -> api/record_sms.php  (status SENT)
-#  SMS_FAIL:ROOM1:TIMEOUT  -> api/record_sms.php  (status FAILED)
-#  SMS_SKIP:ROOM1:COOLDOWN -> api/record_sms.php  (status SKIPPED)
+#  (ROOMx is any of ROOMA, ROOMB, ROOMC. Room D / Pin 5 is removed -
+#   see config.php. Add ROOMD back to both regexes to restore it.)
+#
+#  ROOMA_MOTION_DETECTED   -> api/record_motion.php
+#  ROOMA_MOTION_STOPPED    -> api/record_motion.php
+#  SMS_SENT:ROOMA          -> api/record_sms.php  (status SENT)
+#  SMS_FAIL:ROOMA:TIMEOUT  -> api/record_sms.php  (status FAILED)
+#  SMS_SKIP:ROOMA:COOLDOWN -> api/record_sms.php  (status SKIPPED)
 #
 #  Everything else the Arduino prints (warm-up countdown,
 #  SIM_READY, System Ready...) is shown on screen but not saved.
@@ -50,12 +53,15 @@ $Source    = "ARDUINO_PIR"                                                     #
 $DuplicateWindow = 2     # Ignore the same event repeated within N seconds
 $ReconnectDelay  = 3     # Seconds to wait before retrying a lost connection
 
-# Matches "ROOM1_MOTION_DETECTED" -> zone=ROOM1, event=MOTION_DETECTED
-$ZonePattern = '^(ROOM1)_(MOTION_DETECTED|MOTION_STOPPED)$'
+# Matches "ROOMA_MOTION_DETECTED" -> zone=ROOMA, event=MOTION_DETECTED
+# The room names are listed here on purpose: anything the Arduino
+# prints that is NOT one of these four is shown but never saved,
+# so a garbled serial line can never invent a room.
+$ZonePattern = '^(ROOMA|ROOMB|ROOMC)_(MOTION_DETECTED|MOTION_STOPPED)$'
 
-# Matches "SMS_SENT:ROOM1" or "SMS_FAIL:ROOM1:TIMEOUT"
-# -> result=SENT/FAIL/SKIP, zone=ROOM1, detail=TIMEOUT (detail optional)
-$SmsPattern = '^SMS_(SENT|FAIL|SKIP):(ROOM1)(?::(.+))?$'
+# Matches "SMS_SENT:ROOMA" or "SMS_FAIL:ROOMA:TIMEOUT"
+# -> result=SENT/FAIL/SKIP, zone=ROOMA, detail=TIMEOUT (detail optional)
+$SmsPattern = '^SMS_(SENT|FAIL|SKIP):(ROOMA|ROOMB|ROOMC)(?::(.+))?$'
 
 # ============================================================
 #  You do not need to change anything below this line.
@@ -86,9 +92,14 @@ Line
 Write-Host ""
 
 
-# Remembers the last event so we do not save the same thing twice
-$lastEvent = ""
-$lastTime  = Get-Date "2000-01-01"
+# Remembers when we last saved each kind of event, so we do not
+# save the same thing twice. One entry PER LINE, e.g.
+#   "ROOMA_MOTION_DETECTED" -> 14:05:11
+# A single "last line seen" would not do here: with four rooms the
+# lines interleave, so Room A repeating would slip through just
+# because Room B printed in between. At most 8 entries ever exist
+# (4 rooms x 2 event types), so this never grows.
+$lastSeen = @{}
 
 
 # ============================================================
@@ -205,12 +216,12 @@ while ($true) {
         #  STEP 3 - Duplicate protection
         # ----------------------------------------------------
         $now = Get-Date
-        if ($msg -eq $lastEvent -and ($now - $lastTime).TotalSeconds -lt $DuplicateWindow) {
+        if ($lastSeen.ContainsKey($msg) -and
+            ($now - $lastSeen[$msg]).TotalSeconds -lt $DuplicateWindow) {
             Say ("Skipped duplicate " + $msg)
             continue
         }
-        $lastEvent = $msg
-        $lastTime  = $now
+        $lastSeen[$msg] = $now
 
         # ----------------------------------------------------
         #  STEP 4 - Send the event to the PHP API

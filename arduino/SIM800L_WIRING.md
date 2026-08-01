@@ -161,7 +161,18 @@ logic level converter.
 
 ---
 
-## ASCII wiring diagram
+## ASCII wiring diagram  *(legacy — drawn for the BARE module)*
+
+> ⚠️ **This diagram still shows the 1kΩ/2kΩ divider on Pin 11, which your board
+> does not use.** It is kept for the bare 3.7–4.2 V module only. On the
+> **SIM800L V2.2 (UNV)** that this project actually uses, `PIN 11` wires
+> **straight to `RXD`** with no resistors at all — mentally delete the two
+> resistor boxes below and read that line as a plain wire. Everything else in
+> the drawing (external power, the capacitor, the common ground) is correct for
+> both boards.
+>
+> For an accurate, up-to-date drawing of the board this project uses, see
+> `pir_sms_test/wiring.html`.
 
 ```
                             ARDUINO UNO
@@ -212,8 +223,11 @@ logic level converter.
 - The SIM800L gets its power from the **external supply**, never from the Arduino.
 - The external supply's minus, the SIM800L GND, and the Arduino GND are all
   **joined together** — this is the wire people forget.
-- Pin 11 reaches RXD **through the resistor divider**; Pin 10 comes back from
-  TXD directly.
+- Pin 10 comes back from TXD directly.
+- Pin 11 reaches RXD **directly on the V2.2 board this project uses**. The
+  divider drawn above belongs to the bare module only — fitting it to a V2.2
+  drops `RXD` to ~3.3 V of an already-level-shifted input and is one more thing
+  to have wired wrong.
 
 ---
 

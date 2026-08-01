@@ -29,6 +29,18 @@
         history: document.getElementById('history-body')
     };
 
+    // The room cards. index.php already drew one per room from
+    // ALLOWED_ZONES, so we just collect whatever is on the page -
+    // this code never needs to know how many rooms there are.
+    var zoneCards = {};
+    Array.prototype.forEach.call(
+        document.querySelectorAll('.zone-card'),
+        function (card) {
+            // id="zone-rooma"  ->  key "ROOMA", matching the API
+            zoneCards[card.id.replace('zone-', '').toUpperCase()] = card;
+        }
+    );
+
 
     // --------------------------------------------------------
     // Small helpers
@@ -76,9 +88,33 @@
         }
     }
 
+    // Colour each room card from that room's own status.
+    function drawZones(zones) {
+        if (!zones) { return; }
+
+        Object.keys(zoneCards).forEach(function (code) {
+            var card = zoneCards[code];
+            var info = zones[code];
+            if (!info) { return; }
+
+            var isMotion = info.status === 'MOTION';
+
+            card.className = 'zone-card ' + (isMotion ? 'zone-motion' : 'zone-none');
+
+            card.querySelector('.zone-status').textContent =
+                isMotion ? 'MOTION' : (info.status === 'CLEAR' ? 'Clear' : 'No data yet');
+
+            card.querySelector('.zone-last').textContent =
+                info.last_motion ? info.last_motion : 'never';
+
+            card.querySelector('.zone-sms').textContent =
+                info.last_sms ? info.last_sms : 'none yet';
+        });
+    }
+
     function drawSmsTable(rows) {
         if (!rows || rows.length === 0) {
-            emptyRow(el.smsBody, 5, 'No SMS alerts recorded yet.');
+            emptyRow(el.smsBody, 6, 'No SMS alerts recorded yet.');
             return;
         }
 
@@ -90,6 +126,7 @@
             html += '<tr>'
                  +  '<td>' + safe(row.id) + '</td>'
                  +  '<td><span class="pill ' + cls + '">' + safe(row.status) + '</span></td>'
+                 +  '<td>' + safe(row.zone) + '</td>'
                  +  '<td>' + (row.detail ? safe(row.detail) : '—') + '</td>'
                  +  '<td>' + safe(when.date) + '</td>'
                  +  '<td>' + safe(when.time) + '</td>'
@@ -101,7 +138,7 @@
 
     function drawHistoryTable(rows) {
         if (!rows || rows.length === 0) {
-            emptyRow(el.history, 6, 'No motion events yet. Wave at the sensor!');
+            emptyRow(el.history, 6, 'No motion events yet. Wave at one of the sensors!');
             return;
         }
 
@@ -125,6 +162,7 @@
 
     function draw(data) {
         drawStatus(data.status);
+        drawZones(data.zones);
 
         el.total.textContent = data.stats.total_events;
         el.today.textContent = data.stats.today_events;

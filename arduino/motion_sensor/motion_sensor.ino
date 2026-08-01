@@ -88,7 +88,7 @@ const char* SMS_RECIPIENT = "+639169751409";
 const bool SIM_ENABLED = true;
 
 const int SIM_RX_PIN  = 10;   // Arduino Pin 10 <- SIM800L TXD  (direct)
-const int SIM_TX_PIN  = 11;   // Arduino Pin 11 -> SIM800L RXD  (via 1k/2k divider)
+const int SIM_TX_PIN  = 11;   // Arduino Pin 11 -> SIM800L RXD  (direct on V2.2)
 const int SIM_RST_PIN = 12;   // Arduino Pin 12 -> SIM800L RST  (optional)
 
 const unsigned long SIM_BAUD_RATE   = 9600;   // SIM800L default speed
@@ -154,7 +154,7 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
-  Serial.println("ABMDMS - Multi-Zone Motion Detection System + SMS Alerts");
+  Serial.println(F("ABMDMS - Multi-Zone Motion Detection System + SMS Alerts"));
 
   // --- Wake up the GSM module ---
   // We do this FIRST, because the module also needs time to find
@@ -166,21 +166,21 @@ void setup() {
   // after power on. We wait and show a countdown so the user knows
   // the system is not frozen. All 4 sensors share one warm-up timer,
   // so stay away from ALL of them until it finishes.
-  Serial.print("Warming up ");
+  Serial.print(F("Warming up "));
   Serial.print(NUM_ZONES);
-  Serial.print(" PIR sensors, please stay still (");
+  Serial.print(F(" PIR sensors, please stay still ("));
   Serial.print(WARMUP_SECONDS);
-  Serial.println(" seconds)...");
+  Serial.println(F(" seconds)..."));
 
   for (unsigned long i = WARMUP_SECONDS; i > 0; i--) {
     Serial.print(i);
-    Serial.println("...");
+    Serial.println(F("..."));
     delay(1000);   // wait 1 second
   }
 
   // Ready message
-  Serial.println("System Ready");
-  Serial.println("Waiting for motion...");
+  Serial.println(F("System Ready"));
+  Serial.println(F("Waiting for motion..."));
 }
 
 
@@ -213,7 +213,7 @@ void loop() {
         digitalWrite(LED_PIN, HIGH);   // turn the board LED on (any zone active)
 
         Serial.print(ZONE_NAME[i]);
-        Serial.println("_MOTION_DETECTED");   // <-- the laptop reads this line
+        Serial.println(F("_MOTION_DETECTED"));   // <-- the laptop reads this line
 
         // Ask for an SMS about this zone. It is NOT sent here - it
         // is put in line and sent a small piece at a time by smsTick().
@@ -243,7 +243,7 @@ void loop() {
           lowStartedAt[i] = 0;
 
           Serial.print(ZONE_NAME[i]);
-          Serial.println("_MOTION_STOPPED");  // <-- the laptop reads this line
+          Serial.println(F("_MOTION_STOPPED"));  // <-- the laptop reads this line
           // NOTE: no SMS here on purpose. Only the START of motion texts.
         }
       }
@@ -282,16 +282,16 @@ void queueSms(int zone) {
   // ago" and "never texted at all" (millis() starts at 0, so without
   // this flag the very first alert of every zone would be blocked).
   if (smsEverSent[zone] && (millis() - lastSmsAt[zone] < SMS_COOLDOWN_MS)) {
-    Serial.print("SMS_SKIP:");
+    Serial.print(F("SMS_SKIP:"));
     Serial.print(ZONE_NAME[zone]);
-    Serial.println(":COOLDOWN");
+    Serial.println(F(":COOLDOWN"));
     return;
   }
 
   if (!simReady) {
-    Serial.print("SMS_FAIL:");
+    Serial.print(F("SMS_FAIL:"));
     Serial.print(ZONE_NAME[zone]);
-    Serial.println(":NOMODULE");
+    Serial.println(F(":NOMODULE"));
     return;
   }
 
@@ -327,13 +327,33 @@ void smsTick() {
         return;
       }
 
-      // Find the first zone waiting for a text
+      // Find the first zone waiting for a text.
+      //
+      // Re-check each zone's cooldown HERE, right before sending.
+      // Checking it only in queueSms() is not enough: sending takes
+      // 5-10 seconds, and a zone can easily be triggered again in
+      // that time. That second request is queued while the first
+      // text is still in flight - and at that moment no text has
+      // finished for that zone yet, so the cooldown legitimately
+      // does not apply and the request is accepted. It then sits in
+      // smsPending[] and fires the instant the first send completes,
+      // sending a SECOND text for what should have been one alert.
+      // By the time we get here the first text HAS finished, so the
+      // cooldown is live and the stale request is dropped.
       int zone = -1;
       for (int i = 0; i < NUM_ZONES; i++) {
-        if (smsPending[i]) {
-          zone = i;
-          break;
+        if (!smsPending[i]) {
+          continue;
         }
+        if (smsEverSent[i] && (millis() - lastSmsAt[i] < SMS_COOLDOWN_MS)) {
+          smsPending[i] = false;
+          Serial.print(F("SMS_SKIP:"));
+          Serial.print(ZONE_NAME[i]);
+          Serial.println(F(":COOLDOWN"));
+          continue;         // that zone is muted; keep looking at the others
+        }
+        zone = i;
+        break;
       }
       if (zone < 0) {
         return;   // nobody waiting
@@ -344,9 +364,9 @@ void smsTick() {
 
       // Tell the module who we are texting. It should answer ">".
       simBufClear();
-      sim.print("AT+CMGS=\"");
+      sim.print(F("AT+CMGS=\""));
       sim.print(SMS_RECIPIENT);
-      sim.print("\"\r");
+      sim.print(F("\"\r"));
 
       smsState      = SMS_WAIT_PROMPT;
       smsStateSince = millis();
@@ -363,13 +383,13 @@ void smsTick() {
 
       if (simSaw(">")) {
         // The module is ready for the message text.
-        sim.print("ABMDMS ALERT: Motion detected in ");
+        sim.print(F("ABMDMS ALERT: Motion detected in "));
         sim.print(ZONE_TEXT[smsZone]);
-        sim.print(" (");
+        sim.print(F(" ("));
         sim.print(ZONE_NAME[smsZone]);
-        sim.print("). Uptime ");
+        sim.print(F("). Uptime "));
         sim.print(millis() / 60000UL);
-        sim.print(" min.");
+        sim.print(F(" min."));
         sim.write(26);          // Ctrl+Z = "that is the whole message, send it"
 
         simBufClear();
@@ -418,12 +438,12 @@ void smsFinish(bool ok, const char* reason) {
     smsEverSent[smsZone] = true;
 
     if (ok) {
-      Serial.print("SMS_SENT:");
+      Serial.print(F("SMS_SENT:"));
       Serial.println(ZONE_NAME[smsZone]);
     } else {
-      Serial.print("SMS_FAIL:");
+      Serial.print(F("SMS_FAIL:"));
       Serial.print(ZONE_NAME[smsZone]);
-      Serial.print(":");
+      Serial.print(F(":"));
       Serial.println(reason);
     }
   }
@@ -493,7 +513,7 @@ bool simCommand(const char* command, const char* expect, unsigned long timeoutMs
 
   simBufClear();
   sim.print(command);
-  sim.print("\r");
+  sim.print(F("\r"));
 
   unsigned long startedAt = millis();
 
@@ -515,7 +535,7 @@ bool simCommand(const char* command, const char* expect, unsigned long timeoutMs
 void simSetup() {
 
   if (!SIM_ENABLED) {
-    Serial.println("SIM_FAIL:DISABLED");
+    Serial.println(F("SIM_FAIL:DISABLED"));
     return;
   }
 
@@ -523,28 +543,28 @@ void simSetup() {
   digitalWrite(SIM_RST_PIN, HIGH);   // RST is active LOW - keep it released
 
   sim.begin(SIM_BAUD_RATE);
-  Serial.println("Starting SIM800L, please wait...");
+  Serial.println(F("Starting SIM800L, please wait..."));
   delay(3000);                       // the module needs a moment after power on
 
   // 1. Is it alive?  ->  "OK"
   if (!simCommand("AT", "OK", 5000)) {
-    Serial.println("SIM_FAIL:NOREPLY");
-    Serial.println("   Check: external power, common GND, TX/RX not swapped.");
+    Serial.println(F("SIM_FAIL:NOREPLY"));
+    Serial.println(F("   Check: external power, common GND, TX/RX not swapped."));
     simReady = false;
     return;
   }
 
   // 2. Is the SIM card in and unlocked?  ->  "READY"
   if (!simCommand("AT+CPIN?", "READY", 5000)) {
-    Serial.println("SIM_FAIL:NOSIM");
-    Serial.println("   Check: SIM inserted properly, PIN lock turned OFF.");
+    Serial.println(F("SIM_FAIL:NOSIM"));
+    Serial.println(F("   Check: SIM inserted properly, PIN lock turned OFF."));
     simReady = false;
     return;
   }
 
   // 3. How strong is the signal?  (99 = no signal at all)
   simCommand("AT+CSQ", "+CSQ", 5000);
-  Serial.print("   Signal: ");
+  Serial.print(F("   Signal: "));
   Serial.println(simBuf);
 
   // 4. Did it join the network?  ->  ",1" (home) or ",5" (roaming)
@@ -553,22 +573,22 @@ void simSetup() {
     registered = simCommand("AT+CREG?", ",5", 10000);
   }
   if (!registered) {
-    Serial.println("SIM_FAIL:NONETWORK");
-    Serial.println("   Check: antenna, load/credit, and 2G coverage in this area.");
+    Serial.println(F("SIM_FAIL:NONETWORK"));
+    Serial.println(F("   Check: antenna, load/credit, and 2G coverage in this area."));
     simReady = false;
     return;
   }
 
   // 5. Use plain text messages (not the binary PDU format)
   if (!simCommand("AT+CMGF=1", "OK", 5000)) {
-    Serial.println("SIM_FAIL:TEXTMODE");
+    Serial.println(F("SIM_FAIL:TEXTMODE"));
     simReady = false;
     return;
   }
 
   simReady = true;
-  Serial.println("SIM_READY");
-  Serial.print("   Alerts will be sent to: ");
+  Serial.println(F("SIM_READY"));
+  Serial.print(F("   Alerts will be sent to: "));
   Serial.println(SMS_RECIPIENT);
 }
 
@@ -576,7 +596,7 @@ void simSetup() {
 // Hard-reset the module by pulling its RST pin low for a moment.
 // Used when several sends fail in a row.
 void simReset() {
-  Serial.println("SIM_RESET");
+  Serial.println(F("SIM_RESET"));
 
   digitalWrite(SIM_RST_PIN, LOW);
   delay(150);

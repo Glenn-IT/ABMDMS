@@ -105,6 +105,6 @@ just adding Room D on top of the existing 3-zone system.
 
 - [ ] Update `README.md` to describe the 4-zone system
 - [ ] Update `motion_sensor.ino`'s header comment with the new wiring (4 pins)
-- [ ] Update `arduino/PIR_MULTI_ZONE_WIRING.md` (or add a note) to include Room D on Pin 5
+- [x] Updated `arduino/PIR_MULTI_ZONE_WIRING.md` for all 4 sensors — Room D on Pin 5 added to the pin table, the rail diagram, the ASCII art, the per-wire list and the verification step; also documented the sensor jumper/screw settings and why Pin 2 is Room C
 - [ ] Take a photo of the finished 4-sensor breadboard setup
 - [ ] Take dashboard screenshots showing all 4 zones (idle + at least one active)
