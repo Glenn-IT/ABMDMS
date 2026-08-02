@@ -3,30 +3,33 @@
 #  File: serial/serial_reader.ps1   (PowerShell serial bridge)
 # ============================================================
 #
-#  WHY THIS FILE EXISTS
-#  --------------------
-#  This does the same job as serial_reader.php, but it uses
-#  PowerShell's built-in .NET serial support instead of PHP.
-#  On many Windows computers PHP cannot open a COM port, but
-#  PowerShell always can - and PowerShell is already installed
-#  on every Windows PC, so nothing extra is needed.
+#  WHAT THIS DOES
+#  --------------
+#  Reads the Arduino over USB, line by line, and passes every
+#  event to the PHP API so it lands in MySQL.
 #
-#      Arduino -> USB -> THIS SCRIPT -> PHP API -> MySQL
+#      Arduino -> USB -> THIS SCRIPT -> PHP API -> MySQL -> dashboard
 #
-#  MULTI-ZONE (4 PIR) FORMAT
-#  --------------------------
-#  The Arduino sketch now prints one token per zone, e.g.
-#  "ROOMA_MOTION_DETECTED". This script splits that into
-#  zone=ROOMA and event_type=MOTION_DETECTED before POSTing,
-#  so each zone is saved and tracked independently.
+#  It does the same job as serial_reader.php, but uses PowerShell's
+#  built-in .NET serial support instead. PHP cannot open a COM port
+#  on this PC, while PowerShell's always can - and PowerShell ships
+#  with Windows, so nothing extra is needed.
 #
-#  SMS ALERT REPORTS
-#  -----------------
-#  The Arduino also texts your phone through the SIM800L module.
-#  It reports the result as "SMS_SENT:ROOMA", "SMS_FAIL:ROOMB:TIMEOUT"
-#  or "SMS_SKIP:ROOMC:COOLDOWN". Those lines are sent to
-#  api/record_sms.php instead, so the dashboard can show them.
-#  This script does NOT send any text messages itself.
+#  WHAT IT LISTENS FOR
+#  -------------------
+#  (ROOMx is any of ROOMA, ROOMB, ROOMC. Room D / Pin 5 is removed -
+#   see config.php. Add ROOMD back to both regexes to restore it.)
+#
+#  ROOMA_MOTION_DETECTED   -> api/record_motion.php
+#  ROOMA_MOTION_STOPPED    -> api/record_motion.php
+#  SMS_SENT:ROOMA          -> api/record_sms.php  (status SENT)
+#  SMS_FAIL:ROOMA:TIMEOUT  -> api/record_sms.php  (status FAILED)
+#  SMS_SKIP:ROOMA:COOLDOWN -> api/record_sms.php  (status SKIPPED)
+#
+#  Everything else the Arduino prints (warm-up countdown,
+#  SIM_READY, System Ready...) is shown on screen but not saved.
+#
+#  This script does NOT send any text messages. The Arduino does.
 #
 #  HOW TO RUN IT
 #  -------------
@@ -34,6 +37,7 @@
 #  Press Ctrl + C to stop it.
 #
 #  !! Close the Arduino IDE Serial Monitor before running. !!
+#     Only one program can hold the COM port at a time.
 # ============================================================
 
 
@@ -50,12 +54,15 @@ $Source    = "ARDUINO_PIR"                                         # Saved with 
 $DuplicateWindow = 2     # Ignore the same event repeated within N seconds
 $ReconnectDelay  = 3     # Seconds to wait before retrying a lost connection
 
-# Matches tokens like "ROOMA_MOTION_DETECTED" -> zone=ROOMA, event=MOTION_DETECTED
-$ZonePattern = '^(ROOMA|ROOMB|ROOMC|ROOMD)_(MOTION_DETECTED|MOTION_STOPPED)$'
+# Matches "ROOMA_MOTION_DETECTED" -> zone=ROOMA, event=MOTION_DETECTED
+# The room names are listed here on purpose: anything the Arduino
+# prints that is NOT one of these is shown but never saved, so a
+# garbled serial line can never invent a room.
+$ZonePattern = '^(ROOMA|ROOMB|ROOMC)_(MOTION_DETECTED|MOTION_STOPPED)$'
 
-# Matches tokens like "SMS_SENT:ROOMA" or "SMS_FAIL:ROOMB:TIMEOUT"
-# -> result=SENT/FAIL/SKIP, zone=ROOMA, detail=TIMEOUT (detail is optional)
-$SmsPattern = '^SMS_(SENT|FAIL|SKIP):(ROOMA|ROOMB|ROOMC|ROOMD)(?::(.+))?$'
+# Matches "SMS_SENT:ROOMA" or "SMS_FAIL:ROOMB:TIMEOUT"
+# -> result=SENT/FAIL/SKIP, zone=ROOMA, detail=TIMEOUT (detail optional)
+$SmsPattern = '^SMS_(SENT|FAIL|SKIP):(ROOMA|ROOMB|ROOMC)(?::(.+))?$'
 
 # ============================================================
 #  You do not need to change anything below this line.

@@ -55,7 +55,7 @@ $ReconnectDelay  = 3     # Seconds to wait before retrying a lost connection
 
 # Matches "ROOMA_MOTION_DETECTED" -> zone=ROOMA, event=MOTION_DETECTED
 # The room names are listed here on purpose: anything the Arduino
-# prints that is NOT one of these four is shown but never saved,
+# prints that is NOT one of these is shown but never saved,
 # so a garbled serial line can never invent a room.
 $ZonePattern = '^(ROOMA|ROOMB|ROOMC)_(MOTION_DETECTED|MOTION_STOPPED)$'
 

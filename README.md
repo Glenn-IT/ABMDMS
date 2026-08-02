@@ -54,13 +54,52 @@ When someone walks in front of the PIR sensor, the Arduino prints `MOTION_DETECT
 
 ## 5. Hardware Wiring
 
+### The rooms (zones)
+
+The system watches **three rooms**, one PIR sensor each, all sharing the
+breadboard's power rails:
+
+| Arduino pin | Zone code | Dashboard label |
+|---|---|---|
+| Digital Pin **2** | `ROOMC` | Room C |
+| Digital Pin **3** | `ROOMA` | Room A |
+| Digital Pin **4** | `ROOMB` | Room B |
+
+Pin 2 is Room C, not Room A — that pin held the first sensor ever built and
+every layer of the system has agreed with it since. Change the wire, not the code.
+
+**Pin 5 / Room D is retired.** During bring-up that pin would not respond to
+**two different sensors**, so Room D is out of the system until that is fixed.
+Two sensors failing on one pin points at the pin, the OUT wire, or that sensor's
+rail tap — not the sensors.
+
+<details>
+<summary><strong>Restoring Room D</strong> (four edits, once Pin 5 works)</summary>
+
+1. `config.php` — add `'ROOMD'` to `ALLOWED_ZONES` and `'ROOMD' => 'Room D'` to `ZONE_LABELS`
+2. `arduino/motion_sensor/motion_sensor.ino` — set `NUM_ZONES = 4` and add the
+   fourth entry to `PIR_PIN[]` (`5`), `ZONE_NAME[]` (`"ROOMD"`) and `ZONE_TEXT[]` (`"Room D"`)
+3. `serial/serial_reader.ps1` — add `ROOMD` to both regexes
+4. `serial/serial_reader.php` — add `ROOMD` to both regexes
+
+Nothing else needs touching: the dashboard cards, both APIs' validation and the
+table labels are all driven from `ALLOWED_ZONES`. No database change is needed —
+`zone` is a `VARCHAR`, not an `ENUM`, for exactly this reason.
+</details>
+
+For the full breadboard build — schematic, hole-by-hole drawing, pre-power
+checks and troubleshooting — open **`wiring.html`** (also linked from the
+dashboard navbar), or see `arduino/PIR_MULTI_ZONE_WIRING.md`.
+
+### One sensor's pins
+
 The HC-SR501 has **3 pins** underneath the white dome. Lift or look under the dome — the labels are printed on the board.
 
 | PIR Sensor Pin | Connects To | Wire colour suggestion |
 |---|---|---|
-| **VCC** | Arduino **5V** | Red |
-| **GND** | Arduino **GND** | Black |
-| **OUT** | Arduino **Digital Pin 2** | Yellow |
+| **VCC** | Arduino **5V** (via the breadboard `+` rail) | Red |
+| **GND** | Arduino **GND** (via the breadboard `-` rail) | Black |
+| **OUT** | its **own** Arduino digital pin — never shared | Yellow |
 
 ### How to identify the pins
 
@@ -310,15 +349,18 @@ Now walk in front of the sensor. Within about 3 seconds the dashboard turns **re
 C:\xampp\htdocs\ABMDMS\
 │
 ├── index.php                  The dashboard page
-├── config.php                 Settings: database, time zone, event types
+├── wiring.html                Illustrated build sheet (standalone)
+├── config.php                 Settings: database, time zone, zones, event types
 ├── database.php               Reusable MySQL connection (PDO)
 │
 ├── api\
 │   ├── record_motion.php      Saves one motion event  (POST)
+│   ├── record_sms.php         Saves one SMS result    (POST)
 │   └── get_motion_logs.php    Returns stats + history (GET, JSON)
 │
 ├── serial\
-│   ├── serial_reader.php      The USB bridge program
+│   ├── serial_reader.ps1      The USB bridge (PowerShell — the one that works here)
+│   ├── serial_reader.php      The same bridge in PHP (PHP cannot open COM on this PC)
 │   ├── start_reader.bat       Double-click to start the bridge
 │   └── list_ports.bat         Double-click to find your COM port
 │
@@ -334,6 +376,9 @@ C:\xampp\htdocs\ABMDMS\
 │
 ├── arduino\motion_sensor\
 │   └── motion_sensor.ino      The Arduino program
+│
+├── pir_sms_test\              Rehearsal copy: same build, its OWN database,
+│                              plus the bring-up and single-pin test sketches
 │
 ├── README.md                  This file
 └── CHECKLIST.md               Step-by-step build checklist
@@ -371,6 +416,8 @@ This is a local school/demo project, so security is kept appropriate for the sco
 | Record API | `http://localhost/ABMDMS/api/record_motion.php` |
 | Logs API | `http://localhost/ABMDMS/api/get_motion_logs.php` |
 | phpMyAdmin | `http://localhost/phpmyadmin` |
-| Database | `motion_monitoring` → table `motion_logs` |
+| Wiring diagram | `http://localhost/ABMDMS/wiring.html` |
+| Database | `motion_monitoring` → tables `motion_logs`, `sms_logs` |
 | Baud rate | `9600` |
-| PIR pin | Digital Pin **2** |
+| PIR pins | Pin **2** = Room C · Pin **3** = Room A · Pin **4** = Room B |
+| Test rig | `pir_sms_test/` — same build, its own database |

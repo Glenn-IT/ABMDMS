@@ -49,10 +49,11 @@ Optional query params: `?page=1&limit=20`
 {
   "success": true,
   "status": "MOTION",
+  "state": "MOTION",
   "zones": {
-    "ROOMA": { "label": "Room A", "status": "MOTION",    "last_motion": "July 24, 2026 12:30 PM" },
-    "ROOMB": { "label": "Room B", "status": "NO_MOTION", "last_motion": "July 24, 2026 11:02 AM" },
-    "ROOMC": { "label": "Room C", "status": "NO_MOTION", "last_motion": "No motion yet" }
+    "ROOMA": { "label": "Room A", "status": "MOTION",    "state": "MOTION",  "last_motion": "July 24, 2026 12:30 PM", "last_sms": "July 24, 2026 12:30 PM" },
+    "ROOMB": { "label": "Room B", "status": "NO_MOTION", "state": "CLEAR",   "last_motion": "July 24, 2026 11:02 AM", "last_sms": "No alert yet" },
+    "ROOMC": { "label": "Room C", "status": "NO_MOTION", "state": "NO_DATA", "last_motion": "No motion yet",          "last_sms": "No alert yet" }
   },
   "total_events": 125,
   "today_events": 25,
@@ -76,8 +77,14 @@ Optional query params: `?page=1&limit=20`
 ```
 
 - `status` / per-zone `status` is either `"MOTION"` or `"NO_MOTION"` — use this for a live
-  alert/status screen.
+  alert/status screen. **This field is stable; it has not changed.**
+- `state` / per-zone `state` is the same thing with a third case: `"MOTION"`, `"CLEAR"`, or
+  `"NO_DATA"`. `NO_DATA` means that room has never reported anything, which is worth showing
+  differently from a room that is being watched and is quiet. Optional — ignore it and read
+  `status` if you only need two states.
 - `zones` is keyed by zone code (`ROOMA`, `ROOMB`, `ROOMC`) — always exactly these three.
+  Room D / Pin 5 was tried and rolled back; see `README.md` if it is ever restored.
+- Per-zone `last_sms` is the last time an SMS alert for that room actually went out.
 - `logs` is the history table, newest first, already paginated.
 - Dates/times are pre-formatted strings from PHP — no timezone math needed on the Android side.
 - On failure: `{"success": false, "message": "..."}` with HTTP 500.

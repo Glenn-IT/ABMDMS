@@ -20,12 +20,20 @@
  * ------------------
  * {
  *   "success": true,
- *   "status": "NO_MOTION",
+ *   "status": "NO_MOTION",           <- MOTION / NO_MOTION  (two-state)
+ *   "state":  "CLEAR",               <- MOTION / CLEAR / NO_DATA  (three-state)
  *   "zones": {
- *     "ROOMA": { "label": "Room A", "status": "NO_MOTION", "last_motion": "...", "last_sms": "..." },
- *     "ROOMB": { "label": "Room B", "status": "MOTION",    "last_motion": "...", "last_sms": "..." },
- *     "ROOMC": { "label": "Room C", "status": "NO_MOTION", "last_motion": "...", "last_sms": "..." }
+ *     "ROOMA": { "label": "Room A", "status": "NO_MOTION", "state": "CLEAR",   "last_motion": "...", "last_sms": "..." },
+ *     "ROOMB": { "label": "Room B", "status": "MOTION",    "state": "MOTION",  "last_motion": "...", "last_sms": "..." },
+ *     "ROOMC": { "label": "Room C", "status": "NO_MOTION", "state": "NO_DATA", "last_motion": "...", "last_sms": "..." }
  *   },
+ *
+ * "status" and "state" describe the same thing. "status" is the older
+ * two-state field the Android app reads, and is kept exactly as it was.
+ * "state" adds the third case the dashboard needs: NO_DATA means that
+ * room has never reported anything, which is very different from a room
+ * that has reported and is currently clear.
+ *
  *   "total_events": 125,
  *   "today_events": 25,
  *   "last_motion": "July 24, 2026 12:30 PM",
@@ -123,31 +131,38 @@ try {
     // --------------------------------------------------------
     // STEP 4 - Current status (is someone there RIGHT NOW?)
     // --------------------------------------------------------
-    // We look at the newest record of any kind, overall AND per zone.
+    // For each room we look at that room's OWN newest record:
     //   newest = MOTION_DETECTED -> someone is there
-    //   newest = MOTION_STOPPED  -> the area is clear
+    //   newest = MOTION_STOPPED  -> the room is clear
+    //   no record at all         -> that room has never reported
+    // The system-wide answer is then built up from the rooms.
 
-    $newestEvent = $db->query(
-        'SELECT event_type FROM motion_logs ORDER BY id DESC LIMIT 1'
-    )->fetchColumn();
-
-    $status = ($newestEvent === 'MOTION_DETECTED') ? 'MOTION' : 'NO_MOTION';
-
-    // 4a. Same thing, but one status per zone.
+    // 4a. One status per zone.
+    //
+    //     It HAS to be worked out per zone. Asking only for the newest
+    //     row in the whole table would let a "stopped" in Room B hide
+    //     somebody still moving in Room A.
+    //
+    //     Ordered by detected_at first, then id: detected_at is what
+    //     the event actually means, and id only breaks a tie between
+    //     two rows stamped in the same second.
     $zoneStmt = $db->prepare(
         'SELECT event_type, detected_at FROM motion_logs
          WHERE zone = ?
-         ORDER BY id DESC LIMIT 1'
+         ORDER BY detected_at DESC, id DESC LIMIT 1'
     );
 
     // 4b. The newest SMS alert per zone, so each zone card can show it.
     $zoneSmsStmt = $db->prepare(
         'SELECT sent_at FROM sms_logs
          WHERE zone = ? AND status = ?
-         ORDER BY id DESC LIMIT 1'
+         ORDER BY sent_at DESC, id DESC LIMIT 1'
     );
 
-    $zones = [];
+    $zones     = [];
+    $anyMotion = false;   // is ANY room busy right now?
+    $anyData   = false;   // has ANY room ever reported at all?
+
     foreach (ALLOWED_ZONES as $zoneCode) {
         $zoneStmt->execute([$zoneCode]);
         $zoneRow = $zoneStmt->fetch();
@@ -155,13 +170,39 @@ try {
         $zoneSmsStmt->execute([$zoneCode, 'SENT']);
         $zoneSmsRaw = $zoneSmsStmt->fetchColumn();
 
+        // Three cases, not two: a room that has never reported is not
+        // the same as a room that reported and is now clear.
+        if (!$zoneRow) {
+            $zoneState = 'NO_DATA';
+        } elseif ($zoneRow['event_type'] === 'MOTION_DETECTED') {
+            $zoneState = 'MOTION';
+            $anyMotion = true;
+            $anyData   = true;
+        } else {
+            $zoneState = 'CLEAR';
+            $anyData   = true;
+        }
+
         $zones[$zoneCode] = [
             'label'       => ZONE_LABELS[$zoneCode] ?? $zoneCode,
-            'status'      => ($zoneRow && $zoneRow['event_type'] === 'MOTION_DETECTED') ? 'MOTION' : 'NO_MOTION',
+            'status'      => ($zoneState === 'MOTION') ? 'MOTION' : 'NO_MOTION',
+            'state'       => $zoneState,
             'last_motion' => $zoneRow ? date('F j, Y g:i A', strtotime($zoneRow['detected_at'])) : 'No motion yet',
             'last_sms'    => $zoneSmsRaw ? date('F j, Y g:i A', strtotime($zoneSmsRaw)) : 'No alert yet',
         ];
     }
+
+    // The banner at the top of the page covers the whole system:
+    // MOTION if ANY room is busy.
+    if (!$anyData) {
+        $state = 'NO_DATA';
+    } elseif ($anyMotion) {
+        $state = 'MOTION';
+    } else {
+        $state = 'CLEAR';
+    }
+
+    $status = ($state === 'MOTION') ? 'MOTION' : 'NO_MOTION';
 
 
     // --------------------------------------------------------
@@ -256,7 +297,8 @@ try {
 
     echo json_encode([
         'success'      => true,
-        'status'       => $status,
+        'status'       => $status,   // MOTION / NO_MOTION - kept for the Android app
+        'state'        => $state,    // MOTION / CLEAR / NO_DATA - used by the dashboard
         'zones'        => $zones,
         'total_events' => $totalEvents,
         'today_events' => $todayEvents,

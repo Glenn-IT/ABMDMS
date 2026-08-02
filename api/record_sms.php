@@ -23,7 +23,7 @@
  * POST http://localhost/ABMDMS/api/record_sms.php
  *
  * Data to send:
- *     zone   = ROOMA           (ROOMA, ROOMB, ROOMC, or ROOMD)
+ *     zone   = ROOMA           (ROOMA, ROOMB or ROOMC)
  *     status = SENT            (SENT, FAILED, or SKIPPED)
  *     detail = TIMEOUT         (optional short reason, may be empty)
  *

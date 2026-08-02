@@ -121,6 +121,23 @@ const unsigned long WARMUP_SECONDS  = 30;    // PIR warm-up time
 const unsigned long BAUD_RATE       = 9600;  // Must match the Serial Monitor
 const unsigned long STOP_CONFIRM_MS = 2000;  // Quiet for this long = motion really stopped
 
+// A pin must stay HIGH for this long before we believe it.
+//
+// The SIM800L pulls about 2 A in short bursts while it transmits,
+// and radiates hard from its antenna. Both of those can put a
+// false pulse on a PIR's OUT wire, which the Arduino reads as a
+// person. That is why a room can appear to trigger at the exact
+// moment another room's text is going out.
+//
+// A real PIR holds its output HIGH for seconds. Interference is
+// far shorter, so waiting a fraction of a second before believing
+// a HIGH throws the interference away and costs nothing real.
+//
+// If a false room STILL appears with this set, the burst is not
+// coupling into the wire - it is triggering the sensor itself, and
+// only moving the antenna or the sensor will fix it.
+const unsigned long START_CONFIRM_MS = 150;  // 0 disables this filter
+
 
 // ------------------------------------------------------------
 // SMS / SIM800L SETTINGS
@@ -167,6 +184,7 @@ const int MIN_SIGNAL = 10;                    // below this, sending is unreliab
 // adding or removing a room never means counting braces here.
 bool          motionActive[NUM_ZONES] = {};   // already announced?
 unsigned long lowStartedAt[NUM_ZONES] = {};   // when it went quiet
+unsigned long highStartedAt[NUM_ZONES] = {};  // when it first went busy
 
 // --- SMS memory ---
 SoftwareSerial sim(SIM_RX_PIN, SIM_TX_PIN);
@@ -229,7 +247,7 @@ void setup() {
 
   // The HC-SR501 gives false readings for the first few seconds
   // after power on. Wait it out, with a countdown so you can see
-  // the system is not frozen. All four warm up together, so stay
+  // the system is not frozen. They all warm up together, so stay
   // away from ALL of them until it says "System Ready".
   Serial.print(F("Warming up "));
   Serial.print(NUM_ZONES);
@@ -274,14 +292,26 @@ void loop() {
       // Only announce it if we have NOT already announced it.
       // This is what stops duplicate messages.
       if (motionActive[i] == false) {
-        motionActive[i] = true;
 
-        Serial.print(ZONE_NAME[i]);
-        Serial.println(F("_MOTION_DETECTED"));   // <-- the laptop reads this line
+        // Note when this pin FIRST went HIGH, then make it hold that
+        // for START_CONFIRM_MS before believing it. A real person
+        // keeps the output HIGH for seconds; a burst of electrical
+        // noise from the SIM800L does not last anything like that.
+        if (highStartedAt[i] == 0) {
+          highStartedAt[i] = millis();
+        }
 
-        // Ask for an SMS. It is NOT sent here - it is put in line
-        // and sent a small piece at a time by smsTick().
-        queueSms(i);
+        if (millis() - highStartedAt[i] >= START_CONFIRM_MS) {
+          motionActive[i]  = true;
+          highStartedAt[i] = 0;
+
+          Serial.print(ZONE_NAME[i]);
+          Serial.println(F("_MOTION_DETECTED"));   // <-- the laptop reads this line
+
+          // Ask for an SMS. It is NOT sent here - it is put in line
+          // and sent a small piece at a time by smsTick().
+          queueSms(i);
+        }
       }
     }
 
@@ -290,6 +320,11 @@ void loop() {
     // CASE B: this sensor sees nothing
     // --------------------------------------------------------
     else {
+
+      // The pin dropped again. If it never held HIGH long enough to
+      // be believed, forget it completely - that was the noise this
+      // filter exists to throw away.
+      highStartedAt[i] = 0;
 
       // Only care if motion was previously happening here
       if (motionActive[i] == true) {

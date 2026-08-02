@@ -285,7 +285,7 @@ while (true) {
         // exists to calm down PIR chatter. SMS reports are already
         // rate-limited by the Arduino's per-zone cooldown, and each
         // one is a genuinely separate alert.
-        if (preg_match('/^SMS_(SENT|FAIL|SKIP):(ROOMA|ROOMB|ROOMC|ROOMD)(?::(.+))?$/', $message, $s)) {
+        if (preg_match('/^SMS_(SENT|FAIL|SKIP):(ROOMA|ROOMB|ROOMC)(?::(.+))?$/', $message, $s)) {
 
             $smsZone   = $s[2];
             $smsDetail = $s[3] ?? '';
@@ -309,7 +309,7 @@ while (true) {
         }
 
         // Is this line a zone-tagged motion token, e.g. ROOMA_MOTION_DETECTED?
-        if (!preg_match('/^(ROOMA|ROOMB|ROOMC|ROOMD)_(MOTION_DETECTED|MOTION_STOPPED)$/', $message, $m)) {
+        if (!preg_match('/^(ROOMA|ROOMB|ROOMC)_(MOTION_DETECTED|MOTION_STOPPED)$/', $message, $m)) {
             continue;   // just a status message, nothing to save
         }
         $zone      = $m[1];

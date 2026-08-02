@@ -45,16 +45,30 @@ date_default_timezone_set('Asia/Manila');
 define('ALLOWED_EVENT_TYPES', ['MOTION_DETECTED', 'MOTION_STOPPED']);
 
 // The API will REFUSE to save a zone that is not in this list too.
-// ROOMC is the original/existing PIR sensor (Pin 2); ROOMA, ROOMB, and
-// ROOMD are the sensors added on the breadboard (Pin 3, Pin 4, Pin 5).
-define('ALLOWED_ZONES', ['ROOMA', 'ROOMB', 'ROOMC', 'ROOMD']);
+//
+// Three sensors:
+//   Arduino Pin 2 -> ROOMC
+//   Arduino Pin 3 -> ROOMA
+//   Arduino Pin 4 -> ROOMB
+// (Pin 2 is Room C because that was the first sensor ever built.)
+//
+// Room D / Pin 5 is REMOVED: the pin would not respond to two
+// different sensors, so it is out of the system until that is
+// fixed. To put it back, add 'ROOMD' to both lists below, restore
+// it in arduino/motion_sensor/motion_sensor.ino, and add it to the
+// two regexes in serial/serial_reader.ps1 AND serial/serial_reader.php.
+// Nothing else needs touching.
+//
+// These two lists drive EVERYTHING on the web side - the zone
+// cards, both APIs' validation, the table labels. Adding a room
+// here is all the PHP work there is.
+define('ALLOWED_ZONES', ['ROOMA', 'ROOMB', 'ROOMC']);
 
 // Friendly names shown on the dashboard for each zone code above.
 define('ZONE_LABELS', [
     'ROOMA' => 'Room A',
     'ROOMB' => 'Room B',
     'ROOMC' => 'Room C',
-    'ROOMD' => 'Room D',
 ]);
 
 
@@ -86,8 +100,14 @@ define('SMS_RECENT_LIMIT', 10);
 // DASHBOARD SETTINGS
 // ------------------------------------------------------------
 
-define('RECORDS_PER_PAGE', 20);   // Rows shown in the history table
+// 40, not 20: with several sensors running, twenty rows can be less
+// than a minute of history and events scroll away before you read them.
+define('RECORDS_PER_PAGE', 40);   // Rows shown per page of the history table
 define('MAX_RECORDS_PER_PAGE', 100);
+
+// Kept as an alias so code ported from the pir_sms_test rig - which
+// has no pagination and reads MOTION_RECENT_LIMIT - works unchanged.
+define('MOTION_RECENT_LIMIT', RECORDS_PER_PAGE);
 
 
 // ------------------------------------------------------------

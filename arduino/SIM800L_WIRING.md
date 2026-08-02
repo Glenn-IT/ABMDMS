@@ -10,7 +10,7 @@ answers `AT` on its own (Step 5 below).
 | Room C PIR | Digital Pin **2** | unchanged |
 | Room A PIR | Digital Pin **3** | unchanged |
 | Room B PIR | Digital Pin **4** | unchanged |
-| Room D PIR | Digital Pin **5** | unchanged |
+| ~~Room D PIR~~ | ~~Digital Pin **5**~~ | **retired** — see `arduino/PIR_MULTI_ZONE_WIRING.md` |
 | SIM800L **TXD** | Digital Pin **10** | new — direct wire |
 | SIM800L **RXD** | Digital Pin **11** | new — direct on the V2.2 board (divider only for the bare module) |
 | SIM800L **RST** | Digital Pin **12** | new — optional |
@@ -185,7 +185,7 @@ logic level converter.
                        │  PIN 2  ●─────────┼──► Room C PIR OUT                      │
                        │  PIN 3  ●─────────┼──► Room A PIR OUT                      │
                        │  PIN 4  ●─────────┼──► Room B PIR OUT                      │
-                       │  PIN 5  ●─────────┼──► Room D PIR OUT                      │
+                       │  PIN 5  ○   (retired — Room D is out)                      │
                        │                   │                                        │
                        │  PIN 10 ●◄────────┼──────────────────────┐                 │
                        │  PIN 11 ●─────────┼───[1kΩ]───┬──────┐   │                 │
@@ -219,7 +219,7 @@ logic level converter.
 
 **Reading it in words:**
 
-- Arduino 5V / GND still feed the breadboard rails for the **4 PIR sensors only**.
+- Arduino 5V / GND still feed the breadboard rails for the **3 PIR sensors only**.
 - The SIM800L gets its power from the **external supply**, never from the Arduino.
 - The external supply's minus, the SIM800L GND, and the Arduino GND are all
   **joined together** — this is the wire people forget.

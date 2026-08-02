@@ -34,7 +34,7 @@ $dbCheck = testDBConnection();
         <span class="dot"></span>
         <div>
             <strong>PIR + SMS Test Rig</strong>
-            <small>4 motion sensors &middot; 1 SIM800L &middot; isolated from the main system</small>
+            <small><?php echo count(ALLOWED_ZONES); ?> motion sensors &middot; 1 SIM800L &middot; isolated from the main system</small>
         </div>
     </div>
     <nav>
@@ -65,7 +65,7 @@ $dbCheck = testDBConnection();
         <div class="status-label">Current Status</div>
         <div class="status-value" id="status-value">Loading&hellip;</div>
         <div class="status-meta">
-            <?php echo count(ALLOWED_ZONES); ?> sensors on Arduino pins 2&ndash;5
+            <?php echo count(ALLOWED_ZONES); ?> sensors on Arduino pins 2&ndash;4
             &middot; last updated <span id="last-updated">&mdash;</span>
         </div>
     </section>

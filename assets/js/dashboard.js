@@ -32,6 +32,7 @@
         statusValue: document.getElementById('status-value'),
         lastUpdated: document.getElementById('last-updated'),
         badge:       document.getElementById('connection-badge'),
+        offline:     document.getElementById('offline'),
 
         cardStatus:  document.getElementById('card-status'),
         cardTotal:   document.getElementById('card-total'),
@@ -78,15 +79,21 @@
     // HELPER: show whether the dashboard is talking to the server
     // --------------------------------------------------------
     function setConnected(ok) {
-        if (!el.badge) {
-            return;
+        if (el.badge) {
+            if (ok) {
+                el.badge.textContent = 'Live';
+                el.badge.className   = 'badge badge-live';
+            } else {
+                el.badge.textContent = 'Offline';
+                el.badge.className   = 'badge badge-offline';
+            }
         }
-        if (ok) {
-            el.badge.textContent = 'Live';
-            el.badge.className   = 'badge badge-live';
-        } else {
-            el.badge.textContent = 'Offline';
-            el.badge.className   = 'badge badge-offline';
+
+        // The strip explains what to check; the badge only flags it.
+        // Whatever happens we keep the last known numbers on screen and
+        // keep trying - Apache may just be restarting.
+        if (el.offline) {
+            el.offline.hidden = ok;
         }
     }
 
@@ -102,7 +109,9 @@
         }
         isLoading = true;
 
-        fetch(API_URL + '?page=' + currentPage, { cache: 'no-store' })
+        // The &t= is a cache-buster: without it some browsers keep
+        // handing back the very first answer they ever saw.
+        fetch(API_URL + '?page=' + currentPage + '&t=' + Date.now(), { cache: 'no-store' })
 
             .then(function (response) {
                 if (!response.ok) {
@@ -138,14 +147,28 @@
     function render(data) {
 
         // ---- 2a. The big status panel ----
-        var isMotion = (data.status === 'MOTION');
+        // Three states, not two. "state" is the newer field; fall back
+        // to the older two-state "status" if an old API answers.
+        var state = data.state || (data.status === 'MOTION' ? 'MOTION' : 'CLEAR');
+        var isMotion = (state === 'MOTION');
 
-        el.statusValue.textContent = isMotion ? 'MOTION DETECTED' : 'NO MOTION';
-        el.statusPanel.className   = 'status-panel ' + (isMotion ? 'status-motion' : 'status-none');
+        var words = {
+            MOTION:  'MOTION DETECTED',
+            CLEAR:   'NO MOTION',
+            NO_DATA: 'NO DATA YET'
+        };
+        var text = words[state] || words.CLEAR;
+
+        var panelClass = { MOTION: 'status-motion', CLEAR: 'status-none', NO_DATA: 'status-nodata' };
+
+        el.statusValue.textContent = text;
+        el.statusPanel.className   = 'status-panel ' + (panelClass[state] || 'status-none');
 
         // ---- 2b. The four summary cards ----
-        el.cardStatus.textContent = isMotion ? 'MOTION DETECTED' : 'NO MOTION';
-        el.cardStatus.className   = 'card-value card-value-small ' + (isMotion ? 'is-motion' : 'is-clear');
+        var cardClass = { MOTION: 'is-motion', CLEAR: 'is-clear', NO_DATA: 'is-nodata' };
+
+        el.cardStatus.textContent = text;
+        el.cardStatus.className   = 'card-value card-value-small ' + (cardClass[state] || 'is-clear');
 
         el.cardTotal.textContent = data.total_events;
         el.cardToday.textContent = data.today_events;
@@ -195,12 +218,33 @@
                 continue;   // dashboard doesn't have a card for this zone code
             }
 
-            var zoneInfo   = zones[zoneCode];
-            var isMotion    = (zoneInfo.status === 'MOTION');
-            var valueEl     = card.querySelector('.zone-value');
+            var zoneInfo = zones[zoneCode];
+            var zoneState = zoneInfo.state || (zoneInfo.status === 'MOTION' ? 'MOTION' : 'CLEAR');
+            var isMotion  = (zoneState === 'MOTION');
 
-            card.className   = 'zone-card ' + (isMotion ? 'zone-motion' : 'zone-none');
-            valueEl.textContent = isMotion ? 'MOTION DETECTED' : 'NO MOTION';
+            // Three classes, not two: a room that has never reported
+            // must not wear the same green "all clear" colour as a room
+            // that is genuinely being watched and is quiet.
+            var zoneClass = { MOTION: 'zone-motion', CLEAR: 'zone-none', NO_DATA: 'zone-nodata' };
+            card.className = 'zone-card ' + (zoneClass[zoneState] || 'zone-none');
+
+            setText(card.querySelector('.zone-value'),
+                isMotion ? 'MOTION DETECTED' : (zoneState === 'CLEAR' ? 'NO MOTION' : 'NO DATA YET'));
+
+            // These two say WHY a room looks the way it does - a room
+            // that last moved an hour ago reads very differently from
+            // one that last moved ten seconds ago.
+            setText(card.querySelector('.zone-last'), zoneInfo.last_motion);
+            setText(card.querySelector('.zone-sms'),  zoneInfo.last_sms);
+        }
+    }
+
+
+    // Write text into an element only if the page actually has it,
+    // so a trimmed-down card layout never throws.
+    function setText(element, value) {
+        if (element) {
+            element.textContent = (value === null || value === undefined) ? '-' : value;
         }
     }
 

@@ -294,6 +294,69 @@ table at the bottom of `wiring.html` lists every one.
 
 ---
 
+## STEP 3b — If a room triggers whenever ANOTHER room sends a text
+
+Symptom: you wave at Room A, and Room C reports motion too — but only once the
+four-sensor sketch is running. `pin_monitor.ino` showed clean isolation.
+
+That difference is the whole clue. `pin_monitor.ino` never uses the SIM800L;
+`pir_sms.ino` does. **The GSM transmit burst is false-triggering a sensor.** It
+pulls about 2 A for a few milliseconds and radiates hard from the antenna, and
+PIR sensors are very sensitive to both. Notice the false room appears at the
+moment the text starts going out, several seconds *before* `SMS_SENT` comes back.
+
+### Prove it in two minutes
+
+In `pir_sms.ino`, near the top:
+
+```cpp
+const bool SIM_ENABLED = false;      // was true
+```
+
+Upload and wave at each room. **No texts will be sent** — the motion half still
+works normally.
+
+- [ ] With `SIM_ENABLED = false`, waving at Room A triggers **only** Room A
+- [ ] Same for every other room
+
+If the phantom triggers stop, the SIM800L is confirmed as the cause. **Set it
+back to `true`** and apply the fixes below.
+
+If they continue with the radio off, it is not the module — go back to Step 2b
+and look for a floating OUT wire.
+
+### The fixes, cheapest first
+
+- **Move the antenna.** Get it as far from the sensors as its lead allows, and
+  route it *away* from the board rather than across it. This is usually the whole
+  fix on its own.
+- **Move the offending sensor** away from the module, or turn it to face away.
+- **Shorten and thicken the module's `5Vin` and `GND` leads.** The 2 A burst
+  returning through a long thin ground wire shifts the ground the Arduino is
+  measuring against. Short, direct, not across the breadboard.
+- **Keep the OUT wires short**, and not running parallel to the antenna or the
+  module's power leads.
+- **A 0.1 µF capacitor across each PIR's VCC and GND**, right at the sensor, if
+  you have any spare.
+
+### The software filter
+
+The sketch now requires a pin to stay HIGH for `START_CONFIRM_MS` (150 ms)
+before it believes it. A real person holds a PIR output HIGH for seconds, so
+this costs nothing real and throws away short interference pulses.
+
+That filter also tells you **which kind** of interference you have:
+
+| After the filter | Meaning |
+|---|---|
+| Phantom triggers gone | The burst was coupling into the OUT **wire**. Fixed. |
+| Phantom triggers remain | The burst is triggering the **sensor itself**. No software can fix that — move the antenna or the sensor. |
+
+Raising `START_CONFIRM_MS` above ~300 ms is not the answer; if 150 ms did not do
+it, the sensor is genuinely tripping and the fix is physical.
+
+---
+
 ## STEP 4 — Confirm they all still work together, and the cooldown is per room
 
 - [ ] Wave at each sensor in turn → each prints its own `ROOMx_MOTION_DETECTED`

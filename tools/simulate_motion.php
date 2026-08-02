@@ -74,6 +74,19 @@ require_once __DIR__ . '/../config.php';
             <li>Watch the dashboard update by itself within about 3 seconds.</li>
         </ol>
 
+        <!-- The room list comes from ALLOWED_ZONES in config.php, so it
+             always matches what the dashboard and the API accept. Without
+             this the API falls back to its default room and every
+             simulated event lands in the same card. -->
+        <div class="tool-actions">
+            <label for="zone-select" class="muted">Room</label>
+            <select id="zone-select" class="btn">
+<?php foreach (ALLOWED_ZONES as $zoneCode): ?>
+                <option value="<?= htmlspecialchars($zoneCode) ?>"><?= htmlspecialchars(ZONE_LABELS[$zoneCode] ?? $zoneCode) ?></option>
+<?php endforeach; ?>
+            </select>
+        </div>
+
         <div class="tool-actions">
             <button class="btn btn-primary"   data-event="MOTION_DETECTED">Simulate MOTION_DETECTED</button>
             <button class="btn btn-secondary" data-event="MOTION_STOPPED">Simulate MOTION_STOPPED</button>
@@ -109,10 +122,13 @@ require_once __DIR__ . '/../config.php';
     /* Sends one fake motion event to the real API */
     function sendEvent(eventType) {
 
-        log('Sending ' + eventType + ' ...');
+        var zone = document.getElementById('zone-select').value;
+
+        log('Sending ' + eventType + ' for ' + zone + ' ...');
 
         var body = new URLSearchParams();
         body.append('event_type', eventType);
+        body.append('zone', zone);
         body.append('source', 'SIMULATOR');
 
         fetch(API_RECORD, { method: 'POST', body: body })

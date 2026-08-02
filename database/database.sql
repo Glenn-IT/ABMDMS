@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS `motion_logs` (
     -- What happened: 'MOTION_DETECTED' or 'MOTION_STOPPED'
     `event_type` VARCHAR(20) NOT NULL,
 
-    -- Which zone it happened in: 'ROOMA', 'ROOMB', 'ROOMC', or 'ROOMD'
+    -- Which zone it happened in: 'ROOMA', 'ROOMB' or 'ROOMC'  (Room D/Pin 5 is retired)
     `zone` VARCHAR(20) NOT NULL DEFAULT 'ROOMC',
 
     -- Where it came from: 'ARDUINO_PIR' or 'SIMULATOR'
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS `sms_logs` (
     -- Automatic ID number: 1, 2, 3, 4 ...
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
 
-    -- Which zone the alert was about: 'ROOMA', 'ROOMB', 'ROOMC', or 'ROOMD'
+    -- Which zone the alert was about: 'ROOMA', 'ROOMB' or 'ROOMC'  (Room D/Pin 5 is retired)
     `zone` VARCHAR(20) NOT NULL,
 
     -- The phone number the alert was sent to (for your records)

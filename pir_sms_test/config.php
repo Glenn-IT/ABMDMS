@@ -5,12 +5,12 @@
  * File: config.php
  * ============================================================
  *
- * This folder is a SELF-CONTAINED copy of ABMDMS: four PIR
+ * This folder is a SELF-CONTAINED copy of ABMDMS: three PIR
  * sensors + one SIM800L, its own database, its own dashboard.
  * Nothing here touches the main system.
  *
- * Main system      -> database "motion_monitoring", 4 zones
- * This test rig    -> database "pir_sms_test",      4 zones
+ * Main system      -> database "motion_monitoring", 3 zones
+ * This test rig    -> database "pir_sms_test",      3 zones
  *
  * Same rooms, same pins, same serial words - only the database
  * name differs. That is the point: it is a full rehearsal.
@@ -89,7 +89,7 @@ define('SMS_RECIPIENT_DISPLAY', '+639169751409');
 
 define('SMS_RECENT_LIMIT', 10);      // rows in the SMS Alerts table
 
-// 40, not 20: with four sensors running, twenty rows can be less
+// 40, not 20: with several sensors running, twenty rows can be less
 // than a minute of history and events scroll away before you read them.
 define('MOTION_RECENT_LIMIT', 40);   // rows in the Motion History table
 

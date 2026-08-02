@@ -3,54 +3,80 @@
   ABMDMS - Arduino Based Motion Detection Monitoring System
   File   : motion_sensor.ino
   Board  : Arduino Uno
-  Sensor : 4x HC-SR501 PIR Motion Sensors (multi-zone)
-  GSM    : SIM800L EVB (sends an SMS alert when motion starts)
+  Sensors: 3x HC-SR501 PIR Motion Sensor  (Pins 2, 3, 4)
+  GSM    : SIM800L V2.2 (UNV, the 5V board) - texts on motion
   ============================================================
 
-  WIRING - PIR SENSORS  (see arduino/PIR_MULTI_ZONE_WIRING.md)
-  ------
-  All 4 PIR sensors share the breadboard's 5V (+) and GND (-) rails.
-  Each sensor's OUT wire goes to its OWN Arduino digital pin:
+  This is the live system's sketch. The pir_sms_test folder holds
+  an identical rehearsal copy that writes to its own database, so
+  test any change there first - then bring it here.
 
-  Room C (existing) PIR OUT  ->  Arduino Digital Pin 2
-  Room A (new)      PIR OUT  ->  Arduino Digital Pin 3
-  Room B (new)      PIR OUT  ->  Arduino Digital Pin 4
-  Room D (new)      PIR OUT  ->  Arduino Digital Pin 5
-  All 4 PIR VCC               ->  breadboard (+) rail -> Arduino 5V
-  All 4 PIR GND               ->  breadboard (-) rail -> Arduino GND
+      3x PIR -> Arduino -> SIM800L -> your phone
+                        -> USB -> PowerShell -> PHP -> MySQL -> dashboard
 
-  WIRING - SIM800L V2.2 (UNV, the 5V board)  (see arduino/SIM800L_WIRING.md - READ IT FIRST)
-  ------
-  SIM800L TXD  ->  Arduino Pin 10          (direct)
-  SIM800L RXD  ->  Arduino Pin 11          (direct - V2.2 is 5V-logic, no divider)
-  SIM800L RST  ->  Arduino Pin 12          (optional)
-  SIM800L 5Vin ->  power bank 5V           (direct - NEVER the Arduino 5V pin or DC jack)
-  SIM800L GND  ->  power bank GND AND Arduino GND (must be common)
-  SIM800L VDD  ->  leave UNCONNECTED       (2.8V reference output, not a power pin)
-  1000uF capacitor across the module's 5Vin / GND.
-  NOTE: the bare 3.7-4.2V SIM800L needs a buck + a 1k/2k divider instead - see the wiring doc.
+
+  WIRING - THE PIR SENSORS   (see ../wiring.html, or arduino/PIR_MULTI_ZONE_WIRING.md)
+  ------------------------
+      Arduino Pin 2  <-  PIR 1 OUT   ->  zone ROOMC  ("Room C")
+      Arduino Pin 3  <-  PIR 2 OUT   ->  zone ROOMA  ("Room A")
+      Arduino Pin 4  <-  PIR 3 OUT   ->  zone ROOMB  ("Room B")
+
+      Arduino Pin 5      Room D - REMOVED. The pin would not respond
+                         to two different sensors. See SECTION 1 for
+                         how to put it back once that is fixed.
+
+  Every PIR OUT gets its OWN wire to its OWN pin - never share one.
+  All VCC  ->  breadboard (+) rail  ->  Arduino 5V
+  All GND  ->  breadboard (-) rail  ->  Arduino GND
+
+  The pin/zone order looks odd on purpose: Pin 2 is ROOMC because
+  that was the very first sensor built, and the mapping was kept
+  when the other rooms were added.
+
+  On each sensor: yellow jumper on H (retrigger), time-delay screw
+  turned fully anti-clockwise (shortest). The V/O/G pin order under
+  the dome varies between batches - read the silkscreen.
+
+  WIRING - SIM800L V2.2  (see ../wiring.html, or arduino/SIM800L_WIRING.md)
+  ---------------------
+  SIM800L TXD  ->  Arduino Pin 10       (direct)
+  SIM800L RXD  ->  Arduino Pin 11       (direct - V2.2 is a 5V-logic
+                                         board, so NO 1k/2k divider)
+  SIM800L RST  ->  Arduino Pin 12       (optional, used to recover)
+  SIM800L 5Vin ->  external 5V supply + (NEVER the Arduino 5V pin -
+                                         transmit bursts pull ~2A)
+  SIM800L GND  ->  external supply - AND Arduino GND (must be common)
+  SIM800L VDD  ->  leave UNCONNECTED    (it is a 2.8V reference
+                                         OUTPUT, not a power input.
+                                         Feeding it 5V kills the board.)
+  1000uF capacitor across the module's 5Vin / GND, in PARALLEL.
+  Watch the polarity: the striped leg goes to GND.
+
 
   WHAT THIS PROGRAM DOES
   ----------------------
-  1. Waits for all 4 PIR sensors to warm up (they need time after power on).
-  2. Watches Pins 2, 3, 4, and 5 for movement, independently per zone.
-  3. Prints "<ZONE>_MOTION_DETECTED" one time when movement STARTS in a zone.
-  4. Prints "<ZONE>_MOTION_STOPPED"  one time when movement ENDS in a zone.
-     ZONE is one of: ROOMC (Pin 2), ROOMA (Pin 3), ROOMB (Pin 4), ROOMD (Pin 5).
-  5. Sends an SMS through the SIM800L when motion STARTS (not when it stops),
-     then prints "SMS_SENT:<ZONE>" / "SMS_FAIL:<ZONE>:<REASON>" /
-     "SMS_SKIP:<ZONE>:COOLDOWN" so the laptop can log it too.
+  1. Wakes the SIM800L and checks it can actually text.
+  2. Waits 30 seconds for the PIRs to warm up (they lie at first).
+  3. Prints "ROOMA_MOTION_DETECTED" once when movement STARTS
+     in that room - and the same for ROOMB and ROOMC.
+  4. Prints "ROOMA_MOTION_STOPPED"  once when movement ENDS.
+  5. Texts your phone when movement STARTS (never when it stops),
+     then prints "SMS_SENT:ROOMA" / "SMS_FAIL:ROOMA:<REASON>" /
+     "SMS_SKIP:ROOMA:COOLDOWN" so the laptop can log the result.
 
-  IMPORTANT: each zone only prints when ITS OWN state CHANGES.
-  If it printed on every loop, it would send thousands of
-  messages per second and flood the database. Zones are tracked
-  independently so triggering one zone never triggers another.
+  IMPORTANT: it only prints when the state CHANGES. Printing every
+  loop would flood the database with thousands of rows per second.
 
-  IMPORTANT: the SMS code NEVER uses delay(). Sending one text takes
-  5-10 seconds of back-and-forth with the module. If we waited for it,
-  the Arduino would stop watching the PIR sensors for that whole time
-  and miss real movement. Instead the send is split into small steps
-  ("states") and loop() checks on it a little bit at a time.
+  IMPORTANT: each room is watched completely separately. Room A
+  being busy does not hide Room B, and the 60-second text cooldown
+  is counted PER ROOM - so movement in a second room still texts
+  you straight away even if the first room just did.
+
+  IMPORTANT: the SMS code NEVER uses delay(). One text takes 5-10
+  seconds of back-and-forth with the module. If we waited for it,
+  the Arduino would stop watching the sensor for that whole time
+  and miss real movement. The send is split into small steps
+  ("states") and loop() nudges it forward a little at a time.
 
   Open Tools > Serial Monitor and set the baud rate to 9600.
 */
@@ -60,19 +86,56 @@
 
 // ============================================================
 // SECTION 1 - SETTINGS
-// You can change these numbers if you need to.
 // ============================================================
 
-const int NUM_ZONES = 4;
-const int PIR_PIN[NUM_ZONES]   = { 2,       3,       4,       5       }; // OUT wire per zone
-const char* ZONE_NAME[NUM_ZONES] = { "ROOMC", "ROOMA", "ROOMB", "ROOMD" }; // printed in event tokens
-const char* ZONE_TEXT[NUM_ZONES] = { "Room C", "Room A", "Room B", "Room D" }; // written inside the SMS
+// The rooms. These three lists line up: position 0 of each
+// describes the SAME sensor. To add or move a room, edit all three
+// and update NUM_ZONES - nothing else in the sketch needs changing.
+const int NUM_ZONES = 3;
 
-const int LED_PIN = 13;         // Built-in LED on the Arduino board (lights when ANY zone is active)
+const int   PIR_PIN[NUM_ZONES]   = {  2,       3,       4      }; // OUT wire
+const char* ZONE_NAME[NUM_ZONES] = { "ROOMC", "ROOMA", "ROOMB" }; // in the event tokens
+const char* ZONE_TEXT[NUM_ZONES] = { "Room C","Room A","Room B" }; // inside the SMS
 
-const unsigned long WARMUP_SECONDS   = 30;   // PIR warm-up time in seconds
-const unsigned long BAUD_RATE        = 9600; // Must match the Serial Monitor
-const unsigned long STOP_CONFIRM_MS  = 2000; // Wait this long before saying motion stopped
+// --- ROOM D IS REMOVED, NOT DELETED ---------------------------
+// Pin 5 would not respond to two different sensors, so it is out of
+// the system until that is fixed. Since two sensors both failed on
+// it, suspect the pin, the OUT wire or its rail tap - not the sensors.
+//
+// To put Room D back once Pin 5 works: set NUM_ZONES to 4 and add
+// the fourth value to each of the three lists above -
+//
+//     PIR_PIN    ...,  5
+//     ZONE_NAME  ..., "ROOMD"
+//     ZONE_TEXT  ..., "Room D"
+//
+// then add 'ROOMD' back to ALLOWED_ZONES and ZONE_LABELS in
+// config.php, and to the two regexes in serial/serial_reader.ps1
+// AND serial/serial_reader.php. Nothing else needs touching.
+// --------------------------------------------------------------
+
+const int LED_PIN = 13;              // Built-in LED, lights while ANY room is active
+
+const unsigned long WARMUP_SECONDS  = 30;    // PIR warm-up time
+const unsigned long BAUD_RATE       = 9600;  // Must match the Serial Monitor
+const unsigned long STOP_CONFIRM_MS = 2000;  // Quiet for this long = motion really stopped
+
+// A pin must stay HIGH for this long before we believe it.
+//
+// The SIM800L pulls about 2 A in short bursts while it transmits,
+// and radiates hard from its antenna. Both of those can put a
+// false pulse on a PIR's OUT wire, which the Arduino reads as a
+// person. That is why a room can appear to trigger at the exact
+// moment another room's text is going out.
+//
+// A real PIR holds its output HIGH for seconds. Interference is
+// far shorter, so waiting a fraction of a second before believing
+// a HIGH throws the interference away and costs nothing real.
+//
+// If a false room STILL appears with this set, the burst is not
+// coupling into the wire - it is triggering the sensor itself, and
+// only moving the antenna or the sensor will fix it.
+const unsigned long START_CONFIRM_MS = 150;  // 0 disables this filter
 
 
 // ------------------------------------------------------------
@@ -83,39 +146,55 @@ const unsigned long STOP_CONFIRM_MS  = 2000; // Wait this long before saying mot
 // Philippines example: 0917 123 4567  ->  "+639171234567"
 const char* SMS_RECIPIENT = "+639169751409";
 
-// Set this to false to run the system with NO GSM module attached
-// (everything else still works exactly like before).
+// Set this to false to test the PIR half on its own, with no
+// GSM module attached. Everything else still works.
 const bool SIM_ENABLED = true;
 
 const int SIM_RX_PIN  = 10;   // Arduino Pin 10 <- SIM800L TXD  (direct)
 const int SIM_TX_PIN  = 11;   // Arduino Pin 11 -> SIM800L RXD  (direct on V2.2)
-const int SIM_RST_PIN = 12;   // Arduino Pin 12 -> SIM800L RST  (optional)
+const int SIM_RST_PIN = 12;   // Arduino Pin 12 -> SIM800L RST  (active LOW)
 
 const unsigned long SIM_BAUD_RATE   = 9600;   // SIM800L default speed
 
-// Per zone: never send more than one SMS inside this window.
-// This is what stops one person walking around from draining your load.
+// Never send more than one SMS per ROOM inside this window. This is
+// what stops one person pacing around from draining your load.
+// Counted separately for each room, so a real intruder moving from
+// Room A to Room B still gets you a second text immediately.
 const unsigned long SMS_COOLDOWN_MS = 60000;  // 60 seconds
 
-const unsigned long SMS_MIN_GAP_MS  = 5000;   // rest between any two sends
+// Rest between any two sends. The module needs a moment to finish
+// tidying up after one message before it will accept the next -
+// without this, a failed send is followed instantly by another that
+// fails for no reason except that it was too early.
+const unsigned long SMS_MIN_GAP_MS  = 5000;   // 5 seconds
+
 const unsigned long AT_TIMEOUT_MS   = 10000;  // wait for a normal AT reply
 const unsigned long CMGS_TIMEOUT_MS = 30000;  // wait for the network to accept the SMS
 const int SMS_MAX_FAILS_BEFORE_RESET = 3;     // hard-reset the module after this many fails
+const int MIN_SIGNAL = 10;                    // below this, sending is unreliable
 
 
 // ============================================================
 // SECTION 2 - MEMORY (variables that remember things)
 // ============================================================
 
-bool motionActive[NUM_ZONES]      = { false, false, false, false }; // per-zone: already reported motion?
-unsigned long lowStartedAt[NUM_ZONES] = { 0, 0, 0, 0 };          // per-zone: when it first went quiet
+// One slot per room, in the same order as the lists above.
+// "= {}" fills every slot with false / 0 whatever NUM_ZONES is, so
+// adding or removing a room never means counting braces here.
+bool          motionActive[NUM_ZONES] = {};   // already announced?
+unsigned long lowStartedAt[NUM_ZONES] = {};   // when it went quiet
+unsigned long highStartedAt[NUM_ZONES] = {};  // when it first went busy
 
 // --- SMS memory ---
 SoftwareSerial sim(SIM_RX_PIN, SIM_TX_PIN);
 
-bool          smsPending[NUM_ZONES]  = { false, false, false, false }; // zone is waiting for its text
-unsigned long lastSmsAt[NUM_ZONES]   = { 0, 0, 0, 0 };                 // when this zone last texted
-bool          smsEverSent[NUM_ZONES] = { false, false, false, false }; // has this zone EVER texted?
+bool          smsPending[NUM_ZONES]  = {};   // text waiting for this room
+unsigned long lastSmsAt[NUM_ZONES]   = {};   // when we last texted about it
+bool          smsEverSent[NUM_ZONES] = {};   // EVER texted about it?
+                                      // (millis() starts at 0, so without this
+                                      //  flag the first alert is blocked)
+
+int smsZone = -1;   // which room the text now going out belongs to
 
 bool simReady   = false;   // did the module answer at start-up?
 int  smsFailRun = 0;       // how many sends failed in a row
@@ -128,7 +207,6 @@ enum SmsState {
 };
 
 SmsState      smsState        = SMS_IDLE;
-int           smsZone         = -1;   // which zone we are texting about right now
 unsigned long smsStateSince   = 0;    // when the current step started
 unsigned long smsLastFinished = 0;    // when the last send ended (for SMS_MIN_GAP_MS)
 
@@ -144,28 +222,32 @@ int  simBufLen = 0;
 // ============================================================
 
 void setup() {
-  // Start the USB serial connection to the laptop
   Serial.begin(BAUD_RATE);
 
-  // Tell the Arduino which pins are inputs and outputs
   for (int i = 0; i < NUM_ZONES; i++) {
     pinMode(PIR_PIN[i], INPUT);
   }
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
-  Serial.println(F("ABMDMS - Multi-Zone Motion Detection System + SMS Alerts"));
+  Serial.print(F("ABMDMS - "));
+  Serial.print(NUM_ZONES);
+  Serial.println(F(" sensors, 1 SIM800L"));
+  for (int i = 0; i < NUM_ZONES; i++) {
+    Serial.print(F("   Pin "));
+    Serial.print(PIR_PIN[i]);
+    Serial.print(F(" -> "));
+    Serial.println(ZONE_NAME[i]);
+  }
 
-  // --- Wake up the GSM module ---
-  // We do this FIRST, because the module also needs time to find
-  // the network - it can do that while the PIR sensors warm up.
+  // Wake the GSM module FIRST. It needs time to find the network,
+  // and it can do that while the PIR sensor warms up.
   simSetup();
 
-  // --- PIR warm-up ---
   // The HC-SR501 gives false readings for the first few seconds
-  // after power on. We wait and show a countdown so the user knows
-  // the system is not frozen. All 4 sensors share one warm-up timer,
-  // so stay away from ALL of them until it finishes.
+  // after power on. Wait it out, with a countdown so you can see
+  // the system is not frozen. They all warm up together, so stay
+  // away from ALL of them until it says "System Ready".
   Serial.print(F("Warming up "));
   Serial.print(NUM_ZONES);
   Serial.print(F(" PIR sensors, please stay still ("));
@@ -175,10 +257,9 @@ void setup() {
   for (unsigned long i = WARMUP_SECONDS; i > 0; i--) {
     Serial.print(i);
     Serial.println(F("..."));
-    delay(1000);   // wait 1 second
+    delay(1000);
   }
 
-  // Ready message
   Serial.println(F("System Ready"));
   Serial.println(F("Waiting for motion..."));
 }
@@ -191,15 +272,16 @@ void setup() {
 
 void loop() {
 
-  // Check each zone independently, one after another.
+  // Check every room, one after the other. Each keeps its own
+  // memory, so what happens in one never affects another.
   for (int i = 0; i < NUM_ZONES; i++) {
 
-    // Read this zone's sensor. HIGH = movement, LOW = no movement.
+    // Read this room's sensor. HIGH = movement, LOW = no movement.
     int sensorValue = digitalRead(PIR_PIN[i]);
 
 
     // --------------------------------------------------------
-    // CASE A: This zone's sensor sees movement
+    // CASE A: this sensor sees movement
     // --------------------------------------------------------
     if (sensorValue == HIGH) {
 
@@ -209,35 +291,50 @@ void loop() {
       // Only announce it if we have NOT already announced it.
       // This is what stops duplicate messages.
       if (motionActive[i] == false) {
-        motionActive[i] = true;
-        digitalWrite(LED_PIN, HIGH);   // turn the board LED on (any zone active)
 
-        Serial.print(ZONE_NAME[i]);
-        Serial.println(F("_MOTION_DETECTED"));   // <-- the laptop reads this line
+        // Note when this pin FIRST went HIGH, then make it hold that
+        // for START_CONFIRM_MS before believing it. A real person
+        // keeps the output HIGH for seconds; a burst of electrical
+        // noise from the SIM800L does not last anything like that.
+        if (highStartedAt[i] == 0) {
+          highStartedAt[i] = millis();
+        }
 
-        // Ask for an SMS about this zone. It is NOT sent here - it
-        // is put in line and sent a small piece at a time by smsTick().
-        queueSms(i);
+        if (millis() - highStartedAt[i] >= START_CONFIRM_MS) {
+          motionActive[i]  = true;
+          highStartedAt[i] = 0;
+
+          Serial.print(ZONE_NAME[i]);
+          Serial.println(F("_MOTION_DETECTED"));   // <-- the laptop reads this line
+
+          // Ask for an SMS. It is NOT sent here - it is put in line
+          // and sent a small piece at a time by smsTick().
+          queueSms(i);
+        }
       }
     }
 
 
     // --------------------------------------------------------
-    // CASE B: This zone's sensor sees nothing
+    // CASE B: this sensor sees nothing
     // --------------------------------------------------------
     else {
 
-      // Only care about this if motion was previously happening
+      // The pin dropped again. If it never held HIGH long enough to
+      // be believed, forget it completely - that was the noise this
+      // filter exists to throw away.
+      highStartedAt[i] = 0;
+
+      // Only care if motion was previously happening here
       if (motionActive[i] == true) {
 
-        // Start a small timer the first moment it goes quiet.
-        // The PIR output can flicker for a moment, so we wait a
-        // couple of seconds to be sure the person really left.
+        // Start a small timer the first moment it goes quiet. The
+        // PIR output flickers, so wait a couple of seconds to be
+        // sure the person really left.
         if (lowStartedAt[i] == 0) {
           lowStartedAt[i] = millis();
         }
 
-        // Has it stayed quiet long enough?
         if (millis() - lowStartedAt[i] >= STOP_CONFIRM_MS) {
           motionActive[i] = false;
           lowStartedAt[i] = 0;
@@ -250,10 +347,15 @@ void loop() {
     }
   }
 
-  // The board LED reflects whether ANY zone is currently active
+
+  // The one built-in LED has to stand for every room, so it
+  // means "somebody is somewhere" - lit while ANY room is active.
   bool anyActive = false;
   for (int i = 0; i < NUM_ZONES; i++) {
-    if (motionActive[i]) anyActive = true;
+    if (motionActive[i]) {
+      anyActive = true;
+      break;
+    }
   }
   digitalWrite(LED_PIN, anyActive ? HIGH : LOW);
 
@@ -261,26 +363,26 @@ void loop() {
   // This returns immediately - it never waits.
   smsTick();
 
-  // Small pause so we do not read the pins millions of times per second
+  // Small pause so we do not read the pin millions of times per second
   delay(50);
 }
 
 
 // ============================================================
-// SECTION 5 - SMS: PUTTING A ZONE IN LINE
+// SECTION 5 - SMS: PUTTING A MESSAGE IN LINE
 // ============================================================
 
-// Called the moment a zone starts seeing movement.
+// Called the moment one room's sensor starts seeing movement.
+// "zone" is that room's position in the lists at the top.
 void queueSms(int zone) {
 
   if (!SIM_ENABLED) {
     return;
   }
 
-  // Cooldown check: has this zone texted recently?
-  // smsEverSent tells us the difference between "texted a long time
-  // ago" and "never texted at all" (millis() starts at 0, so without
-  // this flag the very first alert of every zone would be blocked).
+  // Cooldown check: did we text about THIS ROOM recently?
+  // smsEverSent tells the difference between "texted a long time
+  // ago" and "never texted at all".
   if (smsEverSent[zone] && (millis() - lastSmsAt[zone] < SMS_COOLDOWN_MS)) {
     Serial.print(F("SMS_SKIP:"));
     Serial.print(ZONE_NAME[zone]);
@@ -301,8 +403,8 @@ void queueSms(int zone) {
 
 // ============================================================
 // SECTION 6 - SMS: THE STEP-BY-STEP SENDER
-// This is called once per loop(). It does a tiny bit of work
-// and returns straight away, so motion detection never pauses.
+// Called once per loop(). Does a tiny bit of work and returns
+// straight away, so motion detection never pauses.
 // ============================================================
 
 void smsTick() {
@@ -314,7 +416,7 @@ void smsTick() {
   switch (smsState) {
 
     // --------------------------------------------------------
-    // STEP 0 - Nothing being sent. Is anyone waiting?
+    // STEP 0 - Nothing being sent. Is anything waiting?
     // --------------------------------------------------------
     case SMS_IDLE: {
 
@@ -322,25 +424,22 @@ void smsTick() {
         return;
       }
 
-      // Give the module a short rest between messages
-      if (smsLastFinished != 0 && (millis() - smsLastFinished < SMS_MIN_GAP_MS)) {
-        return;
-      }
-
-      // Find the first zone waiting for a text.
+      // Is any room waiting for a text? Take the first one we find.
+      // The others keep their turn and go out on a later pass - the
+      // module can only send one message at a time.
       //
-      // Re-check each zone's cooldown HERE, right before sending.
+      // Re-check each room's cooldown HERE, right before sending.
       // Checking it only in queueSms() is not enough: sending takes
-      // 5-10 seconds, and a zone can easily be triggered again in
+      // 5-10 seconds, and a room can easily be triggered again in
       // that time. That second request is queued while the first
       // text is still in flight - and at that moment no text has
-      // finished for that zone yet, so the cooldown legitimately
+      // finished for that room yet, so the cooldown legitimately
       // does not apply and the request is accepted. It then sits in
       // smsPending[] and fires the instant the first send completes,
       // sending a SECOND text for what should have been one alert.
       // By the time we get here the first text HAS finished, so the
       // cooldown is live and the stale request is dropped.
-      int zone = -1;
+      int next = -1;
       for (int i = 0; i < NUM_ZONES; i++) {
         if (!smsPending[i]) {
           continue;
@@ -350,17 +449,22 @@ void smsTick() {
           Serial.print(F("SMS_SKIP:"));
           Serial.print(ZONE_NAME[i]);
           Serial.println(F(":COOLDOWN"));
-          continue;         // that zone is muted; keep looking at the others
+          continue;         // that room is muted; keep looking at the others
         }
-        zone = i;
+        next = i;
         break;
       }
-      if (zone < 0) {
-        return;   // nobody waiting
+      if (next < 0) {
+        return;
       }
 
-      smsPending[zone] = false;
-      smsZone          = zone;
+      // Give the module its rest before starting another message.
+      if (smsLastFinished != 0 && (millis() - smsLastFinished < SMS_MIN_GAP_MS)) {
+        return;   // the request stays pending; we will come back to it
+      }
+
+      smsPending[next] = false;
+      smsZone          = next;   // remember it, so the result is credited right
 
       // Tell the module who we are texting. It should answer ">".
       simBufClear();
@@ -429,29 +533,43 @@ void smsTick() {
 
 
 // Ends the current send, prints the result line for the laptop,
-// and starts the zone's cooldown either way (a failing module
-// must not be hammered with a retry on every single movement).
+// and starts the cooldown either way (a failing module must not
+// be hammered with a retry on every single movement).
 void smsFinish(bool ok, const char* reason) {
 
-  if (smsZone >= 0) {
-    lastSmsAt[smsZone]   = millis();
-    smsEverSent[smsZone] = true;
+  // If we are giving up part-way through, the module may still be
+  // sitting at its ">" prompt waiting for more message text. ESC
+  // abandons that half-typed message. Without this the module stays
+  // in text-entry mode and swallows the NEXT AT+CMGS, so one failure
+  // turns into an endless run of them.
+  if (!ok) {
+    sim.write((char) 27);   // ESC = throw this message away
+    sim.print(F("\r"));
+  }
 
-    if (ok) {
-      Serial.print(F("SMS_SENT:"));
-      Serial.println(ZONE_NAME[smsZone]);
-    } else {
-      Serial.print(F("SMS_FAIL:"));
-      Serial.print(ZONE_NAME[smsZone]);
-      Serial.print(F(":"));
-      Serial.println(reason);
-    }
+  // Credit the result to the room this message belonged to, so only
+  // that room goes on cooldown. smsZone should always be valid here,
+  // but guard anyway - a stray index would corrupt another room's
+  // memory instead of failing loudly.
+  int zone = (smsZone >= 0 && smsZone < NUM_ZONES) ? smsZone : 0;
+
+  lastSmsAt[zone]   = millis();
+  smsEverSent[zone] = true;
+
+  if (ok) {
+    Serial.print(F("SMS_SENT:"));
+    Serial.println(ZONE_NAME[zone]);
+  } else {
+    Serial.print(F("SMS_FAIL:"));
+    Serial.print(ZONE_NAME[zone]);
+    Serial.print(F(":"));
+    Serial.println(reason);
   }
 
   smsFailRun = ok ? 0 : (smsFailRun + 1);
 
-  smsZone         = -1;
   smsState        = SMS_IDLE;
+  smsZone         = -1;
   smsLastFinished = millis();
   simBufClear();
 
@@ -494,6 +612,17 @@ void simDrain() {
     simBuf[simBufLen++] = c;
     simBuf[simBufLen]   = '\0';
   }
+}
+
+
+// Pull the number out of a "+CSQ: 18,0" reply.
+// Returns -1 if there is no such reply in the buffer.
+int parseCsq() {
+  char* at = strstr(simBuf, "+CSQ:");
+  if (at == NULL) {
+    return -1;
+  }
+  return atoi(at + 5);   // atoi skips the space, stops at the comma
 }
 
 
@@ -554,7 +683,19 @@ void simSetup() {
     return;
   }
 
-  // 2. Is the SIM card in and unlocked?  ->  "READY"
+  // 2. Turn OFF command echo.
+  //    By default the module repeats every command back to us before
+  //    answering it. That echo lands in the same little buffer we
+  //    search for replies, so "AT+CSQ" itself looks like a "+CSQ"
+  //    answer and we read the question instead of the reading.
+  //    ATE0 stops the echo and makes every check below trustworthy.
+  simCommand("ATE0", "OK", 3000);
+
+  // 3. Ask for real error numbers instead of a bare "ERROR",
+  //    so a failure tells us WHY in the serial monitor.
+  simCommand("AT+CMEE=2", "OK", 3000);
+
+  // 4. Is the SIM card in and unlocked?  ->  "READY"
   if (!simCommand("AT+CPIN?", "READY", 5000)) {
     Serial.println(F("SIM_FAIL:NOSIM"));
     Serial.println(F("   Check: SIM inserted properly, PIN lock turned OFF."));
@@ -562,12 +703,22 @@ void simSetup() {
     return;
   }
 
-  // 3. How strong is the signal?  (99 = no signal at all)
+  // 5. How strong is the signal?
+  //    0-31, bigger is better. 99 means "no signal at all".
+  //    Under 10 is too weak to send reliably.
   simCommand("AT+CSQ", "+CSQ", 5000);
+  int signal = parseCsq();
   Serial.print(F("   Signal: "));
-  Serial.println(simBuf);
+  if (signal < 0) {
+    Serial.println(F("could not read"));
+  } else if (signal == 99) {
+    Serial.println(F("99 - NO SIGNAL (check the antenna)"));
+  } else {
+    Serial.print(signal);
+    Serial.println(signal < MIN_SIGNAL ? " - WEAK, sending may fail" : " - ok");
+  }
 
-  // 4. Did it join the network?  ->  ",1" (home) or ",5" (roaming)
+  // 6. Did it join the network?  ->  ",1" (home) or ",5" (roaming)
   bool registered = simCommand("AT+CREG?", ",1", 10000);
   if (!registered) {
     registered = simCommand("AT+CREG?", ",5", 10000);
@@ -579,7 +730,7 @@ void simSetup() {
     return;
   }
 
-  // 5. Use plain text messages (not the binary PDU format)
+  // 7. Use plain text messages (not the binary PDU format)
   if (!simCommand("AT+CMGF=1", "OK", 5000)) {
     Serial.println(F("SIM_FAIL:TEXTMODE"));
     simReady = false;
@@ -602,14 +753,21 @@ void simReset() {
   delay(150);
   digitalWrite(SIM_RST_PIN, HIGH);
 
-  // The module is unusable while it restarts. We mark it as not
-  // ready so no send is attempted; the next successful start-up
-  // check would set it back. Keeping it simple: give it time and
-  // re-run the same checks setup() used.
+  // The module is unusable while it restarts, so give it time and
+  // then re-run the checks that matter. A reset also forgets ATE0
+  // and text mode, so both have to be set again.
   delay(3000);
   simBufClear();
 
-  simReady = simCommand("AT", "OK", 5000) && simCommand("AT+CMGF=1", "OK", 5000);
+  simReady = simCommand("AT", "OK", 5000);
+  if (simReady) {
+    simCommand("ATE0", "OK", 3000);
+    simReady = simCommand("AT+CMGF=1", "OK", 5000);
+  }
+
+  // Start the rest timer from here too, so the first send after a
+  // reset does not fire while the module is still waking up.
+  smsLastFinished = millis();
 
   Serial.println(simReady ? "SIM_READY" : "SIM_FAIL:RESETFAILED");
 }

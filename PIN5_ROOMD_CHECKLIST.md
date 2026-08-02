@@ -1,5 +1,19 @@
 # ABMDMS — 4th PIR (Room D, Pin 5) Upgrade Checklist
 
+> ## ⚠️ SUPERSEDED — Room D was rolled back
+>
+> This upgrade was completed in software but **failed in hardware**. Pin 5 would
+> not respond to **two different sensors**, so Room D was taken back out of the
+> system. Two sensors failing on the same pin points at the pin, the OUT wire or
+> that sensor's rail tap — not the sensors.
+>
+> The live system is back to **3 zones**: Room C (Pin 2), Room A (Pin 3),
+> Room B (Pin 4). Everything below is kept as a record of what the change
+> touched — which is exactly the list to redo if Pin 5 is ever fixed. The
+> short version of that list is in `README.md` under "Restoring Room D".
+>
+> The unresolved hardware question is the last item in *Phase 1*.
+
 Tracks the work to go from **3 PIR / 3 zones** to **4 PIR sensors / 4 zones**
 (Room A = Pin 3, Room B = Pin 4, Room C = Pin 2, existing; **Room D = Pin 5, new**).
 Work through the phases **in order** — each depends on the one before it.

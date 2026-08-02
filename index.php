@@ -9,8 +9,9 @@
  *     http://localhost/ABMDMS/
  *
  * This page draws the layout once. After that, the file
- * assets/js/dashboard.js keeps the numbers up to date every
- * few seconds WITHOUT reloading the page.
+ * assets/js/dashboard.js asks api/get_motion_logs.php for fresh
+ * numbers every 3 seconds and fills them in, so the dashboard
+ * updates WITHOUT reloading the page.
  * ============================================================
  */
 
@@ -45,6 +46,7 @@ $dbCheck = testDBConnection();
 
         <nav class="nav-links">
             <a href="index.php" class="active">Dashboard</a>
+            <a href="wiring.html" target="_blank">Wiring Diagram</a>
             <a href="tools/simulate_motion.php">Test Tool</a>
             <span id="connection-badge" class="badge badge-live">Live</span>
         </nav>
@@ -62,33 +64,51 @@ $dbCheck = testDBConnection();
     </div>
 <?php endif; ?>
 
+    <!-- Shown by dashboard.js when the API stops answering.
+         Separate from the badge: the badge says "we lost the
+         server", this says what to check about it. -->
+    <div class="alert alert-error" id="offline" hidden>
+        <strong>Not updating.</strong>
+        Cannot reach <code>api/get_motion_logs.php</code>. Is Apache still running?
+    </div>
+
 
     <!-- ========================================================
          BIG STATUS INDICATOR
+         Covers the whole system: it reads MOTION if ANY room is busy.
          ======================================================== -->
     <section id="status-panel" class="status-panel status-none">
         <div class="status-light"></div>
         <div class="status-text">
             <span class="status-label">Current Status</span>
-            <span id="status-value" class="status-value">NO MOTION</span>
+            <span id="status-value" class="status-value">Loading&hellip;</span>
         </div>
         <div class="status-meta">
-            <span>Last updated</span>
-            <strong id="last-updated">--:--:--</strong>
+            <span><?= count(ALLOWED_ZONES) ?> sensors on Arduino pins 2&ndash;4</span>
+            <strong>Last updated <span id="last-updated">--:--:--</span></strong>
         </div>
     </section>
 
 
     <!-- ========================================================
-         PER-ZONE STATUS (Room A / Room B / Room C / Room D)
+         ONE CARD PER ROOM
+
+         Built from ALLOWED_ZONES in config.php, so adding or
+         removing a room there changes this section on its own -
+         nothing below is hardcoded to a number of rooms.
+         dashboard.js finds each card by its id ("zone-rooma").
          ======================================================== -->
     <section class="zones">
 <?php foreach (ALLOWED_ZONES as $zoneCode): ?>
         <article id="zone-<?= strtolower($zoneCode) ?>" class="zone-card zone-none">
-            <span class="zone-dot"></span>
-            <div class="zone-text">
+            <div class="zone-head">
+                <span class="zone-dot"></span>
                 <span class="zone-label"><?= htmlspecialchars(ZONE_LABELS[$zoneCode] ?? $zoneCode) ?></span>
-                <span class="zone-value">NO MOTION</span>
+            </div>
+            <div class="zone-value">&mdash;</div>
+            <div class="zone-meta">
+                Last motion: <span class="zone-last">&mdash;</span><br>
+                Last alert: <span class="zone-sms">&mdash;</span>
             </div>
         </article>
 <?php endforeach; ?>
@@ -102,7 +122,7 @@ $dbCheck = testDBConnection();
 
         <article class="card">
             <span class="card-label">Current Status</span>
-            <span id="card-status" class="card-value">NO MOTION</span>
+            <span id="card-status" class="card-value">&mdash;</span>
             <span class="card-hint">Live sensor state</span>
         </article>
 
@@ -173,6 +193,14 @@ $dbCheck = testDBConnection();
             </table>
         </div>
 
+        <p class="footnote">
+            The Arduino sends the text itself through the SIM800L. This website
+            never sends an SMS &mdash; it only records what the Arduino reports.
+            <strong>SKIPPED</strong> means the 60-second cooldown blocked it on purpose.
+            That cooldown is counted <strong>per room</strong>, so movement in a
+            second room still texts you straight away.
+        </p>
+
     </section>
 
 
@@ -218,6 +246,8 @@ $dbCheck = testDBConnection();
 
     <footer class="footer">
         ABMDMS &middot; Arduino Uno + HC-SR501 PIR + SIM800L SMS &middot; XAMPP / PHP / MySQL
+        &middot; database <code><?= htmlspecialchars(DB_NAME) ?></code>
+        &middot; refreshes every 3 seconds
     </footer>
 
 </main>

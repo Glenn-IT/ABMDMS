@@ -1,4 +1,4 @@
-<title>4-Sensor Wiring &amp; Breadboard &mdash; PIR + SMS Test Rig</title>
+<title>Wiring &amp; Breadboard &mdash; ABMDMS</title>
 
 <style>
   :root {
@@ -461,7 +461,7 @@
 <div class="wrap">
 
   <header class="masthead">
-    <div class="eyebrow">ABMDMS &nbsp;&middot;&nbsp; pir_sms_test &nbsp;&middot;&nbsp; build sheet</div>
+    <div class="eyebrow">ABMDMS &nbsp;&middot;&nbsp; build sheet</div>
     <h1>Three rooms, one modem, one wire at a time</h1>
     <p class="standfirst">
       Three PIR sensors on Arduino pins 2&ndash;4, each watching its own room, all texting through
@@ -1146,7 +1146,7 @@
       <div class="led good">
         <div class="rate"><span class="dot"></span> one blink &middot; every ~3 s</div>
         <span class="verdict">joined the network</span>
-        <p>Registered on 2G. Upload <code>pir_sms.ino</code> and go on.</p>
+        <p>Registered on 2G. Upload <code>motion_sensor.ino</code> and go on.</p>
       </div>
       <div class="led bad">
         <div class="rate"><span class="dot"></span> one blink &middot; every ~1 s</div>
@@ -1262,7 +1262,7 @@
           <tr>
             <td>Waving at Room A lights up Room B on the dashboard</td>
             <td>Two OUT wires swapped between pins</td>
-            <td>Read the pin-to-room list the sketch prints at start-up, then move the wire &mdash; not the code. If you would rather move the code, edit <code>ZONE_NAME[]</code> in <code>pir_sms.ino</code>, keeping it in pin order 2, 3, 4, 5.</td>
+            <td>Read the pin-to-room list the sketch prints at start-up, then move the wire &mdash; not the code. If you would rather move the code, edit <code>ZONE_NAME[]</code> in <code>motion_sensor.ino</code>, keeping it in pin order 2, 3, 4, 5.</td>
           </tr>
           <tr>
             <td>One room never reports anything, the other three are fine</td>
@@ -1272,7 +1272,7 @@
           <tr>
             <td>A pin stays dead even after swapping in a known-good sensor</td>
             <td>The pin, its OUT wire, or that position's rail taps &mdash; not the sensor</td>
-            <td>Move that sensor to a spare pin (6 or 7) and retest with <code>one_pin_test.ino</code>. If it works there, the original pin or its wiring is the fault. This is what happened to Pin 5 / Room D on this build.</td>
+            <td>Move that sensor to a spare pin (6 or 7) and retest with <code>pir_sms_test/arduino/one_pin_test/one_pin_test.ino</code>. If it works there, the original pin or its wiring is the fault. This is what happened to Pin 5 / Room D on this build.</td>
           </tr>
           <tr>
             <td>Every room triggers when you wave at just one</td>
@@ -1312,7 +1312,7 @@
           <tr>
             <td>Dashboard stays empty but the reader shows <code>[OK]</code></td>
             <td>The SQL was never imported, or MySQL is stopped</td>
-            <td>Import <code>database/pir_sms_test.sql</code> in phpMyAdmin.</td>
+            <td>Import <code>database/database.sql</code> in phpMyAdmin.</td>
           </tr>
         </tbody>
       </table>
@@ -1321,7 +1321,7 @@
 
   <footer>
     <p>
-      Build sheet for <code>pir_sms_test</code> &middot; sketch in <code>arduino/pir_sms/pir_sms.ino</code> &middot;
+      Build sheet for <code>ABMDMS</code> &middot; sketch in <code>arduino/motion_sensor/motion_sensor.ino</code> &middot;
       AT-command reference in <code>sms_module_test/AT_COMMANDS.md</code> &middot;
       power faults in <code>sms_module_test/POWER_TROUBLESHOOTING.md</code>.
     </p>
