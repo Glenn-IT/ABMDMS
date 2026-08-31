@@ -1,4 +1,4 @@
-# SIM800L EVB Wiring — SMS Alerts for ABMDMS
+# SIM800L EVB Wiring — SMS Alerts for ABMDMS (HW-131 & 12V Wall Adapter)
 
 Adds a **SIM800L EVB GSM module** to the existing 4-PIR setup so the Arduino
 **texts your phone** the moment motion starts — even if the laptop and XAMPP
@@ -6,29 +6,44 @@ are switched off. Wiring only. Do not upload the new sketch until the module
 answers `AT` on its own (Step 5 below).
 
 | Part | Arduino pin | Status |
-|------|-------------|--------|
+|------|--------|-------------|--------|
+| **Arduino 5V Power** | Arduino **5V Pin** | Connected to HW-131 **5V Rail (+)** (powers Arduino) |
+| **Arduino GND** | Arduino **GND Pin** | Connected to Breadboard **GND Rail (-)** |
+| **Arduino USB** | USB to PC/Laptop | Serial data link only (dashboard bridge) |
 | Room C PIR | Digital Pin **2** | unchanged |
 | Room A PIR | Digital Pin **3** | unchanged |
 | Room B PIR | Digital Pin **4** | unchanged |
 | ~~Room D PIR~~ | ~~Digital Pin **5**~~ | **retired** — see `arduino/PIR_MULTI_ZONE_WIRING.md` |
-| SIM800L **TXD** | Digital Pin **10** | new — direct wire |
-| SIM800L **RXD** | Digital Pin **11** | new — direct on the V2.2 board (divider only for the bare module) |
-| SIM800L **RST** | Digital Pin **12** | new — optional |
-| SIM800L **VCC / 5Vin** | ✗ NOT the Arduino | new — **external supply only** |
-| SIM800L **GND** | Arduino GND **and** supply GND | new — must be common |
+| **5V Piezo Buzzer** | Digital Pin **8** | Positive (+) to Pin 8, Negative (-) to Breadboard GND rail |
+| SIM800L **TXD** | Digital Pin **10** | direct wire |
+| SIM800L **RXD** | Digital Pin **11** | direct on the V2.2 board (divider only for the bare module) |
+| SIM800L **RST** | Digital Pin **12** | optional |
+| SIM800L **VCC / 5Vin** | Breadboard TOP `+` rail | **HW-131 5V output** (fed by 12V wall adapter) |
+| SIM800L **GND** | Breadboard TOP `-` rail | common GND with HW-131 and Arduino GND |
 
 ---
 
-## ✅ THIS BUILD — SIM800L V2.2 by UNV (the 5 V board)
+## ✅ THIS BUILD — HW-131 Power Supply + SIM800L V2.2 by UNV
 
-The module in this project is confirmed as the **SIM800L V2.2 (UNV)** — the **5 V version**
-with an onboard regulator and level shifting. That makes the wiring much simpler than the
-generic guidance below. For **this** board:
+Power is provided by a **12 V DC Wall Adapter** plugged into an **HW-131 (MB-102) Breadboard Power Supply Module**, which slots directly into the breadboard rails:
 
-- **No buck converter, no diodes** — feed `5Vin` straight from the power bank's 5 V.
-- **No resistor divider** — the board is 5 V-logic, so `RXD` wires **directly** to Pin 11.
-- **`VDD` is NOT a power pin** — it is a ~2.8 V logic-reference *output*. Leave it unconnected;
-  do not feed 5 V into it.
+1. **HW-131 Module Setup:**
+   - Plug the HW-131 module into the left end of the breadboard (columns 1–4).
+   - Set **Top Rail Jumper** to **`5V`** (powers SIM800L `5Vin` and `GND`).
+   - Set **Bottom Rail Jumper** to **`5V`** (powers Arduino Uno `5V`, all PIR sensors `VCC`, and buzzer).
+   - Plug the **12 V wall adapter** into the HW-131 DC barrel jack (5.5mm × 2.1mm center-positive).
+   - Press the latching push-button switch **ON** (power LED lights up).
+
+2. **Arduino Power & Connection:**
+   - **Arduino 5V pin** connects to the **HW-131 5V Rail (+)** (the Arduino draws operating power from the HW-131).
+   - **Arduino GND pin** connects to the **Breadboard GND Rail (-)**.
+   - **USB Cable** connects from Arduino to PC/Laptop **strictly for serial data communication** (running the serial reader bridge to feed MySQL & the live dashboard).
+
+3. **SIM800L V2.2 (UNV) Module:**
+   - **No buck converter, no diodes** — feed `5Vin` directly from the HW-131 5 V top rail.
+   - **No resistor divider** — the board is 5 V-logic, so `RXD` wires **directly** to Pin 11.
+   - **`VDD` is NOT a power pin** — it is a ~2.8 V logic-reference *output*. Leave it unconnected;
+     do not feed 5 V into it.
 
 Its two headers are labelled:
 
@@ -41,96 +56,53 @@ Simplified wiring for this board:
 
 | V2.2 pin | Goes to |
 |---|---|
-| `5Vin` | Power bank **5 V** (direct) |
-| `GND` (either header) | Power bank GND **and** Arduino GND |
+| `5Vin` | Breadboard **TOP `+` rail** (HW-131 5 V) |
+| `GND` (either header) | Breadboard **TOP `-` rail** (Common GND) |
 | `TXD` | Arduino **Pin 10** (direct) |
 | `RXD` | Arduino **Pin 11** (direct — **no** divider) |
 | `RST` | Arduino **Pin 12** (optional) |
 | `VDD` | leave unconnected |
-| 1000µF cap | across `5Vin` ↔ `GND` (still required) |
+| 1000µF cap | across `5Vin` ↔ `GND` (still strictly required for 2A bursts) |
 
-> Power the Arduino from the power bank over **USB**, and run a **separate 5 V tap** from the
-> same bank to the module's `5Vin`. Never power the module through an Arduino pin or the DC jack —
-> the Uno's regulator can't handle the module's 2 A transmit bursts, and a 5 V power bank is too
-> low for the DC jack anyway (it wants 7–12 V).
+> Power everything (Arduino, SIM800L, PIRs, Buzzer) from the **HW-131 via the 12 V wall adapter**.
+> The Arduino connects over **USB strictly for serial data communication** with the computer.
 
 **Still applies to your board:** the common ground, the 1000 µF capacitor, the SIM / antenna /
-2G checks, and the power-bank auto-shutoff warning. Skip only the buck and divider sections.
+2G checks.
 
-### Checking your own diagram
+### Checking your diagram
 
-If you draw this yourself (Canva, Fritzing, on paper), the drawing is only right when all
-four of these are visible in it:
-
-1. **The capacitor is in parallel, not in series.** It is the mistake that is easiest to
-   draw and hardest to spot. It must have **two legs**: `+` on `5Vin`, `−` on `GND`, both
-   at the module end. Drawn *inline on* the 5 V wire it blocks DC and the module never
-   powers up at all.
-
+1. **The capacitor is in parallel, not in series.** It must have **two legs**: `+` on `5Vin` (top `+` rail), `−` on `GND` (top `-` rail), both at the module end.
    ```
-        power bank (+) ●────────────────┬──────────► 5Vin
-                                        │
-                                    ┌───┴───┐
-                                    │ 1000µF│   + leg here
-                                    │  cap  │   − leg (stripe) below
-                                    └───┬───┘
-        power bank (−) ●────────────────┴──────────► GND  (and Arduino GND)
+        HW-131 5V (+) ●────────────────┬──────────► SIM800L 5Vin
+                                       │
+                                   ┌───┴───┐
+                                   │ 1000µF│   + leg here
+                                   │  cap  │   − leg (stripe) below
+                                   └───┬───┘
+        HW-131 GND (−) ●───────────────┴──────────► SIM800L GND  (and Arduino GND)
 
         the cap sits ACROSS the two rails — current does not flow "through" it
    ```
 
-2. **Three grounds joined at one point** — module `GND`, power-bank `−`, Arduino `GND`.
-   A breadboard `−` rail is a fine place to join them, as long as all three land on the
-   **same** rail and the rail is labelled `−`.
-3. **The three data wires** — `TXD`→Pin 10, `RXD`→Pin 11, `RST`→Pin 12. Power alone gets
-   you a module that joins the network and does nothing; the SMS needs these.
+2. **Common ground** — module `GND`, HW-131 `−`, Arduino `GND` must all be joined.
+3. **The three data wires** — `TXD`→Pin 10, `RXD`→Pin 11, `RST`→Pin 12.
 4. **`VDD` shown as left unconnected**, so nobody later mistakes it for a power input.
-
-Also label the Arduino box, and show the antenna and the SIM holder — those two are build
-steps 1 and 2 below and a diagram that omits them invites skipping them.
 
 ---
 
-## ⚠ Read this before you connect anything  *(general reference — bare module)*
+## ⚠ Read this before you connect anything
 
 Three things kill a SIM800L or make it look "broken" when it is fine:
 
 1. **Powering it from the Arduino's 5V pin.** It will not work. The module pulls
    up to **2 A** in short bursts while transmitting; the Uno's regulator can give
-   about 0.5 A. The module browns out and reboots mid-message.
-2. **Feeding 5 V to a 3.7–4.2 V board.** Instant, permanent damage. Check the
-   silkscreen — see below.
+   about 0.5 A. Always use the HW-131 powered by the 12V adapter.
+2. **Missing the 1000 µF capacitor.** The linear AMS1117 regulator on the HW-131
+   supplies up to ~800mA-1A; the 1000µF capacitor stores the charge required for
+   the rapid 2 A GSM bursts.
 3. **Forgetting the common ground.** Serial data needs a shared 0 V reference.
    No common GND = the module never answers, even though both parts are powered.
-
-### Which board do you have?
-
-"SIM800L EVB" is sold in two electrically different versions. **Look at the
-printing next to the VCC pin.**
-
-| Board | Marking near VCC | Feed it |
-|---|---|---|
-| SIM800L core / EVB (small blue-purple board, SIM holder on the back) | `3.7V–4.2V` / `VCC 4V` | **NOT 5 V.** Use a buck converter set to **4.0 V**, or a 3.7 V Li-ion cell. |
-| SIM800L V2.0 (larger red board, onboard regulator) | `5V` / `DC 5V` | A 5 V supply directly. |
-
-If you use an **LM2596 buck converter**, set its output to 4.0 V with a
-multimeter **before** you connect the module to it. (Two 1N4007 diodes in series
-is the cheap trick — 5 V − 1.4 V ≈ 3.6 V — but it sags under the transmit burst
-and gives random failures. Use the buck.)
-
-### About powering it from a power bank (5 V 3 A)
-
-- The **3 A rating is plenty** — the module only needs ~2 A in bursts.
-- **But most power banks switch themselves off** when the draw falls below
-  ~50–100 mA, and an idle SIM800L only draws ~20 mA. So the bank cuts out after
-  about half a minute and the alerts silently stop. Fixes, best first:
-  1. Use a power bank with an **"always on" / low-current mode** (often a
-     double-press of the button).
-  2. Use a **5 V 2 A wall adapter** for the demo — the most reliable option.
-  3. Add a bleeder load (100 Ω resistor + LED) to keep the draw above the cut-off.
-- **A 1000 µF capacitor across VCC/GND at the module is required**, not optional.
-  It stores the energy for the transmit bursts. Mind the polarity — the stripe
-  is the negative leg.
 
 ---
 
@@ -168,66 +140,70 @@ logic level converter.
 > **SIM800L V2.2 (UNV)** that this project actually uses, `PIN 11` wires
 > **straight to `RXD`** with no resistors at all — mentally delete the two
 > resistor boxes below and read that line as a plain wire. Everything else in
-> the drawing (external power, the capacitor, the common ground) is correct for
-> both boards.
->
-> For an accurate, up-to-date drawing of the board this project uses, see
-> `pir_sms_test/wiring.html`.
+## ASCII wiring diagram (HW-131 Power Supply & SIM800L V2.2)
 
 ```
                             ARDUINO UNO
                        ┌───────────────────┐
+                       │  USB (from Laptop)│──────────► Power + Serial Bridge
+                       │  5V  ○            │           (leave 5V UNCONNECTED!)
+                       │  GND ●────────────┼──────────► Breadboard (-) rail (col 6)
                        │                   │
-                       │  5V  ●            │──────────► breadboard (+) rail  (PIRs ONLY)
-                       │  GND ●            │──────────► breadboard (-) rail  ──────┐
-                       │                   │                                        │
-                       │  DIGITAL          │                                        │
-                       │  PIN 2  ●─────────┼──► Room C PIR OUT                      │
-                       │  PIN 3  ●─────────┼──► Room A PIR OUT                      │
-                       │  PIN 4  ●─────────┼──► Room B PIR OUT                      │
-                       │  PIN 5  ○   (retired — Room D is out)                      │
-                       │                   │                                        │
-                       │  PIN 10 ●◄────────┼──────────────────────┐                 │
-                       │  PIN 11 ●─────────┼───[1kΩ]───┬──────┐   │                 │
-                       │  PIN 12 ●─────────┼───────┐   │      │   │                 │
-                       │                   │       │ [2kΩ]    │   │                 │
-                       │  GND ●            │───────┼───┴──────┼───┼─────────┐       │
-                       └───────────────────┘       │          │   │         │       │
-                                                    │          │   │         │       │
-                                                   RST        RXD TXD       GND     GND
-                                                    │          │   │         │       │
-                                              ┌─────┴──────────┴───┴─────────┴────┐  │
-                                              │         SIM800L EVB              │  │
-                                              │   ┌──────────┐      ▲ antenna     │  │
-                                              │   │ SIM card │      │             │  │
-                                              │   └──────────┘   [status LED]     │  │
-                                              │  VCC ●                            │  │
-                                              └───┬───────────────────────────────┘  │
-                                                  │                                   │
-                                    ┌─────────────┴──────────────┐                    │
-                                    │  + 1000µF capacitor  −     │                    │
-                                    └─────────────┬──────────────┘                    │
-                                                  │                                   │
-                                 ┌────────────────┴─────────────────┐                 │
-                                 │   EXTERNAL POWER                 │                 │
-                                 │   power bank 5V  (or buck 4.0V)  │                 │
-                                 │   (+) ─────────────► SIM800L VCC │                 │
-                                 │   (−) ─────────────────────────────────────────────┘
-                                 └──────────────────────────────────┘
-                                    the (−) MUST also reach Arduino GND
+                       │  DIGITAL          │
+                       │  PIN 2  ●─────────┼──────────► Room C PIR OUT
+                       │  PIN 3  ●─────────┼──────────► Room A PIR OUT
+                       │  PIN 4  ●─────────┼──────────► Room B PIR OUT
+                       │  PIN 5  ○         │           (retired — Room D is out)
+                       │                   │
+                       │  PIN 10 ●◄────────┼──────────┐ (SIM TXD direct)
+                       │  PIN 11 ●─────────┼──────┐   │ (SIM RXD direct - no divider)
+                       │  PIN 12 ●─────────┼──┐   │   │ (SIM RST optional)
+                       │  GND ●            │──┼───┼───┼──┐
+                       └───────────────────┘  │   │   │  │
+                                              │   │   │  │
+                                             RST RXD TXD GND
+                                              │   │   │  │
+                                        ┌─────┴───┴───┴──┴───────────────┐
+                                        │         SIM800L V2.2           │
+                                        │   ┌──────────┐      ▲ antenna  │
+                                        │   │ SIM card │      │          │
+                                        │   └──────────┘   [status LED]  │
+                                        │  5Vin ●       GND ●            │
+                                        └───┬─────────────┬──────────────┘
+                                            │             │
+                             ┌──────────────┴─────────────┴─┐
+                             │    + 1000µF capacitor  −     │ (across 5Vin / GND)
+                             └──────────────┬─────────────┬─┘
+                                            │             │
+    BREADBOARD POWER RAILS                  │             │
+    ┌───────────────────────────────────────┴─────────────┴────────────────┐
+    │ TOP (+) RAIL  [5V]  ●─────────────────┘             │                │
+    │ TOP (-) RAIL  [GND] ●───────────────────────────────┘                │
+    ├──────────────────────────────────────────────────────────────────────┤
+    │ BOTTOM (-) RAIL [GND] ●───────── (All 3 PIR GNDs & Arduino GND)      │
+    │ BOTTOM (+) RAIL [5V]  ●───────── (All 3 PIR VCCs)                    │
+    └───────▲──────────────────────────────────────────────────────────────┘
+            │
+    ┌───────┴──────────────────────────────┐
+    │  HW-131 BREADBOARD POWER MODULE      │
+    │  - Top jumper: set to 5V             │
+    │  - Bottom jumper: set to 5V          │
+    │  - Power switch: ON                  │
+    │  [DC BARREL JACK: 12V 1A/2A Adapter] │
+    └──────────────────────────────────────┘
 ```
 
 **Reading it in words:**
 
-- Arduino 5V / GND still feed the breadboard rails for the **3 PIR sensors only**.
-- The SIM800L gets its power from the **external supply**, never from the Arduino.
-- The external supply's minus, the SIM800L GND, and the Arduino GND are all
-  **joined together** — this is the wire people forget.
-- Pin 10 comes back from TXD directly.
-- Pin 11 reaches RXD **directly on the V2.2 board this project uses**. The
-  divider drawn above belongs to the bare module only — fitting it to a V2.2
-  drops `RXD` to ~3.3 V of an already-level-shifted input and is one more thing
-  to have wired wrong.
+- The **12V wall adapter** plugs into the **HW-131 module**, which slots into the breadboard.
+- HW-131 jumpers set both **Top and Bottom rails to 5V**.
+- HW-131 feeds the **SIM800L (Top Rail)** and all **3 PIR sensors (Bottom Rail)**.
+- Arduino Uno connects to PC via **USB** for programming and dashboard serial relay.
+- **Arduino 5V is left unconnected** to prevent backfeeding regulators.
+- **Arduino GND** is connected to the breadboard `-` rail for a shared 0V reference.
+- **1000 µF capacitor** sits directly across the SIM800L `5Vin` and `GND` pins on the breadboard.
+- `TXD` → Arduino Pin 10, `RXD` → Arduino Pin 11 (direct), `RST` → Arduino Pin 12 (direct).
+
 
 ---
 

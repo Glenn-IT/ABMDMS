@@ -11,6 +11,7 @@ PHP/DB/dashboard side.
 | Room A | PIR #2 | Digital Pin **3** | |
 | Room B | PIR #3 | Digital Pin **4** | |
 | ~~Room D~~ | ~~PIR #4~~ | ~~Digital Pin **5**~~ | **Retired** — see below |
+| **Buzzer** | **5V Piezo Buzzer** | Digital Pin **8** | Positive (+) to Pin 8, Negative (-) to Breadboard GND rail |
 
 **Pin 5 / Room D is retired.** During bring-up that pin would not respond to
 **two different sensors**, so Room D was taken out of the system. Two sensors
@@ -32,23 +33,19 @@ has agreed with that ever since. `ZONE_NAME[]` in
 
 ---
 
-## Why a breadboard
+## Why a breadboard & HW-131 Power Supply
 
-An Arduino Uno has only **one 5V pin** and a couple of GND pins — not enough
-to plug 3 sensors in directly. The breadboard's two power rails (`+` and `-`
-running the length of the board) let all 3 PIR sensors share a single 5V/GND
-feed from the Arduino, while each sensor's **OUT** wire still runs to its own
-dedicated Arduino digital pin.
+The **HW-131 (MB-102) Breadboard Power Supply Module** is powered by a **12V DC Wall Adapter** and slots directly into the breadboard rails. It provides clean, regulated 5V power to both rails, powering the Arduino, all PIR sensors, the buzzer, and the SIM800L:
 
 ```
-Arduino 5V  ────────► breadboard  +  rail (red)   ─── shared by all 3 sensors
-Arduino GND ────────► breadboard  -  rail (blue)  ─── shared by all 3 sensors
-Arduino Pin 2/3/4  ─► one dedicated wire per sensor OUT pin (never shared)
+HW-131 5V (Bottom + Rail)  ────────► Powers Arduino 5V pin + all 3 PIR VCC pins
+HW-131 GND (Bottom - Rail) ────────► Arduino GND pin + all 3 PIR GND pins + Buzzer (-)
+Arduino Pin 2 / 3 / 4      ────────► Dedicated wire per sensor OUT pin (never shared)
+Arduino Pin 8              ────────► Dedicated wire to 5V Piezo Buzzer (+) leg
+Arduino USB                ────────► Serial data connection to PC/laptop only
 ```
 
-All three sensors together draw roughly 45 mA, which the Arduino's 5V pin
-supplies comfortably. (The SIM800L is the opposite case — it needs its own
-external supply. See `arduino/SIM800L_WIRING.md`.)
+The HW-131 supplies both the PIR sensors & Arduino (on the bottom rail at 5V) and the SIM800L module (on the top rail at 5V).
 
 ---
 
@@ -57,35 +54,45 @@ external supply. See `arduino/SIM800L_WIRING.md`.)
 ```
                               ARDUINO UNO
                        ┌───────────────────────┐
-                       │  5V  ●                │───────────────────┐
-                       │  GND ●                │────────────────┐  │
-                       │                       │                │  │
-                       │  DIGITAL              │                │  │
-                       │  PIN 2 ●──────────────┼── OUT, Room C  │  │
-                       │  PIN 3 ●──────────────┼── OUT, Room A  │  │
-                       │  PIN 4 ●──────────────┼── OUT, Room B  │  │
-                       │  PIN 5 ○   (retired — Room D is out)   │  │
-                       └───────────────────────┘                │  │
-                                                                │  │
-    BREADBOARD                                                  │  │
-    ┌──────────────────────────────────────────────────────┐    │  │
-    │ (+) RED  RAIL ●──●────────●────────●                 │◄───┼──┘  Arduino 5V
-    ├──────────────────────────────────────────────────────┤    │
-    │ (-) BLUE RAIL ●──●────────●────────●                 │◄───┘     Arduino GND
-    └──────────────────────────────────────────────────────┘
-                       │        │        │
-                    PIR #1   PIR #2   PIR #3
-                    Room C   Room A   Room B
-                    Pin 2    Pin 3    Pin 4
-                  ┌───────┐┌───────┐┌───────┐
-                  │ ╭───╮ ││ ╭───╮ ││ ╭───╮ │
-                  │ │dom│ ││ │dom│ ││ │dom│ │
-                  │ ╰───╯ ││ ╰───╯ ││ ╰───╯ │
-                  │ V O G ││ V O G ││ V O G │
-                  └─┬─┬─┬─┘└─┬─┬─┬─┘└─┬─┬─┬─┘
-                    │ │ └────┴─┴─┴─────┴─┴─┴──► (-) rail   (all three)
-                    │ └────────────────────────► its own Arduino pin
-                    └──────────────────────────► (+) rail   (all three)
+                       │  USB (from Laptop)    │──► Serial Data Link (dashboard bridge)
+                       │  5V  ●────────────────┼───────────────┐
+                       │  GND ●────────────────┼────────────┐  │
+                       │                       │            │  │
+                       │  DIGITAL              │            │  │
+                       │  PIN 2 ●──────────────┼── OUT (C)  │  │
+                       │  PIN 3 ●──────────────┼── OUT (A)  │  │
+                       │  PIN 4 ●──────────────┼── OUT (B)  │  │
+                       │  PIN 5 ○   (retired)  │            │  │
+                       │  PIN 8 ●──────────────┼── Buzz (+) │  │
+                       └───────────────────────┘            │  │
+                                                            │  │
+    BREADBOARD (BOTTOM POWER RAILS)                         │  │
+    ┌──────────────────────────────────────────────────────┐│  │
+    │ (+) RED  RAIL [5V]  ●──●────────●────────●─────●     ││◄─┘ Arduino 5V Power
+    ├──────────────────────────────────────────────────────┤│
+    │ (-) BLUE RAIL [GND] ●──●────────●────────●─────●     │◄─── Arduino GND
+    └───────▲────────────────────────────────────────┼─────┘
+            │                                        │
+    ┌───────┴──────────────────────────────┐         │
+    │  HW-131 BREADBOARD POWER MODULE      │         │
+    │  - Bottom jumper: set to 5V          │         │
+    │  - Top jumper: set to 5V (for SIM)   │         │
+    │  - Power switch: ON                  │         │
+    │  [DC JACK: 12V 1A/2A Wall Adapter]   │         │
+    └──────────────────────────────────────┘         │
+                       │        │        │           │
+                    PIR #1   PIR #2   PIR #3       BUZZER
+                    Room C   Room A   Room B      [ 5V PIEZO ]
+                    Pin 2    Pin 3    Pin 4       (+) Pin 8
+                  ┌───────┐┌───────┐┌───────┐      │     │
+                  │ ╭───╮ ││ ╭───╮ ││ ╭───╮ │     ┌┴─────┴┐
+                  │ │dom│ ││ │dom│ ││ │dom│ │     │ (+) (-│
+                  │ ╰───╯ ││ ╰───╯ ││ ╰───╯ │     └───────┘
+                  │ V O G ││ V O G ││ V O G │            │
+                  └─┬─┬─┬─┘└─┬─┬─┬─┘└─┬─┬─┬─┘            │
+                    │ │ └────┴─┴─┴─────┴─┴─┴─────────────┴──► (-) rail (GND)
+                    │ └─────────────────────────────────────► its own Arduino pin
+                    └───────────────────────────────────────► (+) rail (5V)
 ```
 
 *(V = VCC, O = OUT, G = GND — but always confirm the actual pin order printed
@@ -94,15 +101,14 @@ sensors from the same bag do not have to agree with each other.)*
 
 **Plain description of every wire, if the ASCII art is hard to follow:**
 
-1. Arduino `5V` → breadboard `(+)` red rail
-2. Arduino `GND` → breadboard `(-)` blue rail
-3. **PIR #1 (Room C):** VCC → `(+)` rail · GND → `(-)` rail · OUT → Arduino **Pin 2**
-4. **PIR #2 (Room A):** VCC → `(+)` rail · GND → `(-)` rail · OUT → Arduino **Pin 3**
-5. **PIR #3 (Room B):** VCC → `(+)` rail · GND → `(-)` rail · OUT → Arduino **Pin 4**
-
-That is 11 wires: 2 for the rails, and 3 per sensor. No resistors anywhere on
-the PIR side — the HC-SR501 drives a clean digital level on its own, so there
-are no pull-ups or pull-downs to add.
+1. **HW-131 Module:** Plugged into breadboard ends, 12V adapter plugged into barrel jack, jumpers on 5V.
+2. **Arduino 5V Power:** Arduino `5V` pin → breadboard `(+)` red rail (col 3) — Arduino draws power from HW-131.
+3. **Arduino GND:** Arduino `GND` → breadboard `(-)` blue rail (col 6).
+4. **Arduino USB:** Connected to PC/laptop for serial data communications only.
+5. **PIR #1 (Room C):** VCC → `(+)` rail (col 18) · GND → `(-)` rail (col 21) · OUT → Arduino **Pin 2**
+6. **PIR #2 (Room A):** VCC → `(+)` rail (col 31) · GND → `(-)` rail (col 34) · OUT → Arduino **Pin 3**
+7. **PIR #3 (Room B):** VCC → `(+)` rail (col 43) · GND → `(-)` rail (col 46) · OUT → Arduino **Pin 4**
+8. **5V Piezo Buzzer:** `(+)` leg (longer pin) → Arduino **Pin 8** · `(-)` leg (shorter pin) → breadboard `(-)` rail (col 15)
 
 ---
 

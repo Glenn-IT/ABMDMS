@@ -15,19 +15,24 @@
                         -> USB -> PowerShell -> PHP -> MySQL -> dashboard
 
 
-  WIRING - THE PIR SENSORS   (see ../wiring.html, or arduino/PIR_MULTI_ZONE_WIRING.md)
+  WIRING - POWER & SENSORS   (see ../wiring.html, or arduino/PIR_MULTI_ZONE_WIRING.md)
   ------------------------
+      HW-131 5V (from 12V adapter) -> Breadboard (+) rail -> Arduino 5V Pin (powers Arduino)
+      HW-131 GND                   -> Breadboard (-) rail -> Arduino GND Pin
+      USB Cable                    -> Connected to PC/Laptop (Serial Data Link only)
+
       Arduino Pin 2  <-  PIR 1 OUT   ->  zone ROOMC  ("Room C")
       Arduino Pin 3  <-  PIR 2 OUT   ->  zone ROOMA  ("Room A")
       Arduino Pin 4  <-  PIR 3 OUT   ->  zone ROOMB  ("Room B")
+      Arduino Pin 8  ->  5V Piezo Buzzer (+) leg (audible detection alarm)
 
       Arduino Pin 5      Room D - REMOVED. The pin would not respond
                          to two different sensors. See SECTION 1 for
                          how to put it back once that is fixed.
 
   Every PIR OUT gets its OWN wire to its OWN pin - never share one.
-  All VCC  ->  breadboard (+) rail  ->  Arduino 5V
-  All GND  ->  breadboard (-) rail  ->  Arduino GND
+  All PIR VCC ->  breadboard (+) rail  ->  HW-131 5V
+  All PIR GND ->  breadboard (-) rail  ->  HW-131 GND / Arduino GND
 
   The pin/zone order looks odd on purpose: Pin 2 is ROOMC because
   that was the very first sensor built, and the mapping was kept
@@ -43,9 +48,8 @@
   SIM800L RXD  ->  Arduino Pin 11       (direct - V2.2 is a 5V-logic
                                          board, so NO 1k/2k divider)
   SIM800L RST  ->  Arduino Pin 12       (optional, used to recover)
-  SIM800L 5Vin ->  external 5V supply + (NEVER the Arduino 5V pin -
-                                         transmit bursts pull ~2A)
-  SIM800L GND  ->  external supply - AND Arduino GND (must be common)
+  SIM800L 5Vin ->  HW-131 5V Top Rail + (12V wall adapter input)
+  SIM800L GND  ->  HW-131 GND Top Rail - AND Arduino GND (must be common)
   SIM800L VDD  ->  leave UNCONNECTED    (it is a 2.8V reference
                                          OUTPUT, not a power input.
                                          Feeding it 5V kills the board.)
@@ -114,7 +118,10 @@ const char* ZONE_TEXT[NUM_ZONES] = { "Room C","Room A","Room B" }; // inside the
 // AND serial/serial_reader.php. Nothing else needs touching.
 // --------------------------------------------------------------
 
-const int LED_PIN = 13;              // Built-in LED, lights while ANY room is active
+const int LED_PIN    = 13;             // Built-in LED, lights while ANY room is active
+const int BUZZER_PIN = 8;              // 5V Piezoelectric Buzzer (+) leg -> Arduino Pin 8
+const bool BUZZER_ENABLED = true;      // Set false to mute buzzer
+const unsigned long BUZZER_BEEP_MS = 600; // Beep duration on detection in ms (set to 0 to buzz continuously while motion active)
 
 const unsigned long WARMUP_SECONDS  = 30;    // PIR warm-up time
 const unsigned long BAUD_RATE       = 9600;  // Must match the Serial Monitor
@@ -185,6 +192,9 @@ bool          motionActive[NUM_ZONES] = {};   // already announced?
 unsigned long lowStartedAt[NUM_ZONES] = {};   // when it went quiet
 unsigned long highStartedAt[NUM_ZONES] = {};  // when it first went busy
 
+// --- Buzzer memory ---
+unsigned long buzzerUntil = 0;   // Non-blocking timer for buzzer alert
+
 // --- SMS memory ---
 SoftwareSerial sim(SIM_RX_PIN, SIM_TX_PIN);
 
@@ -230,15 +240,21 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
+  pinMode(BUZZER_PIN, OUTPUT);
+  digitalWrite(BUZZER_PIN, LOW);
+
   Serial.print(F("ABMDMS - "));
   Serial.print(NUM_ZONES);
-  Serial.println(F(" sensors, 1 SIM800L"));
+  Serial.println(F(" sensors, 1 SIM800L, 1 Buzzer"));
   for (int i = 0; i < NUM_ZONES; i++) {
     Serial.print(F("   Pin "));
     Serial.print(PIR_PIN[i]);
     Serial.print(F(" -> "));
     Serial.println(ZONE_NAME[i]);
   }
+  Serial.print(F("   Pin "));
+  Serial.print(BUZZER_PIN);
+  Serial.println(F(" -> 5V Piezo Buzzer"));
 
   // Wake the GSM module FIRST. It needs time to find the network,
   // and it can do that while the PIR sensor warms up.
@@ -258,6 +274,13 @@ void setup() {
     Serial.print(i);
     Serial.println(F("..."));
     delay(1000);
+  }
+
+  // Chirp buzzer once to signal warmup complete and system armed
+  if (BUZZER_ENABLED) {
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(100);
+    digitalWrite(BUZZER_PIN, LOW);
   }
 
   Serial.println(F("System Ready"));
@@ -306,6 +329,12 @@ void loop() {
 
           Serial.print(ZONE_NAME[i]);
           Serial.println(F("_MOTION_DETECTED"));   // <-- the laptop reads this line
+
+          // Trigger Buzzer Alert (Non-blocking)
+          if (BUZZER_ENABLED) {
+            buzzerUntil = millis() + BUZZER_BEEP_MS;
+            digitalWrite(BUZZER_PIN, HIGH);
+          }
 
           // Ask for an SMS. It is NOT sent here - it is put in line
           // and sent a small piece at a time by smsTick().
@@ -358,6 +387,21 @@ void loop() {
     }
   }
   digitalWrite(LED_PIN, anyActive ? HIGH : LOW);
+
+  // Manage non-blocking Buzzer timing
+  if (BUZZER_ENABLED) {
+    if (BUZZER_BEEP_MS > 0) {
+      // Beep for BUZZER_BEEP_MS milliseconds on each new motion detection
+      if (millis() >= buzzerUntil) {
+        digitalWrite(BUZZER_PIN, LOW);
+      }
+    } else {
+      // Continuous buzz as long as any zone has active motion
+      digitalWrite(BUZZER_PIN, anyActive ? HIGH : LOW);
+    }
+  } else {
+    digitalWrite(BUZZER_PIN, LOW);
+  }
 
   // Move any in-progress SMS forward by one small step.
   // This returns immediately - it never waits.

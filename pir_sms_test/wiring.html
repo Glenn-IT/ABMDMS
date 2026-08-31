@@ -492,8 +492,18 @@
     <div class="parts">
       <div class="part key">
         <span class="id">Arduino Uno</span>
-        <span class="qty">&times;1 &middot; powered over USB</span>
-        <p>The USB cable carries both power and the serial link the dashboard reads.</p>
+        <span class="qty">&times;1 &middot; 5 V from HW-131, USB for data</span>
+        <p>Powered via its 5V pin from the HW-131 5V rail. The USB cable connects to PC/laptop for serial data link to the dashboard.</p>
+      </div>
+      <div class="part key">
+        <span class="id">HW-131 Power Module</span>
+        <span class="qty">&times;1 &middot; MB-102 compatible</span>
+        <p>Plugs onto breadboard ends. Sets both top and bottom rails to 5 V. Powers Arduino, SIM800L, PIRs, and buzzer.</p>
+      </div>
+      <div class="part key">
+        <span class="id">12 V DC Wall Adapter</span>
+        <span class="qty">&times;1 &middot; 1 A to 2 A rating</span>
+        <p>Plugs directly into the HW-131 DC barrel jack (5.5mm &times; 2.1mm center positive).</p>
       </div>
       <div class="part key">
         <span class="id">SIM800L V2.2 (UNV)</span>
@@ -503,22 +513,22 @@
       <div class="part key">
         <span class="id">HC-SR501 PIR</span>
         <span class="qty">&times;3 &middot; ROOMA / ROOMB / ROOMC</span>
-        <p>Three pins: VCC, OUT, GND. The order under the dome varies between batches &mdash; read each one.</p>
+        <p>Three pins: VCC, OUT, GND. Powered from HW-131 bottom 5V rail.</p>
+      </div>
+      <div class="part key">
+        <span class="id">5V Piezo Buzzer</span>
+        <span class="qty">&times;1 &middot; audible motion alarm</span>
+        <p>Positive (+) leg to Arduino Pin 8, negative (-) leg to breadboard ground rail. Sounds when motion is detected.</p>
       </div>
       <div class="part">
         <span class="id">1000 &micro;F capacitor</span>
         <span class="qty">&times;1 &middot; 16 V or higher</span>
-        <p>Sits right beside the module. Without it, transmitting browns the module out mid-send.</p>
-      </div>
-      <div class="part">
-        <span class="id">5 V supply, 2 A or more</span>
-        <span class="qty">&times;1 &middot; wall adapter preferred</span>
-        <p>For the module <em>only</em>. Many power banks switch themselves off at the module's idle current.</p>
+        <p>Sits right beside the SIM800L across 5Vin and GND. Buffers the 2 A GSM transmit bursts.</p>
       </div>
       <div class="part">
         <span class="id">Breadboard + jumpers</span>
         <span class="qty">830-point &middot; 15&times; M-F, 8&times; M-M</span>
-        <p>Male-to-female for the module and the twelve sensor pins; male-to-male for the rails and the ground bridge.</p>
+        <p>Male-to-female for module and sensor pins; male-to-male for rails, Arduino 5V/GND, and ground links.</p>
       </div>
     </div>
 
@@ -559,6 +569,16 @@
         </thead>
         <tbody>
           <tr>
+            <td class="pin">Arduino 5V</td>
+            <td class="pin">HW-131 5V (bottom + rail)</td>
+            <td>Arduino draws operating power from HW-131 5V output. USB is for serial data.</td>
+          </tr>
+          <tr>
+            <td class="pin">Arduino GND</td>
+            <td class="pin">common ground</td>
+            <td>Bottom &minus; rail.</td>
+          </tr>
+          <tr>
             <td class="pin">PIR 1 OUT (ROOMC)</td>
             <td class="pin">Arduino Pin 2</td>
             <td>Its own wire, straight to the pin, never through a rail.</td>
@@ -579,14 +599,24 @@
             <td class="warn">Retired. Pin 5 would not respond to two different sensors, so Room D is out of the system. Suspect the pin, the wire or the rail tap &mdash; not the sensors.</td>
           </tr>
           <tr>
+            <td class="pin">Buzzer (+) (longer leg)</td>
+            <td class="pin">Arduino Pin 8</td>
+            <td>Direct wire. Triggers a non-blocking alert beep on motion.</td>
+          </tr>
+          <tr>
+            <td class="pin">Buzzer (&minus;) (shorter leg)</td>
+            <td class="pin">common ground</td>
+            <td>Bottom &minus; rail.</td>
+          </tr>
+          <tr>
             <td class="pin">All three PIR VCC</td>
-            <td class="pin">Arduino 5V (via bottom + rail)</td>
-            <td>About 45&nbsp;mA for all three together &mdash; the Arduino feeds them happily. The rail exists because the Uno has only one 5V pin.</td>
+            <td class="pin">HW-131 5V (via bottom + rail)</td>
+            <td>About 45&nbsp;mA for all three together &mdash; powered directly by the HW-131 5V bottom rail.</td>
           </tr>
           <tr>
             <td class="pin">All three PIR GND</td>
             <td class="pin">common ground</td>
-            <td>Bottom &minus; rail.</td>
+            <td>Bottom &minus; rail (shared with HW-131 GND and Arduino GND).</td>
           </tr>
           <tr>
             <td class="pin">SIM800L TXD</td>
@@ -605,12 +635,12 @@
           </tr>
           <tr>
             <td class="pin">SIM800L 5Vin</td>
-            <td class="pin">external supply +</td>
-            <td class="warn">External only. Transmit bursts pull about 2 A; the Arduino's regulator gives roughly 0.5 A and browns out.</td>
+            <td class="pin">HW-131 5V (top + rail)</td>
+            <td class="warn">Powered from HW-131 top rail (fed by 12V wall adapter). Transmit bursts pull 2 A; buffered by 1000&micro;F cap.</td>
           </tr>
           <tr>
             <td class="pin">SIM800L GND</td>
-            <td class="pin">supply &minus; <em>and</em> Arduino GND</td>
+            <td class="pin">HW-131 &minus; <em>and</em> Arduino GND</td>
             <td>Must be one shared net, or serial cannot work at all.</td>
           </tr>
           <tr>
@@ -633,15 +663,16 @@
     </div>
 
     <div class="panel" tabindex="0">
-      <svg viewBox="0 0 980 700" role="img" aria-label="Schematic view. An external 5 volt supply feeds the SIM800L's 5Vin pin, with a 1000 microfarad capacitor in parallel across the module's power pins. The SIM800L's TXD, RXD and RST connect directly to Arduino pins 10, 11 and 12, and its VDD is left unconnected. Three HC-SR501 PIR sensors are stacked in a column; all three take 5 volts from one shared power bus fed by the Arduino's 5V pin, all three share one ground bus, and each sensor's OUT wire runs on its own to Arduino pin 2, 3 or 4 for zones ROOMC, ROOMA and ROOMB. One common ground bus joins the supply minus, the module, all three sensors and the Arduino.">
+      <svg viewBox="0 0 980 700" role="img" aria-label="Schematic view. A 12 volt wall adapter feeds the HW-131 breadboard power supply module, which outputs 5 volts to both breadboard rails. Top rail feeds the SIM800L with a 1000 microfarad capacitor in parallel. Bottom rail powers the Arduino 5V pin, all three PIR sensors, and the buzzer. Arduino connects over USB for serial communication.">
 
-        <!-- ===== external supply ===== -->
-        <rect class="box" x="30" y="30" width="190" height="86" rx="4" />
-        <text class="t-hd" x="46" y="56">EXTERNAL 5 V</text>
-        <text class="t-sm" x="46" y="74">2 A wall adapter</text>
-        <text class="t-sm" x="46" y="90">module power only</text>
-        <text class="t-pwrc" x="214" y="90" text-anchor="end">+</text>
-        <text class="t-lbl"  x="214" y="118" text-anchor="end">&minus;</text>
+        <!-- ===== HW-131 & 12V Wall Adapter ===== -->
+        <rect class="box" x="30" y="30" width="200" height="96" rx="4" />
+        <text class="t-hd" x="46" y="54">HW-131 POWER</text>
+        <text class="t-sm" x="46" y="70">12 V 1A/2A DC adapter</text>
+        <text class="t-sm" x="46" y="86">Top &amp; Bottom = 5 V</text>
+        <text class="t-sm" x="46" y="102">Power switch ON</text>
+        <text class="t-pwrc" x="224" y="90" text-anchor="end">+</text>
+        <text class="t-lbl"  x="224" y="118" text-anchor="end">&minus;</text>
 
         <!-- ===== SIM800L ===== -->
         <rect class="box" x="330" y="30" width="240" height="155" rx="4" />
@@ -656,14 +687,13 @@
         <text class="t-sm"  x="340" y="174">2.8 V output &mdash; never feed it 5 V</text>
 
         <!-- supply + -> module 5Vin, and supply - -> module GND -->
-        <path class="w-pwr" d="M220 96 H330" />
+        <path class="w-pwr" d="M230 96 H330" />
         <circle class="n-pwr" cx="330" cy="96" r="4" />
-        <text class="t-pwrc" x="232" y="88">5 V</text>
-        <path class="w-gnd" d="M220 112 H228 V124 H330" />
+        <text class="t-pwrc" x="242" y="88">5 V</text>
+        <path class="w-gnd" d="M230 112 H238 V124 H330" />
         <circle class="n-gnd" cx="330" cy="124" r="4" />
 
         <!-- ===== capacitor, in parallel across the module's power pins ===== -->
-        <!-- minus leg stops at the ground line; plus leg hops over it -->
         <path class="w-gnd" d="M262 170 V124" />
         <circle class="n-gnd" cx="262" cy="124" r="4" />
         <path class="w-pwr" d="M300 170 V131 A7 7 0 0 1 300 117 V96" />
@@ -679,26 +709,25 @@
         <!-- ===== Arduino ===== -->
         <rect class="box" x="660" y="30" width="290" height="560" rx="4" />
         <text class="t-hd" x="678" y="56">ARDUINO UNO</text>
-        <text class="t-sm" x="678" y="72">powered over USB from the laptop</text>
+        <text class="t-sm" x="678" y="72">Powered by HW-131 &middot; USB for serial</text>
         <text class="t-lbl" x="670" y="104">Pin 10</text>
         <text class="t-lbl" x="670" y="128">Pin 11</text>
         <text class="t-lbl" x="670" y="152">Pin 12</text>
-        <text class="t-pos" x="670" y="200">5V</text>
+        <text class="t-pos" x="670" y="200">5V &larr; HW-131 5V</text>
         <text class="t-sm" x="790" y="104">&larr; SIM TXD</text>
         <text class="t-sm" x="790" y="128">&rarr; SIM RXD</text>
         <text class="t-sm" x="790" y="152">&rarr; SIM RST</text>
-        <text class="t-sm" x="790" y="200">&rarr; feeds all three PIRs</text>
+        <text class="t-sm" x="678" y="218">Draws 5V power from rail</text>
 
         <text class="t-lbl" x="670" y="304">Pin 2</text>
         <text class="t-lbl" x="670" y="348">Pin 3</text>
         <text class="t-lbl" x="670" y="392">Pin 4</text>
+        <text class="t-lbl" x="670" y="430">Pin 8</text>
         <text class="t-sig" x="790" y="304">&larr; ROOMC</text>
         <text class="t-sig" x="790" y="348">&larr; ROOMA</text>
         <text class="t-sig" x="790" y="392">&larr; ROOMB</text>
-        <text class="t-bad" x="670" y="440">Pin 5 &#10005; retired &mdash; would not respond</text>
-        <text class="t-sm"  x="670" y="456">to two different sensors. Room D is out.</text>
-        <text class="t-sm"  x="678" y="496">One pin per room. That is the whole</text>
-        <text class="t-sm"  x="678" y="512">reason the dashboard can tell them apart.</text>
+        <text class="t-sig" x="790" y="430">&rarr; BUZZER (+)</text>
+        <text class="t-bad" x="670" y="466">Pin 5 &#10005; retired (Room D)</text>
         <text class="t-lbl" x="670" y="564">GND</text>
 
         <!-- data wires: module <-> Arduino -->
@@ -746,16 +775,16 @@
         <circle class="n-sig" cx="550" cy="428" r="4" />
         <circle class="n-sig" cx="654" cy="392" r="4" />
 
-        <!-- ===== shared 5 V bus: Arduino 5V feeds every sensor ===== -->
-        <path class="w-ard" d="M252 252 V428" />
-        <path class="w-ard" d="M252 252 H630 V200 H654" />
-        <path class="w-ard" d="M252 296 H322 M252 362 H322 M252 428 H322" />
+        <!-- ===== shared 5 V bus from HW-131 to PIR sensors & Arduino ===== -->
+        <path class="w-ard" d="M180 126 V428 H322" />
+        <path class="w-ard" d="M180 200 H654" />
+        <path class="w-ard" d="M180 296 H322 M180 362 H322" />
         <circle class="n-ard" cx="322" cy="296" r="4" />
         <circle class="n-ard" cx="322" cy="362" r="4" />
         <circle class="n-ard" cx="322" cy="428" r="4" />
         <circle class="n-ard" cx="654" cy="200" r="4" />
-        <text class="t-pos" x="60" y="246">ONE 5 V BUS &mdash; the bottom + rail</text>
-        <text class="t-sm"  x="60" y="262">all three sensors, ~45 mA together</text>
+        <text class="t-pos" x="60" y="246">HW-131 5 V BUS &mdash; bottom + rail</text>
+        <text class="t-sm"  x="60" y="262">powers Arduino 5V pin, PIRs &amp; Buzzer</text>
 
         <!-- ===== one common ground bus ===== -->
         <path class="w-gnd" d="M228 124 V600 H640 V564 H654" />
@@ -765,70 +794,62 @@
         <circle class="n-gnd" cx="322" cy="450" r="4" />
         <circle class="n-gnd" cx="228" cy="124" r="4" />
         <circle class="n-gnd" cx="654" cy="564" r="4" />
-        <text class="t-lbl" x="270" y="622">COMMON GROUND &mdash; supply &minus;, module, all three sensors, Arduino: one net</text>
-
-        <text class="t-bad" x="270" y="662">The Arduino's 5 V pin feeds the sensors and nothing else. It never reaches the module.</text>
+        <text class="t-lbl" x="270" y="622">COMMON GROUND &mdash; HW-131 &minus;, module GND, all PIR GNDs, Buzzer GND, Arduino GND: one net</text>
 
       </svg>
     </div>
 
     <p class="caption">
       Filled dots are connections; the small arch near the capacitor is a wire hop, crossing over
-      without joining. Three sensors were added to this drawing and the SIM800L half did not move:
-      the extra sensors hang off the same 5&nbsp;V bus and the same ground, and only their OUT wires
-      are individual. The capacitor still belongs beside the module's own power pins &mdash; put it at
-      the far end of a long rail and the wire resistance between cancels most of what it is there to do.
+      without joining. The HW-131 module provides 5 V to both rails. The Arduino 5V pin connects to the bottom 5V rail, and USB is used for serial communications.
     </p>
   </section>
 
   <section>
     <h2><span class="num">03</span>The four rails, and who owns them</h2>
     <p class="col">
-      This build has <strong>two separate 5 V supplies</strong> that must never meet, and
-      <strong>one ground</strong> shared by everything. Getting that right is most of the wiring.
+      The <strong>HW-131 Breadboard Power Module</strong> (fed by the 12 V wall adapter) powers both the
+      top and bottom breadboard rails with clean, regulated <strong>5 V</strong>, while <strong>Ground</strong>
+      is shared across everything.
     </p>
 
     <div class="rails">
       <div class="rail pos">
         <span class="id">TOP + rail</span>
-        <span class="src">external supply only</span>
-        <p>Wall adapter &rarr; the SIM800L's <code>5Vin</code>. The Arduino's 5 V pin never touches this rail.</p>
+        <span class="src">HW-131 5 V output</span>
+        <p>Powers the SIM800L's <code>5Vin</code>. Jumper set to <strong>5V</strong>. Buffered by 1000&micro;F capacitor.</p>
       </div>
       <div class="rail neg">
         <span class="id">TOP &minus; rail</span>
         <span class="src">common ground</span>
-        <p>Supply &minus;, module <code>GND</code>, and &mdash; through the bridge jumper &mdash; the Arduino's ground.</p>
+        <p>HW-131 &minus;, module <code>GND</code>, and Arduino ground.</p>
       </div>
       <div class="rail neg">
         <span class="id">BOTTOM &minus; rail</span>
         <span class="src">common ground</span>
-        <p>Arduino <code>GND</code> and all three PIR grounds. Bridged to the top &minus; rail so it is all one net.</p>
+        <p>Arduino <code>GND</code>, all three PIR grounds, and Buzzer ground. Connected to top &minus; rail via HW-131 / bridge.</p>
       </div>
       <div class="rail pos">
         <span class="id">BOTTOM + rail</span>
-        <span class="src">arduino 5 V &mdash; pirs only</span>
-        <p>Feeds all three HC-SR501s. Nothing else belongs on it &mdash; especially not the module.</p>
+        <span class="src">HW-131 5 V output</span>
+        <p>Powers Arduino Uno <code>5V</code> pin and all three HC-SR501 sensors. Jumper set to <strong>5V</strong>.</p>
       </div>
     </div>
 
     <p class="col">
-      Adding sensors does not add a rail. All three VCC pins land in the same
-      bottom&nbsp;+ rail and all three GND pins in the same bottom&nbsp;&minus; rail, just in different
-      columns. The only thing each sensor keeps to itself is its OUT wire.
+      All three PIR VCC pins tap into the bottom + rail and all three GND pins into the bottom &minus; rail.
+      Each sensor keeps its OUT wire dedicated to its assigned Arduino pin.
     </p>
 
     <div class="rule">
-      <span class="tag">The one rule</span>
+      <span class="tag">Power Connection Rule</span>
       <p>
-        <strong>Bridge the two &minus; rails. Never bridge the two + rails.</strong>
-        Ground must be one continuous net or the serial link cannot work at all. The two 5 V
-        rails come from different supplies &mdash; joining them back-feeds the Arduino's regulator
-        and puts the module's 2 A transmit burst onto a rail that can give 0.5 A.
+        <strong>HW-131 supplies 5V to Arduino 5V pin & rails. Share the GND line.</strong>
+        The HW-131 powers both rails directly from the 12 V wall adapter. The USB cable connects to the PC/laptop to provide the serial data bridge for the live web dashboard.
       </p>
       <p>
-        Most full-size boards also <strong>split each rail in the middle</strong> &mdash; look for a break
-        in the red and blue lines near column 30. If two wires sit on opposite sides of that break
-        they are not connected; bridge the halves of the rail you are using.
+        Most full-size boards <strong>split each rail in the middle</strong> (column 30). Bridge the rail
+        halves with short jumpers so power reaches all columns.
       </p>
     </div>
   </section>
@@ -836,15 +857,12 @@
   <section>
     <h2><span class="num">04</span>The breadboard, hole by hole</h2>
     <p class="col">
-      Drawn as a full-size 830-point board: 63 columns, rows A&ndash;J, four power rails. The column
-      numbers are a suggestion; the rail each wire lands in is not. On a half-size 400-point board,
-      keep the rails and shift the columns down to fit. Spread the sensors out as shown &mdash;
-      not because the electricity cares, but because you will be probing and re-seating these wires,
-      and crowded taps are what turn a loose OUT wire into an hour of guessing.
+      Drawn as a full-size 830-point board. The <strong>HW-131 module</strong> slots directly into columns 1–4
+      at the left end, bridging both rails and taking 12 V from the wall adapter.
     </p>
 
     <div class="panel" tabindex="0">
-      <svg viewBox="0 0 970 710" role="img" aria-label="Breadboard layout for three sensors. The external 5 volt supply feeds the top plus rail at column 3 and the top minus rail at column 6. The 1000 microfarad capacitor bridges the top plus rail at column 50 and the top minus rail at column 52. The SIM800L's 5Vin goes to the top plus rail at column 56 and its ground to the top minus rail at column 59. The Arduino's 5 volt pin feeds the bottom plus rail at column 3 and its ground the bottom minus rail at column 6. Three PIR sensors sit along the bottom: Room C taps the bottom plus rail at column 18 and the bottom minus rail at column 21, Room A at columns 31 and 34, and Room B at columns 43 and 46. Each sensor's OUT wire runs on its own, past the breadboard entirely, into Arduino pins 2, 3 and 4 respectively. A bridge jumper at column 62 joins the bottom minus rail to the top minus rail. A crossed-out dashed line marks that the two plus rails must never be joined. A fourth position on pin 5 is marked as retired.">
+      <svg viewBox="0 0 970 710" role="img" aria-label="Breadboard layout for three sensors with HW-131 power supply. The HW-131 module is plugged into the left side of the breadboard, powered by 12V DC adapter. It provides 5V to top and bottom rails. SIM800L and 1000uF capacitor sit on top rail. PIR sensors sit on bottom rail. Arduino 5V connects to bottom 5V rail, Arduino GND connects to bottom ground rail, and USB is for serial data.">
 
         <defs>
           <pattern id="holes" width="13.6" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(57.2, 7)">
@@ -852,10 +870,11 @@
           </pattern>
         </defs>
 
-        <!-- ===== supply, cap, module ===== -->
-        <rect class="box" x="52" y="18" width="200" height="76" rx="4" />
-        <text class="t-hd" x="68" y="44">EXTERNAL 5 V</text>
-        <text class="t-sm" x="68" y="62">module only &middot; 2 A adapter</text>
+        <!-- ===== HW-131 Module Box ===== -->
+        <rect class="box" x="52" y="18" width="220" height="76" rx="4" />
+        <text class="t-hd" x="68" y="42">HW-131 MODULE</text>
+        <text class="t-sm" x="68" y="58">12 V DC wall adapter input</text>
+        <text class="t-sm" x="68" y="74">Jumpers set to 5V / 5V</text>
         <text class="t-pwrc" x="91.2" y="88" text-anchor="middle">+</text>
         <text class="t-lbl" x="132" y="88" text-anchor="middle">&minus;</text>
 
@@ -889,10 +908,10 @@
         <text class="t-neg" x="48" y="410" text-anchor="end">&minus;</text>
         <text class="t-pos" x="48" y="424" text-anchor="end">+</text>
 
-        <text class="t-pwrc" x="330" y="172">TOP + &mdash; EXTERNAL 5 V &rarr; SIM800L</text>
+        <text class="t-pwrc" x="330" y="172">TOP + &mdash; HW-131 5 V &rarr; SIM800L</text>
         <text class="t-lbl"  x="330" y="187">TOP &minus; &mdash; COMMON GROUND</text>
         <text class="t-lbl"  x="155" y="411">COMMON GROUND</text>
-        <text class="t-pos"  x="155" y="425">ARDUINO 5 V &rarr; PIRs</text>
+        <text class="t-pos"  x="155" y="425">HW-131 5 V &rarr; Arduino 5V &amp; PIRs</text>
 
         <!-- row letters -->
         <text class="t-col" x="52" y="227" text-anchor="middle">J</text>
@@ -922,12 +941,7 @@
         <text class="t-col" x="866.4" y="210" text-anchor="middle">60</text>
 
         <!-- ===== top-half wires ===== -->
-        <!-- supply + -> top + rail, col 3 -->
-        <path class="w-pwr" d="M91.2 90 V168" />
-        <circle class="n-pwr" cx="91.2" cy="168" r="4" />
-        <!-- supply - -> top - rail, col 6, hopping over the + rail -->
-        <path class="w-gnd" d="M132 90 V161 A7 7 0 0 1 132 175 V182" />
-        <circle class="n-gnd" cx="132" cy="182" r="4" />
+        <!-- HW-131 plugs into cols 1-4 directly -->
         <!-- cap + leg -> top + rail, col 50 -->
         <path class="w-pwr" d="M726 94 L730.4 168" />
         <circle class="n-pwr" cx="730.4" cy="168" r="4" />
@@ -941,25 +955,18 @@
         <path class="w-gnd" d="M852.8 90 V161 A7 7 0 0 1 852.8 175 V182" />
         <circle class="n-gnd" cx="852.8" cy="182" r="4" />
 
-        <!-- ===== the forbidden link ===== -->
-        <path class="w-bad" d="M200 168 V420" />
-        <circle cx="200" cy="294" r="15" fill="var(--fail-bg)" stroke="var(--fail)" stroke-width="2" />
-        <path d="M193 287 L207 301 M207 287 L193 301" stroke="var(--fail)" stroke-width="2.5" fill="none" />
-        <text class="t-bad" x="224" y="290">NEVER join the two + rails</text>
-        <text class="t-sm"  x="224" y="305">two different supplies &mdash; one of them cannot survive it</text>
-
         <!-- ===== ground bridge, col 62 ===== -->
         <path class="w-gnd" d="M893.6 406 H948 V182 H893.6" />
         <circle class="n-gnd" cx="893.6" cy="406" r="4" />
         <circle class="n-gnd" cx="893.6" cy="182" r="4" />
-        <text class="t-lbl" x="520" y="452">GROUND BRIDGE col 62 &mdash; always join the two &minus; rails</text>
+        <text class="t-lbl" x="520" y="452">GROUND BRIDGE col 62 &mdash; joins the two &minus; rails</text>
 
         <!-- ===== Arduino ===== -->
         <rect class="box" x="52" y="510" width="196" height="100" rx="4" />
         <text class="t-hd" x="68" y="538">ARDUINO UNO</text>
-        <text class="t-sm" x="68" y="554">USB power + serial</text>
+        <text class="t-sm" x="68" y="554">HW-131 5V + USB serial</text>
         <text class="t-sm" x="68" y="570">Pins 10/11/12 &rarr; SIM800L</text>
-        <text class="t-sm" x="68" y="586">Pins 2/3/4 &rarr; the three OUTs</text>
+        <text class="t-sm" x="68" y="586">Pins 2/3/4 &rarr; OUTs &middot; Pin 8 &rarr; Buzz</text>
         <text class="t-pos" x="91.2" y="503" text-anchor="middle">5V</text>
         <text class="t-lbl" x="132" y="503" text-anchor="middle">GND</text>
 
@@ -1052,15 +1059,16 @@
           <tr><th>Wire</th><th>From</th><th>Lands in</th></tr>
         </thead>
         <tbody>
-          <tr><td class="pin">supply +</td><td>5 V 2 A adapter</td><td class="hole">TOP + rail &middot; col 3</td></tr>
-          <tr><td class="pin">supply &minus;</td><td>5 V 2 A adapter</td><td class="hole">TOP &minus; rail &middot; col 6</td></tr>
+          <tr><td class="pin">HW-131 Module</td><td>12 V 1A/2A DC Adapter</td><td class="hole">Breadboard left edge (cols 1&ndash;4) &middot; Jumpers at 5V</td></tr>
           <tr><td class="pin">cap + leg</td><td>1000 &micro;F</td><td class="hole">TOP + rail &middot; col 50</td></tr>
           <tr><td class="pin">cap &minus; leg</td><td>1000 &micro;F (stripe side)</td><td class="hole">TOP &minus; rail &middot; col 52</td></tr>
           <tr><td class="pin">5Vin</td><td>SIM800L</td><td class="hole">TOP + rail &middot; col 56</td></tr>
           <tr><td class="pin">GND</td><td>SIM800L</td><td class="hole">TOP &minus; rail &middot; col 59</td></tr>
           <tr><td class="pin">bridge</td><td>BOTTOM &minus; rail &middot; col 62</td><td class="hole">TOP &minus; rail &middot; col 62</td></tr>
-          <tr><td class="pin">5V</td><td>Arduino</td><td class="hole">BOTTOM + rail &middot; col 3</td></tr>
-          <tr><td class="pin">GND</td><td>Arduino</td><td class="hole">BOTTOM &minus; rail &middot; col 6</td></tr>
+          <tr><td class="pin">Arduino 5V</td><td>Arduino 5V</td><td class="hole">BOTTOM + rail &middot; col 3 (draws power from HW-131)</td></tr>
+          <tr><td class="pin">Arduino GND</td><td>Arduino GND</td><td class="hole">BOTTOM &minus; rail &middot; col 6</td></tr>
+          <tr><td class="pin">Buzzer (+)</td><td>5V Piezo Buzzer (+) leg</td><td class="hole">Arduino Pin 8 &mdash; direct</td></tr>
+          <tr><td class="pin">Buzzer (&minus;)</td><td>5V Piezo Buzzer (&minus;) leg</td><td class="hole">BOTTOM &minus; rail &middot; col 15</td></tr>
           <tr><td class="pin">VCC</td><td>PIR ROOMC</td><td class="hole">BOTTOM + rail &middot; col 18</td></tr>
           <tr><td class="pin">GND</td><td>PIR ROOMC</td><td class="hole">BOTTOM &minus; rail &middot; col 21</td></tr>
           <tr><td class="pin">OUT</td><td>PIR ROOMC</td><td class="hole">Arduino Pin 2 &mdash; direct</td></tr>
@@ -1123,15 +1131,15 @@
   <section>
     <h2><span class="num">06</span>Check the board before you power it</h2>
     <div class="checks">
-      <div class="check"><span class="mark">01</span><span>Set the multimeter to continuity. Probe the <strong>two + rails</strong> &mdash; it must <em>not</em> beep. If it does, you have bridged them somewhere.</span></div>
-      <div class="check"><span class="mark">02</span><span>Probe the <strong>two &minus; rails</strong> &mdash; it <em>must</em> beep. That is the bridge jumper doing its job.</span></div>
-      <div class="check"><span class="mark">03</span><span>Probe each rail end to end. Silence in the middle means your board's rails are split at column 30 &mdash; bridge the halves. With the sensors spread from column 18 to 46 this now matters: a split rail can leave one of them dead.</span></div>
-      <div class="check"><span class="mark">04</span><span>Probe the module's <code>5Vin</code> wire against the Arduino's 5 V pin &mdash; it must <em>not</em> beep.</span></div>
+      <div class="check"><span class="mark">01</span><span>Check the <strong>HW-131 jumpers</strong> &mdash; confirm both the top and bottom jumpers are firmly seated across the <strong>5V</strong> pins (not 3.3V or OFF).</span></div>
+      <div class="check"><span class="mark">02</span><span>Probe the <strong>two &minus; rails</strong> with a multimeter on continuity &mdash; it <em>must</em> beep. That confirms common ground across the board.</span></div>
+      <div class="check"><span class="mark">03</span><span>Probe each rail end to end. Silence in the middle means your board's rails are split at column 30 &mdash; bridge the halves. With the sensors spread from column 18 to 46, a split rail can leave one of them unpowered.</span></div>
+      <div class="check"><span class="mark">04</span><span>Confirm the <strong>Arduino's 5V pin is connected to the bottom 5V rail</strong> and Arduino GND is connected to the bottom ground rail.</span></div>
       <div class="check"><span class="mark">05</span><span>Probe <strong>each OUT wire against every other</strong> &mdash; none may beep. A beep means two rooms are shorted together and will always report as one.</span></div>
-      <div class="check"><span class="mark">06</span><span>Count the OUT wires landing in the Arduino header: exactly one each in pins 2, 3, 4 and 5, and nothing in any other digital pin.</span></div>
-      <div class="check"><span class="mark">07</span><span>Check the capacitor is across two <em>different</em> rails, not two holes in the same one. Same rail = a short across your supply.</span></div>
+      <div class="check"><span class="mark">06</span><span>Count the OUT wires landing in the Arduino header: exactly one each in pins 2, 3, and 4, and nothing in any other digital pin.</span></div>
+      <div class="check"><span class="mark">07</span><span>Check the capacitor is across two <em>different</em> rails (+ and &minus;), not two holes in the same rail.</span></div>
       <div class="check"><span class="mark">08</span><span>Confirm the stripe leg of the capacitor is the one in the &minus; rail. Backwards, it vents.</span></div>
-      <div class="check"><span class="mark">09</span><span>Confirm <code>VDD</code> on the module has nothing plugged into it at all.</span></div>
+      <div class="check"><span class="mark">09</span><span>Confirm <code>VDD</code> on the SIM800L has nothing plugged into it at all.</span></div>
       <div class="check"><span class="mark">10</span><span>Screw the antenna on <em>before</em> powering up. Transmitting without one damages the radio.</span></div>
     </div>
   </section>

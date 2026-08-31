@@ -500,7 +500,7 @@
     <div class="scope">
       <span class="chip">Arduino Uno</span>
       <span class="chip">SIM800L V2.2 (UNV) · 5 V</span>
-      <span class="chip">external 5 V supply</span>
+      <span class="chip">HW-131 + 12 V adapter</span>
       <span class="chip">1000 µF</span>
       <span class="chip out">4× PIR sensors</span>
       <span class="chip out">XAMPP · MySQL</span>
@@ -512,12 +512,12 @@
     <h2><span class="num">01</span>The rig</h2>
     <p class="col">
       Five wires and a capacitor. The module never touches the Arduino's 5 V pin —
-      it draws up to <strong>2 A</strong> in bursts while transmitting and the Uno's
-      regulator can give about a quarter of that.
+      it is powered by the HW-131 5V rail (fed from a 12V wall adapter) and draws up to
+      <strong>2 A</strong> in bursts while transmitting, buffered by a 1000 &micro;F capacitor.
     </p>
 
     <div class="panel" tabindex="0">
-      <svg viewBox="0 0 900 570" role="img" aria-label="Wiring diagram: Arduino Uno pins 10, 11 and 12 connect to the SIM800L TXD, RXD and RST. The module's 5Vin comes from an external power bank, not the Arduino. A 1000 microfarad capacitor sits across the module's 5Vin and GND. All three grounds join on one bus.">
+      <svg viewBox="0 0 900 570" role="img" aria-label="Wiring diagram: Arduino Uno pins 10, 11 and 12 connect to the SIM800L TXD, RXD and RST. The module's 5Vin comes from an HW-131 power module fed by 12V DC adapter, not the Arduino. A 1000 microfarad capacitor sits across the module's 5Vin and GND. All grounds join on one bus.">
 
         <!-- ============ ARDUINO ============ -->
         <rect class="board" x="40" y="60" width="230" height="300" rx="4" />
@@ -529,7 +529,7 @@
         <text class="t" x="196" y="185" text-anchor="end">PIN 11</text>
         <text class="t" x="196" y="225" text-anchor="end">PIN 12</text>
         <text class="t" x="196" y="305" text-anchor="end">GND</text>
-        <text class="t-sm" x="60" y="345">pins 2–5 (PIRs) unused in this test</text>
+        <text class="t-sm" x="60" y="345">5V disconnected · pins 2–4 unused</text>
 
         <circle class="node-data" cx="266" cy="140" r="4" />
         <circle class="node-data" cx="266" cy="180" r="4" />
@@ -598,13 +598,13 @@
         <circle class="node-gnd" cx="700" cy="392" r="4.5" />
 
         <text class="t-lbl" x="470" y="412">COMMON GROUND — all three meet here</text>
-        <text class="t-sm" x="470" y="428">Arduino GND · module GND · supply −</text>
+        <text class="t-sm" x="470" y="428">Arduino GND · module GND · HW-131 −</text>
 
         <!-- ============ POWER ============ -->
         <rect class="board" x="430" y="440" width="250" height="90" rx="4" />
-        <text class="t-hd" x="450" y="470">EXTERNAL 5 V</text>
-        <text class="t-sm" x="450" y="488">power bank or 5 V 2 A adapter</text>
-        <text class="t-sm" x="450" y="504">never the Arduino 5V pin or DC jack</text>
+        <text class="t-hd" x="450" y="468">HW-131 POWER</text>
+        <text class="t-sm" x="450" y="486">12 V DC wall adapter input</text>
+        <text class="t-sm" x="450" y="502">jumper set to 5V (never Arduino 5V)</text>
 
         <circle class="node-gnd" cx="430" cy="500" r="4" />
         <circle class="node-pwr" cx="680" cy="470" r="4" />
