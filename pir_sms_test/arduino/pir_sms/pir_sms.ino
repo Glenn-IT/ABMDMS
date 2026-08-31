@@ -120,9 +120,15 @@ const char* ZONE_TEXT[NUM_ZONES] = { "Room C","Room A","Room B" }; // inside the
 // --------------------------------------------------------------
 
 const int LED_PIN    = 13;             // Built-in LED, lights while ANY room is active
-const int BUZZER_PIN = 8;              // 5V Piezoelectric Buzzer (+) leg -> Arduino Pin 8
+const int BUZZER_PIN = 8;              // 5V Passive Piezo Buzzer (+) leg -> Arduino Pin 8
 const bool BUZZER_ENABLED = true;      // Set false to mute buzzer
-const unsigned long BUZZER_BEEP_MS = 600; // Beep duration on detection in ms (set to 0 to buzz continuously while motion active)
+
+// Siren / Chirp settings for passive buzzer:
+// 4 cycles of "piwiw" (each 200ms = 100ms sweep up + 100ms sweep down) = 800ms total
+const unsigned long BUZZER_SWEEP_MS = 200; // Duration of one "piwiw" cycle (ms)
+const int BUZZER_CYCLES             = 4;   // 4 repetitions: "piwiw piwiw piwiw piwiw"
+const int BUZZER_FREQ_LOW           = 800;  // Starting/ending pitch (Hz)
+const int BUZZER_FREQ_HIGH          = 2500; // Peak pitch (Hz)
 
 const unsigned long WARMUP_SECONDS  = 30;    // PIR warm-up time
 const unsigned long BAUD_RATE       = 9600;  // Must match the Serial Monitor
@@ -193,8 +199,9 @@ bool          motionActive[NUM_ZONES] = {};   // already announced?
 unsigned long lowStartedAt[NUM_ZONES] = {};   // when it went quiet
 unsigned long highStartedAt[NUM_ZONES] = {};  // when it first went busy
 
-// --- Buzzer memory ---
-unsigned long buzzerUntil = 0;   // Non-blocking timer for buzzer alert
+// --- Passive Buzzer Siren Memory (Non-blocking) ---
+bool          buzzerPlaying = false;
+unsigned long buzzerStarted = 0;
 
 // --- SMS memory ---
 SoftwareSerial sim(SIM_RX_PIN, SIM_TX_PIN);
@@ -242,11 +249,11 @@ void setup() {
   digitalWrite(LED_PIN, LOW);
 
   pinMode(BUZZER_PIN, OUTPUT);
-  digitalWrite(BUZZER_PIN, LOW);
+  noTone(BUZZER_PIN);
 
   Serial.print(F("PIR + SMS Test Rig - "));
   Serial.print(NUM_ZONES);
-  Serial.println(F(" sensors, 1 SIM800L, 1 Buzzer"));
+  Serial.println(F(" sensors, 1 SIM800L, 1 Passive Buzzer"));
   for (int i = 0; i < NUM_ZONES; i++) {
     Serial.print(F("   Pin "));
     Serial.print(PIR_PIN[i]);
@@ -255,7 +262,7 @@ void setup() {
   }
   Serial.print(F("   Pin "));
   Serial.print(BUZZER_PIN);
-  Serial.println(F(" -> 5V Piezo Buzzer"));
+  Serial.println(F(" -> 5V Passive Buzzer (piwiw siren)"));
 
   // Wake the GSM module FIRST. It needs time to find the network,
   // and it can do that while the PIR sensor warms up.
@@ -277,11 +284,13 @@ void setup() {
     delay(1000);
   }
 
-  // Chirp buzzer once to signal warmup complete and system armed
+  // Play arming chirp (high double tone) to signal warmup complete
   if (BUZZER_ENABLED) {
-    digitalWrite(BUZZER_PIN, HIGH);
+    tone(BUZZER_PIN, 1800, 80);
     delay(100);
-    digitalWrite(BUZZER_PIN, LOW);
+    tone(BUZZER_PIN, 2500, 120);
+    delay(140);
+    noTone(BUZZER_PIN);
   }
 
   Serial.println(F("System Ready"));
@@ -331,10 +340,10 @@ void loop() {
           Serial.print(ZONE_NAME[i]);
           Serial.println(F("_MOTION_DETECTED"));   // <-- the laptop reads this line
 
-          // Trigger Buzzer Alert (Non-blocking)
+          // Trigger "piwiw piwiw piwiw piwiw" siren (Non-blocking)
           if (BUZZER_ENABLED) {
-            buzzerUntil = millis() + BUZZER_BEEP_MS;
-            digitalWrite(BUZZER_PIN, HIGH);
+            buzzerPlaying = true;
+            buzzerStarted = millis();
           }
 
           // Ask for an SMS. It is NOT sent here - it is put in line
@@ -389,27 +398,52 @@ void loop() {
   }
   digitalWrite(LED_PIN, anyActive ? HIGH : LOW);
 
-  // Manage non-blocking Buzzer timing
-  if (BUZZER_ENABLED) {
-    if (BUZZER_BEEP_MS > 0) {
-      // Beep for BUZZER_BEEP_MS milliseconds on each new motion detection
-      if (millis() >= buzzerUntil) {
-        digitalWrite(BUZZER_PIN, LOW);
-      }
-    } else {
-      // Continuous buzz as long as any zone has active motion
-      digitalWrite(BUZZER_PIN, anyActive ? HIGH : LOW);
-    }
-  } else {
-    digitalWrite(BUZZER_PIN, LOW);
-  }
+  // Advance "piwiw piwiw piwiw piwiw" siren frequency without blocking
+  buzzerTick();
 
   // Move any in-progress SMS forward by one small step.
   // This returns immediately - it never waits.
   smsTick();
 
   // Small pause so we do not read the pin millions of times per second
-  delay(50);
+  delay(10);
+}
+
+
+// ============================================================
+// SECTION 4B - NON-BLOCKING "PIWIW" BUZZER SIREN
+// Sweeps pitch up and down rapidly in repeating cycles.
+// ============================================================
+
+void buzzerTick() {
+  if (!BUZZER_ENABLED || !buzzerPlaying) {
+    return;
+  }
+
+  unsigned long elapsed = millis() - buzzerStarted;
+  unsigned long totalDuration = BUZZER_SWEEP_MS * BUZZER_CYCLES;
+
+  if (elapsed >= totalDuration) {
+    buzzerPlaying = false;
+    noTone(BUZZER_PIN);
+    return;
+  }
+
+  // Position within current 200ms cycle (0..199)
+  unsigned long cycleTime = elapsed % BUZZER_SWEEP_MS;
+  unsigned long halfCycle = BUZZER_SWEEP_MS / 2; // 100ms
+  int freq;
+
+  if (cycleTime < halfCycle) {
+    // Pitch sweep UP (e.g. 800 Hz -> 2500 Hz over 100ms)
+    freq = BUZZER_FREQ_LOW + (int)(((long)(BUZZER_FREQ_HIGH - BUZZER_FREQ_LOW) * cycleTime) / halfCycle);
+  } else {
+    // Pitch sweep DOWN (e.g. 2500 Hz -> 800 Hz over 100ms)
+    unsigned long downTime = cycleTime - halfCycle;
+    freq = BUZZER_FREQ_HIGH - (int)(((long)(BUZZER_FREQ_HIGH - BUZZER_FREQ_LOW) * downTime) / halfCycle);
+  }
+
+  tone(BUZZER_PIN, freq);
 }
 
 
