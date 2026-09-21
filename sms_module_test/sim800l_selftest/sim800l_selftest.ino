@@ -1,101 +1,88 @@
 /*
   ============================================================
-  SIM800L SELF TEST — TEST C
+  SIM800L SELF TEST — ESP32 VERSION
   File  : sim800l_selftest.ino
-  Board : Arduino Uno
-  Part  : ABMDMS / sms_module_test  (bench test only)
+  Board : ESP32 Dev Module
+  Part  : ABMDMS / sms_module_test
   ============================================================
 
-  WHAT THIS IS
-  ------------
-  The same checks you did by hand in sim800l_passthrough.ino, but run
-  automatically with a clear PASS / FAIL for each step. Use it to prove
-  the module works, to re-check it quickly before a demo, and to show
-  someone the result without them having to know AT commands.
+  WHAT THIS DOES:
+  ---------------
+  Runs automatic hardware and network diagnostics on your SIM800L module
+  using ESP32 Hardware UART2 (GPIO 16 / GPIO 17).
+  Prints clear PASS / FAIL for each step:
+    1. AT response (wiring & power)
+    2. SIM Card detection & PIN lock status
+    3. 2G Signal quality (RSSI)
+    4. Cellular network registration (Home/Roaming)
+    5. SMS text mode initialization
+    6. (Optional) Real SMS transmission to your phone
 
-  Nothing here touches the PIR sensors, the database, or the dashboard.
-  This is a bench test of the GSM module on its own.
+  WIRING (ESP32):
+  ---------------
+  SIM800L TXD  ->  ESP32 GPIO 16 (RX2)
+  SIM800L RXD  ->  ESP32 GPIO 17 (TX2)
+  SIM800L RST  ->  ESP32 GPIO 4
+  SIM800L 5Vin ->  HW-131 5V Rail (with 12V wall adapter)
+  SIM800L GND  ->  HW-131 GND AND ESP32 GND (Common Ground)
+  1000uF capacitor in parallel across 5Vin and GND (stripe to GND).
+  Antenna screwed on firmly.
 
-  WIRING  (SIM800L V2.2 by UNV — the 5V board)
-  ------
-  SIM800L TXD  ->  Arduino Pin 10          (direct)
-  SIM800L RXD  ->  Arduino Pin 11          (direct - V2.2 is 5V-logic, no divider)
-  SIM800L RST  ->  Arduino Pin 12
-  SIM800L 5Vin ->  power bank 5V           (NEVER the Arduino 5V pin or DC jack)
-  SIM800L GND  ->  power bank GND AND Arduino GND   (all grounds common)
-  SIM800L VDD  ->  leave UNCONNECTED       (2.8V reference output, not a power pin)
-  1000uF capacitor ACROSS the module's 5Vin / GND. Antenna on BEFORE power.
-
-  HOW TO USE IT
-  -------------
-  1. Put YOUR OWN number in TEST_RECIPIENT below (international: +639171234567).
-  2. Leave SEND_REAL_SMS as false for a dry run (checks 1-5 only, spends nothing).
-     Set it to true when you want it to actually send the text.
-  3. Upload, then open Tools > Serial Monitor at 9600.
-  4. The test runs once at boot. Type 't' and press Enter to run it again.
-
-  WHAT EACH STEP MEANS
-  --------------------
-  1 AT        - the module is powered and the two data wires are right
-  2 AT+CPIN?  - the SIM is seated and its PIN lock is off
-  3 AT+CSQ    - there is usable 2G signal (above 10; 99 means none at all)
-  4 AT+CREG?  - the network actually accepted this SIM (0,1 home / 0,5 roaming)
-  5 AT+CMGF=1 - plain-text SMS mode, the mode the real sketch uses
-  6 AT+CMGS   - a real message goes out
-
-  A failure at step 1 is wiring. Steps 3-4 are coverage. Step 6 is usually
-  load/credit, a wrongly formatted number, or the module browning out.
-  ============================================================
+  SERIAL MONITOR SETTINGS:
+  ------------------------
+  - Baud rate: 115200
+  - Line ending: Both NL & CR
 */
 
-#include <SoftwareSerial.h>
-
+#include <Arduino.h>
 
 // ============================================================
 // SECTION 1 - SETTINGS
-// Change these two lines. Everything else can stay as it is.
 // ============================================================
 
-// Your phone number, international format, no spaces. THIS IS THE ONE TO EDIT.
+// Your phone number in international format (+639XXXXXXXXX)
 const char* TEST_RECIPIENT = "+639169751409";
 
 // false = run checks 1-5 only, send nothing (free, safe to repeat)
 // true  = also send one real text message (costs one SMS)
 const bool SEND_REAL_SMS = false;
 
-// The message that gets sent. Keep it plain ASCII - no emoji, no accents.
-const char* TEST_MESSAGE = "ABMDMS SIM800L bench test - if you can read this, the module can send 2G SMS.";
+// The message that gets sent if SEND_REAL_SMS is true
+const char* TEST_MESSAGE = "ABMDMS SIM800L ESP32 test - module is working perfectly!";
 
-// Signal strength below this counts as a fail. 10 is the usual usable floor.
-const int MIN_SIGNAL = 10;
+const int MIN_SIGNAL = 10; // Signal floor
 
+// ESP32 Hardware UART2 Pins
+const int SIM_RX_PIN  = 16;  // ESP32 GPIO 16 (RX2) <- SIM800L TXD
+const int SIM_TX_PIN  = 17;  // ESP32 GPIO 17 (TX2) -> SIM800L RXD
+const int SIM_RST_PIN = 4;   // ESP32 GPIO 4        -> SIM800L RST
 
-// ------------------------------------------------------------
-// PINS - these match arduino/motion_sensor/motion_sensor.ino on purpose
-// ------------------------------------------------------------
-
-const int SIM_RX_PIN  = 10;   // Arduino Pin 10 <- SIM800L TXD
-const int SIM_TX_PIN  = 11;   // Arduino Pin 11 -> SIM800L RXD
-const int SIM_RST_PIN = 12;   // Arduino Pin 12 -> SIM800L RST (active LOW)
-
-const unsigned long PC_BAUD_RATE  = 9600;
+const unsigned long PC_BAUD_RATE  = 115200;
 const unsigned long SIM_BAUD_RATE = 9600;
 
-// How long to wait for each kind of reply. Sending is slow - the module has
-// to hand the message to the tower - so it gets much longer than the rest.
-const unsigned long REPLY_TIMEOUT_MS = 3000;
-const unsigned long SEND_TIMEOUT_MS  = 60000;
-
+const unsigned long REPLY_TIMEOUT_MS = 4000;
+const unsigned long SEND_TIMEOUT_MS  = 45000;
 
 // ============================================================
-// SECTION 2 - STATE
+// SECTION 2 - STATE & FORWARD DECLARATIONS
 // ============================================================
 
-SoftwareSerial sim(SIM_RX_PIN, SIM_TX_PIN);
+HardwareSerial sim(2); // Hardware UART2
 
-String reply = "";       // the module's last answer, kept for printing
-int    failures = 0;     // how many steps failed in this run
+String reply = "";
+int    failures = 0;
 
+void runSelfTest();
+void sendTestSms();
+void verdict();
+void ask(const char* command, unsigned long timeoutMs);
+bool askAndExpect(const char* command, const char* wanted, unsigned long timeoutMs);
+bool waitFor(const char* wanted, unsigned long timeoutMs);
+void collect(unsigned long timeoutMs);
+int  parseCsq(String s);
+String trimReply(String s);
+void pass(String note);
+void fail(const char* why);
 
 // ============================================================
 // SECTION 3 - SETUP
@@ -103,24 +90,27 @@ int    failures = 0;     // how many steps failed in this run
 
 void setup() {
   Serial.begin(PC_BAUD_RATE);
+  delay(1000);
 
   pinMode(SIM_RST_PIN, OUTPUT);
-  digitalWrite(SIM_RST_PIN, HIGH);   // RST is active LOW - keep it released
+  digitalWrite(SIM_RST_PIN, HIGH); // Active LOW
 
-  sim.begin(SIM_BAUD_RATE);
+  // Initialize Hardware UART2 on ESP32
+  sim.begin(SIM_BAUD_RATE, SERIAL_8N1, SIM_RX_PIN, SIM_TX_PIN);
 
-  Serial.println();
-  Serial.println(F("Waiting 10s for the SIM800L to join the network..."));
-  Serial.println(F("(status LED should settle to one blink every ~3 seconds)"));
-  delay(10000);
+  Serial.println(F("\n============================================"));
+  Serial.println(F("ABMDMS - SIM800L ESP32 AUTOMATED SELF-TEST"));
+  Serial.println(F("============================================"));
+  Serial.println(F("Waiting 5s for the SIM800L power-on & network search..."));
+  Serial.println(F("(Watch the SIM800L LED: it should blink once every ~3 seconds)\n"));
+  
+  delay(5000);
 
   runSelfTest();
 }
 
-
 // ============================================================
 // SECTION 4 - LOOP
-// Only job: let you press 't' to run the test again.
 // ============================================================
 
 void loop() {
@@ -132,7 +122,6 @@ void loop() {
   }
 }
 
-
 // ============================================================
 // SECTION 5 - THE TEST ITSELF
 // ============================================================
@@ -140,74 +129,85 @@ void loop() {
 void runSelfTest() {
   failures = 0;
 
-  Serial.println();
-  Serial.println(F("=== SIM800L SELF TEST ==="));
+  Serial.println(F("\n----------------- DIAGNOSTIC RUN -----------------"));
 
-  // ---- 1. Is it alive? ------------------------------------
+  // ---- 1. Check basic AT communication ----
   Serial.print(F("[1/6] Module responds (AT) ............ "));
-  if (askAndExpect("AT", "OK", REPLY_TIMEOUT_MS)) {
+  
+  // Try sending AT up to 3 times to sync autobaud
+  bool alive = false;
+  for (int attempt = 0; attempt < 3; attempt++) {
+    if (askAndExpect("AT", "OK", 1500)) {
+      alive = true;
+      break;
+    }
+    delay(300);
+  }
+
+  if (alive) {
     pass("");
   } else {
-    fail(F("no reply - check external power, common ground, TX/RX not swapped"));
-    verdict();                 // nothing else can pass, so stop here
+    fail("NO RESPONSE to AT!\n      * Check: 12V adapter plugged into HW-131 breadboard power\n      * Check: Common GND wire between ESP32 and HW-131\n      * Check: Try swapping GPIO 16 & GPIO 17 jumper wires");
+    verdict();
     return;
   }
 
-  // Turn the echo off so the answers we parse are clean.
+  // Turn off echo and enable detailed error numbers
   askAndExpect("ATE0", "OK", REPLY_TIMEOUT_MS);
+  askAndExpect("AT+CMEE=2", "OK", REPLY_TIMEOUT_MS);
 
-  // ---- 2. Is the SIM ready? -------------------------------
-  Serial.print(F("[2/6] SIM ready (AT+CPIN?) ............ "));
+  // ---- 2. Is SIM card detected & unlocked? ----
+  Serial.print(F("[2/6] SIM card status (AT+CPIN?) ...... "));
   if (askAndExpect("AT+CPIN?", "+CPIN: READY", REPLY_TIMEOUT_MS)) {
-    pass("");
+    pass("SIM Card Detected & Ready");
   } else {
-    fail(F("SIM not seated, or its PIN lock is still on"));
+    fail("SIM NOT DETECTED or PIN locked (Check if SIM is inserted firmly)");
   }
 
-  // ---- 3. Is there signal? --------------------------------
+  // ---- 3. Signal Quality Check ----
   Serial.print(F("[3/6] Signal quality (AT+CSQ) ......... "));
   ask("AT+CSQ", REPLY_TIMEOUT_MS);
   int rssi = parseCsq(reply);
   if (rssi >= MIN_SIGNAL && rssi != 99) {
-    pass(String("rssi=") + rssi + (rssi >= 20 ? " strong" : " good"));
+    pass(String("RSSI = ") + rssi + (rssi >= 20 ? " (Strong signal)" : " (Good signal)"));
   } else if (rssi == 99 || rssi < 0) {
-    fail(F("no signal at all (99) - antenna not attached, or no 2G coverage here"));
+    fail("NO SIGNAL (RSSI 99) - Screw on the antenna firmly & check 2G coverage");
   } else {
-    pass(String("rssi=") + rssi + " WEAK - may fail under load");
+    pass(String("RSSI = ") + rssi + " (WEAK signal - may fail under load)");
   }
 
-  // ---- 4. Did the network accept us? ----------------------
+  // ---- 4. Network Registration Check ----
   Serial.print(F("[4/6] Network registered (AT+CREG?) ... "));
   ask("AT+CREG?", REPLY_TIMEOUT_MS);
-  if (reply.indexOf("0,1") >= 0) {
-    pass(F("0,1 home network"));
-  } else if (reply.indexOf("0,5") >= 0) {
-    pass(F("0,5 roaming"));
+  if (reply.indexOf("0,1") >= 0 || reply.indexOf("1,1") >= 0) {
+    pass("Registered (Home Network)");
+  } else if (reply.indexOf("0,5") >= 0 || reply.indexOf("1,5") >= 0) {
+    pass("Registered (Roaming Network)");
   } else if (reply.indexOf("0,2") >= 0) {
-    fail(F("0,2 still searching - wait 30s and retry, or 2G is off in this area"));
+    fail("Still searching for cell tower (Wait 30s and press 't' to test again)");
   } else if (reply.indexOf("0,3") >= 0) {
-    fail(F("0,3 registration DENIED - SIM barred, expired, or no load"));
+    fail("Registration DENIED by carrier (SIM expired, barred, or zero load)");
   } else {
-    fail(F("not registered - check the SIM in a 2G-forced phone in this room"));
+    fail(String("Not registered on cell network (Reply: " + trimReply(reply) + ")").c_str());
   }
 
-  // ---- 5. Plain-text mode ---------------------------------
-  Serial.print(F("[5/6] Text mode (AT+CMGF=1) ........... "));
+  // ---- 5. Plain-Text SMS Mode ----
+  Serial.print(F("[5/6] SMS text mode (AT+CMGF=1) ....... "));
   if (askAndExpect("AT+CMGF=1", "OK", REPLY_TIMEOUT_MS)) {
-    pass("");
+    pass("Text Mode Enabled");
   } else {
-    fail(F("module refused text mode - firmware or a bad connection"));
+    fail("Module refused text mode");
   }
 
-  // ---- 6. Actually send one ------------------------------
+  // ---- 6. Real SMS Test ----
   Serial.print(F("[6/6] Send SMS to "));
   Serial.print(TEST_RECIPIENT);
   Serial.print(F(" ....... "));
 
   if (!SEND_REAL_SMS) {
-    Serial.println(F("SKIPPED (SEND_REAL_SMS is false)"));
+    Serial.println(F("SKIPPED (Set SEND_REAL_SMS = true in sketch to test actual SMS)"));
   } else if (failures > 0) {
-    Serial.println(F("SKIPPED (fix the failures above first)"));
+    Serial.println(F("SKIPPED (Resolve failures above first)"));
   } else {
     sendTestSms();
   }
@@ -215,70 +215,57 @@ void runSelfTest() {
   verdict();
 }
 
-
-// The send is its own function because it is the only multi-part exchange:
-// the module answers with '>' first, and only then do we hand it the text.
 void sendTestSms() {
   sim.print("AT+CMGS=\"");
   sim.print(TEST_RECIPIENT);
   sim.println("\"");
 
   if (!waitFor(">", REPLY_TIMEOUT_MS)) {
-    fail(F("no '>' prompt - number must be international format, e.g. +639171234567"));
+    fail("No '>' prompt received from module");
     return;
   }
 
   sim.print(TEST_MESSAGE);
-  sim.write((char)26);            // Ctrl+Z = "message finished, send it"
+  sim.write((char)26); // Ctrl+Z
 
   if (waitFor("+CMGS:", SEND_TIMEOUT_MS)) {
     pass(trimReply(reply));
-    Serial.println(F("      -> check your phone now."));
+    Serial.println(F("      -> Check your mobile phone for the test message!"));
   } else if (reply.indexOf("ERROR") >= 0) {
-    fail(F("module returned ERROR - usually no load/credit on the SIM"));
+    fail("Module returned ERROR (Check SIM prepaid balance / load)");
   } else {
-    fail(F("timed out - weak signal, or the module browned out (check the 1000uF cap)"));
+    fail("Timed out waiting for network acceptance (Check 1000uF capacitor)");
   }
 }
-
 
 void verdict() {
-  Serial.println();
+  Serial.println(F("--------------------------------------------------"));
   if (failures == 0 && SEND_REAL_SMS) {
-    Serial.println(F("RESULT: ALL PASS - the module can send 2G SMS."));
-    Serial.println(F("Next: SIM800L_SMS_CHECKLIST.md Phase 4."));
+    Serial.println(F("RESULT: ALL 6 TESTS PASSED! SIM800L is 100% operational."));
   } else if (failures == 0) {
-    Serial.println(F("RESULT: CHECKS PASS - set SEND_REAL_SMS to true to send a real text."));
+    Serial.println(F("RESULT: HARDWARE CHECKS PASSED! Set SEND_REAL_SMS = true to test sending."));
   } else {
-    Serial.print(F("RESULT: "));
-    Serial.print(failures);
-    Serial.println(F(" FAILED - see AT_COMMANDS.md for the fix table."));
+    Serial.printf("RESULT: %d STEP(S) FAILED. Follow the suggestions above.\n", failures);
   }
-  Serial.println(F("Type 't' to run again."));
-  Serial.println(F("========================="));
+  Serial.println(F("Type 't' in Serial Monitor and press Enter to test again."));
+  Serial.println(F("==================================================\n"));
 }
 
-
 // ============================================================
-// SECTION 6 - TALKING TO THE MODULE
+// SECTION 6 - SERIAL COMMUNICATION HELPERS
 // ============================================================
 
-// Send one command and collect whatever comes back into 'reply'.
 void ask(const char* command, unsigned long timeoutMs) {
-  while (sim.available()) sim.read();     // throw away anything left over
+  while (sim.available()) sim.read();
   sim.println(command);
   collect(timeoutMs);
 }
 
-
-// Send one command and say whether the answer contained what we wanted.
 bool askAndExpect(const char* command, const char* wanted, unsigned long timeoutMs) {
   ask(command, timeoutMs);
   return reply.indexOf(wanted) >= 0;
 }
 
-
-// Read until 'wanted' shows up, or the time runs out. Used for the two-part send.
 bool waitFor(const char* wanted, unsigned long timeoutMs) {
   reply = "";
   unsigned long started = millis();
@@ -292,9 +279,6 @@ bool waitFor(const char* wanted, unsigned long timeoutMs) {
   return false;
 }
 
-
-// Gather the module's answer. Stops early once OK or ERROR arrives, so a
-// passing step does not sit through the whole timeout.
 void collect(unsigned long timeoutMs) {
   reply = "";
   unsigned long started = millis();
@@ -303,34 +287,25 @@ void collect(unsigned long timeoutMs) {
       reply += (char)sim.read();
     }
     if (reply.indexOf("OK") >= 0 || reply.indexOf("ERROR") >= 0) {
-      delay(20);                          // let the last few bytes land
+      delay(20);
       while (sim.available()) reply += (char)sim.read();
       return;
     }
   }
 }
 
-
-// ============================================================
-// SECTION 7 - SMALL HELPERS
-// ============================================================
-
-// Pull the first number out of "+CSQ: 17,0". Returns -1 if it is not there.
 int parseCsq(String s) {
   int at = s.indexOf("+CSQ:");
   if (at < 0) return -1;
   return s.substring(at + 5).toInt();
 }
 
-
-// Squash a multi-line module reply onto one line so it prints tidily.
 String trimReply(String s) {
   s.replace("\r", " ");
   s.replace("\n", " ");
   s.trim();
   return s;
 }
-
 
 void pass(String note) {
   Serial.print(F("PASS"));
@@ -342,8 +317,7 @@ void pass(String note) {
   Serial.println();
 }
 
-
-void fail(const __FlashStringHelper* why) {
+void fail(const char* why) {
   failures++;
   Serial.println(F("FAIL"));
   Serial.print(F("      -> "));
