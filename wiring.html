@@ -1,4 +1,9 @@
-<title>Wiring &amp; Breadboard &mdash; ABMDMS</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP32 Wireless Wiring &amp; Breadboard Guide &mdash; ABMDMS</title>
 
 <style>
   :root {
@@ -18,6 +23,8 @@
     --fail-bg:   #FBE7E4;
     --signal:    #1B6E7A;
     --signal-bg: #E1F0F1;
+    --wifi:      #2B6CB0;
+    --wifi-bg:   #EBF8FF;
 
     --board:     #EFEFEA;
     --board-ln:  #C9CAC3;
@@ -50,6 +57,8 @@
       --fail-bg:   #2A1512;
       --signal:    #58BCC8;
       --signal-bg: #0E2529;
+      --wifi:      #63B3ED;
+      --wifi-bg:   #1A365D;
 
       --board:     #23282C;
       --board-ln:  #3B444C;
@@ -62,62 +71,6 @@
     }
   }
 
-  :root[data-theme="dark"] {
-    --bg:        #0F1316;
-    --surface:   #161B1F;
-    --surface-2: #1C2328;
-    --ink:       #E6EAED;
-    --ink-2:     #A8B2BA;
-    --ink-3:     #77828B;
-    --line:      #293036;
-    --line-2:    #3A434A;
-    --accent:    #E5A33F;
-    --accent-bg: #29200F;
-    --pass:      #55C08D;
-    --pass-bg:   #10261C;
-    --fail:      #F2796B;
-    --fail-bg:   #2A1512;
-    --signal:    #58BCC8;
-    --signal-bg: #0E2529;
-
-    --board:     #23282C;
-    --board-ln:  #3B444C;
-    --hole:      #0C1013;
-    --channel:   #1A1E22;
-    --rail-pos:  #E0685A;
-    --rail-neg:  #6E9BD6;
-    --wire-gnd:  #8C97A0;
-    --wire-pwr:  #E5A33F;
-  }
-
-  :root[data-theme="light"] {
-    --bg:        #ECEEEF;
-    --surface:   #FFFFFF;
-    --surface-2: #F5F7F8;
-    --ink:       #131719;
-    --ink-2:     #48525A;
-    --ink-3:     #79848C;
-    --line:      #D2D7DA;
-    --line-2:    #B7BEC3;
-    --accent:    #B8720F;
-    --accent-bg: #FBF0DA;
-    --pass:      #14663F;
-    --pass-bg:   #E3F1E9;
-    --fail:      #A32218;
-    --fail-bg:   #FBE7E4;
-    --signal:    #1B6E7A;
-    --signal-bg: #E1F0F1;
-
-    --board:     #EFEFEA;
-    --board-ln:  #C9CAC3;
-    --hole:      #9BA0A5;
-    --channel:   #DFDFD8;
-    --rail-pos:  #C2352A;
-    --rail-neg:  #2F5FA8;
-    --wire-gnd:  #6B757E;
-    --wire-pwr:  #B8720F;
-  }
-
   body {
     background: var(--bg);
     color: var(--ink);
@@ -125,6 +78,7 @@
     font-size: 16px;
     line-height: 1.6;
     padding: 0 20px 96px;
+    margin: 0;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -170,14 +124,15 @@
     letter-spacing: -0.02em;
     font-weight: 650;
     text-wrap: balance;
-    max-width: 20ch;
+    max-width: 24ch;
+    margin: 0;
   }
 
-  .standfirst { font-size: 18px; color: var(--ink-2); max-width: 62ch; }
+  .standfirst { font-size: 18px; color: var(--ink-2); max-width: 65ch; margin: 0; }
 
   section { display: flex; flex-direction: column; gap: 20px; }
 
-  h2 { font-size: 24px; letter-spacing: -0.01em; font-weight: 640; text-wrap: balance; }
+  h2 { font-size: 24px; letter-spacing: -0.01em; font-weight: 640; text-wrap: balance; margin: 0; }
 
   h2 .num {
     font-family: var(--font-mono);
@@ -189,9 +144,9 @@
     vertical-align: 3px;
   }
 
-  h3 { font-size: 15px; font-weight: 640; }
+  h3 { font-size: 15px; font-weight: 640; margin: 0; }
 
-  p { max-width: 68ch; }
+  p { max-width: 68ch; margin: 0; }
   strong { font-weight: 640; }
 
   code, .mono { font-family: var(--font-mono); }
@@ -208,7 +163,7 @@
   .panel {
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 3px;
+    border-radius: 4px;
     overflow-x: auto;
   }
 
@@ -230,19 +185,21 @@
   .w-pwr     { stroke: var(--wire-pwr); stroke-width: 2.5; fill: none; stroke-linecap: round; }
   .w-ard     { stroke: var(--rail-pos); stroke-width: 2.5; fill: none; stroke-linecap: round; }
   .w-sig     { stroke: var(--signal); stroke-width: 2.5; fill: none; stroke-linecap: round; }
-  .w-bad     { stroke: var(--fail); stroke-width: 2.5; fill: none; stroke-dasharray: 7 5; opacity: 0.75; }
+  .w-wifi    { stroke: var(--wifi); stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-dasharray: 5 4; }
   .n-gnd     { fill: var(--wire-gnd); }
   .n-pwr     { fill: var(--wire-pwr); }
   .n-ard     { fill: var(--rail-pos); }
   .n-sig     { fill: var(--signal); }
+  .n-wifi    { fill: var(--wifi); }
   .t         { font-family: var(--font-mono); font-size: 12px; fill: var(--ink); }
   .t-sm      { font-family: var(--font-mono); font-size: 10px; fill: var(--ink-3); }
   .t-col     { font-family: var(--font-mono); font-size: 9px; fill: var(--ink-3); }
   .t-lbl     { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-2); letter-spacing: 0.05em; }
-  .t-hd      { font-family: var(--font-mono); font-size: 12.5px; fill: var(--ink); letter-spacing: 0.1em; }
+  .t-hd      { font-family: var(--font-mono); font-size: 12.5px; fill: var(--ink); letter-spacing: 0.1em; font-weight: 600; }
   .t-bad     { font-family: var(--font-mono); font-size: 11.5px; fill: var(--fail); letter-spacing: 0.04em; }
   .t-pwrc    { font-family: var(--font-mono); font-size: 11px; fill: var(--wire-pwr); }
   .t-sig     { font-family: var(--font-mono); font-size: 11px; fill: var(--signal); }
+  .t-wifi    { font-family: var(--font-mono); font-size: 11px; fill: var(--wifi); }
 
   /* ---- parts list ---- */
   .parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
@@ -251,7 +208,7 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-left: 3px solid var(--line-2);
-    border-radius: 3px;
+    border-radius: 4px;
     padding: 15px 17px;
     display: flex;
     flex-direction: column;
@@ -259,6 +216,7 @@
   }
 
   .part.key { border-left-color: var(--accent); }
+  .part.wifi { border-left-color: var(--wifi); }
 
   .part .id { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--ink); }
 
@@ -279,7 +237,7 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-left: 3px solid var(--line-2);
-    border-radius: 3px;
+    border-radius: 4px;
     padding: 16px 18px;
     display: flex;
     flex-direction: column;
@@ -303,13 +261,18 @@
 
   /* ---- the rules ---- */
   .rule {
-    background: var(--fail-bg);
-    border: 1px solid var(--fail);
-    border-radius: 3px;
+    background: var(--accent-bg);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
     padding: 20px 22px;
     display: flex;
     flex-direction: column;
     gap: 10px;
+  }
+
+  .rule.wifi-banner {
+    background: var(--wifi-bg);
+    border-color: var(--wifi);
   }
 
   .rule .tag {
@@ -317,7 +280,12 @@
     font-size: 10.5px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--fail);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .rule.wifi-banner .tag {
+    color: var(--wifi);
   }
 
   .rule p { margin: 0; font-size: 14.5px; color: var(--ink-2); }
@@ -333,6 +301,7 @@
     font-size: 14.5px;
     background: var(--surface);
     border: 1px solid var(--line);
+    border-radius: 4px;
   }
 
   th {
@@ -362,7 +331,46 @@
 
   td.hole { color: var(--accent); }
   td.tok  { color: var(--signal); }
-  td.warn { color: var(--fail); }
+  td.warn { color: var(--fail); font-weight: 600; }
+  td.wifi { color: var(--wifi); font-weight: 600; }
+
+  /* ---- flow ---- */
+  .flow {
+    background: var(--wifi-bg);
+    border: 1px solid var(--wifi);
+    border-radius: 4px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .flow .tag {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--wifi);
+    font-weight: 600;
+  }
+
+  .flow p { margin: 0; font-size: 14.5px; color: var(--ink-2); }
+  .flow .chain { font-family: var(--font-mono); font-size: 13px; color: var(--ink); line-height: 2; }
+
+  /* ---- checks ---- */
+  .checks {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .check { background: var(--surface); padding: 14px 18px; display: flex; gap: 14px; align-items: baseline; }
+  .check .mark { font-family: var(--font-mono); color: var(--accent); font-size: 13px; flex: none; font-weight: 600; }
+  .check span:last-child { font-size: 14.5px; color: var(--ink-2); }
 
   /* ---- LED decoder ---- */
   .leds { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
@@ -370,7 +378,7 @@
   .led {
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 3px;
+    border-radius: 4px;
     padding: 16px 18px;
     display: flex;
     flex-direction: column;
@@ -403,47 +411,6 @@
 
   @keyframes blink { 0%, 12% { opacity: 1; } 13%, 100% { opacity: 0.18; } }
 
-  @media (prefers-reduced-motion: reduce) {
-    .led .dot { animation: none !important; }
-  }
-
-  /* ---- checks ---- */
-  .checks {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    background: var(--line);
-    border: 1px solid var(--line);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-
-  .check { background: var(--surface); padding: 14px 18px; display: flex; gap: 14px; align-items: baseline; }
-  .check .mark { font-family: var(--font-mono); color: var(--accent); font-size: 13px; flex: none; }
-  .check span:last-child { font-size: 14.5px; color: var(--ink-2); }
-
-  /* ---- flow ---- */
-  .flow {
-    background: var(--signal-bg);
-    border: 1px solid var(--signal);
-    border-radius: 3px;
-    padding: 18px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .flow .tag {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--signal);
-  }
-
-  .flow p { margin: 0; font-size: 14.5px; color: var(--ink-2); }
-  .flow .chain { font-family: var(--font-mono); font-size: 13px; color: var(--ink); line-height: 2; }
-
   footer {
     border-top: 1px solid var(--line);
     padding-top: 24px;
@@ -457,32 +424,26 @@
   a { color: var(--accent); text-underline-offset: 2px; }
   a:focus-visible, .panel:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 </style>
+</head>
+<body>
 
 <div class="wrap">
 
   <header class="masthead">
-    <div class="eyebrow">ABMDMS &nbsp;&middot;&nbsp; build sheet</div>
-    <h1>Three rooms, one modem, one wire at a time</h1>
+    <div class="eyebrow">ABMDMS &nbsp;&middot;&nbsp; ESP32 Wireless Build Sheet</div>
+    <h1>Wireless Motion Detection with ESP32 &amp; SIM800L</h1>
     <p class="standfirst">
-      Three PIR sensors on Arduino pins 2&ndash;4, each watching its own room, all texting through
-      a single SIM800L and writing into MySQL. The single-sensor rig proved the chain works;
-      this sheet is the same build with more sensors hung off the same two power rails.
-      Add them <strong>one at a time</strong> &mdash; section&nbsp;05 says why.
+      Upgraded to <strong>ESP32 Wi-Fi</strong>. Motion events and SMS status reports are posted
+      directly to your XAMPP backend over the local Wi-Fi network &mdash; <strong>no USB tethering cord
+      or PowerShell serial bridge required</strong>.
     </p>
 
-    <div class="rule">
-      <span class="tag">Pin 5 / Room D is retired</span>
+    <div class="rule wifi-banner">
+      <span class="tag">Wireless Architecture &bull; No USB Cord Needed</span>
       <p>
-        This sheet used to describe a fourth sensor on <strong>Pin&nbsp;5</strong>, zone
-        <code>ROOMD</code>. During bring-up that pin would not respond to <strong>two different
-        sensors</strong>, so Room&nbsp;D was taken out of the system and the drawings below now
-        show three.
-      </p>
-      <p>
-        Two sensors failing on the same pin points at the <strong>pin, the OUT wire, or that
-        sensor's rail tap</strong> &mdash; not the sensors. To chase it, move the suspect sensor to
-        pin 6 or 7 and retest; if it works there, Pin&nbsp;5 or its wiring is the fault. Restoring
-        Room&nbsp;D afterwards is four small edits, listed in <code>README.md</code>.
+        The ESP32 runs standalone on your 5V HW-131 breadboard power adapter. When motion is detected,
+        it triggers the buzzer, texts via SIM800L (Hardware UART2), and transmits HTTP POST data
+        over 2.4GHz Wi-Fi straight into <code>record_motion.php</code> and <code>record_sms.php</code>.
       </p>
     </div>
   </header>
@@ -490,180 +451,157 @@
   <section>
     <h2><span class="num">01</span>What you need on the desk</h2>
     <div class="parts">
-      <div class="part key">
-        <span class="id">Arduino Uno</span>
-        <span class="qty">&times;1 &middot; 5 V from HW-131, USB for data</span>
-        <p>Powered via its 5V pin from the HW-131 5V rail. The USB cable connects to PC/laptop for serial data link to the dashboard.</p>
+      <div class="part wifi">
+        <span class="id">ESP32 Dev Module</span>
+        <span class="qty">&times;1 &middot; NodeMCU-32S / ESP32-WROOM</span>
+        <p>Powered via VIN from HW-131 5V rail. Direct Wi-Fi HTTP client &amp; Hardware UART2.</p>
       </div>
       <div class="part key">
         <span class="id">HW-131 Power Module</span>
         <span class="qty">&times;1 &middot; MB-102 compatible</span>
-        <p>Plugs onto breadboard ends. Sets both top and bottom rails to 5 V. Powers Arduino, SIM800L, PIRs, and buzzer.</p>
+        <p>Plugs onto breadboard end. Sets both rails to 5 V. Powers ESP32 VIN, SIM800L, and PIRs.</p>
       </div>
       <div class="part key">
         <span class="id">12 V DC Wall Adapter</span>
         <span class="qty">&times;1 &middot; 1 A to 2 A rating</span>
-        <p>Plugs directly into the HW-131 DC barrel jack (5.5mm &times; 2.1mm center positive).</p>
+        <p>Plugs into HW-131 DC barrel jack (5.5mm &times; 2.1mm center positive).</p>
       </div>
       <div class="part key">
         <span class="id">SIM800L V2.2 (UNV)</span>
-        <span class="qty">&times;1 &middot; the 5 V board</span>
-        <p>The blue board with a 5Vin pin. It is 5 V-logic, so its RX needs <strong>no</strong> voltage divider.</p>
+        <span class="qty">&times;1 &middot; 5 V board</span>
+        <p>Communicates with ESP32 via Hardware UART2 (GPIO 16 RX / GPIO 17 TX).</p>
       </div>
       <div class="part key">
-        <span class="id">HC-SR501 PIR</span>
+        <span class="id">HC-SR501 PIR Sensors</span>
         <span class="qty">&times;3 &middot; ROOMA / ROOMB / ROOMC</span>
-        <p>Three pins: VCC, OUT, GND. Powered from HW-131 bottom 5V rail.</p>
+        <p>Powered by 5V rail. Sensor OUT is 3.3V logic &mdash; 100% safe to plug directly into ESP32 GPIOs!</p>
       </div>
       <div class="part key">
         <span class="id">5V Piezo Buzzer</span>
         <span class="qty">&times;1 &middot; audible motion alarm</span>
-        <p>Positive (+) leg to Arduino Pin 8, negative (-) leg to breadboard ground rail. Sounds when motion is detected.</p>
+        <p>Positive (+) leg to ESP32 GPIO 25, negative (-) to ground rail. Plays non-blocking siren.</p>
       </div>
       <div class="part">
         <span class="id">1000 &micro;F capacitor</span>
         <span class="qty">&times;1 &middot; 16 V or higher</span>
-        <p>Sits right beside the SIM800L across 5Vin and GND. Buffers the 2 A GSM transmit bursts.</p>
+        <p>Sits across SIM800L 5Vin and GND in parallel to buffer 2 A GSM transmit bursts.</p>
       </div>
       <div class="part">
-        <span class="id">Breadboard + jumpers</span>
-        <span class="qty">830-point &middot; 15&times; M-F, 8&times; M-M</span>
-        <p>Male-to-female for module and sensor pins; male-to-male for rails, Arduino 5V/GND, and ground links.</p>
+        <span class="id">Breadboard + Jumpers</span>
+        <span class="qty">830-point &middot; M-F &amp; M-M</span>
+        <p>Male-to-female for module/sensor headers; male-to-male for rails &amp; ground links.</p>
       </div>
     </div>
 
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Sensor</th><th>OUT goes to</th><th>Zone in the code</th><th>Shown on the dashboard as</th></tr>
+          <tr><th>Sensor</th><th>OUT Wire Lands In</th><th>Zone Token</th><th>Web &amp; Android Display</th></tr>
         </thead>
         <tbody>
-          <tr><td class="pin">PIR 1</td><td class="pin">Arduino Pin 2</td><td class="tok">ROOMC</td><td>Room C</td></tr>
-          <tr><td class="pin">PIR 2</td><td class="pin">Arduino Pin 3</td><td class="tok">ROOMA</td><td>Room A</td></tr>
-          <tr><td class="pin">PIR 3</td><td class="pin">Arduino Pin 4</td><td class="tok">ROOMB</td><td>Room B</td></tr>
+          <tr><td class="pin">PIR 1</td><td class="pin wifi">ESP32 GPIO 13</td><td class="tok">ROOMC</td><td>Room C</td></tr>
+          <tr><td class="pin">PIR 2</td><td class="pin wifi">ESP32 GPIO 12</td><td class="tok">ROOMA</td><td>Room A</td></tr>
+          <tr><td class="pin">PIR 3</td><td class="pin wifi">ESP32 GPIO 14</td><td class="tok">ROOMB</td><td>Room B</td></tr>
+          <tr><td class="pin">PIR 4 (Optional)</td><td class="pin wifi">ESP32 GPIO 27</td><td class="tok">ROOMD</td><td>Room D (Ready to enable)</td></tr>
         </tbody>
       </table>
     </div>
-
-    <p class="caption">
-      Pin&nbsp;2 being Room&nbsp;C looks like a mistake and is not. Pin&nbsp;2 held the very first sensor
-      ever built, that sensor was Room&nbsp;C, and the main system still maps it that way. This rig copies
-      the mapping exactly so the two systems always agree. If you change it here, change
-      <code>ZONE_NAME[]</code> in the sketch to match.
-    </p>
   </section>
 
   <section>
-    <h2><span class="num">02</span>Every connection, once</h2>
+    <h2><span class="num">02</span>Every connection, pin by pin</h2>
     <p class="col">
-      Twenty wires. Adding three sensors adds nine of them and changes nothing else &mdash; the
-      SIM800L half is untouched from the one-sensor build. The rows in the
-      <span class="mono" style="color:var(--fail)">warning</span> colour are the ones that destroy
-      hardware or waste an evening, so they are called out rather than buried.
+      Clean and simple. The ESP32 is powered via <code>VIN</code> from the regulated 5V rail.
+      The PIR signal wires connect directly to GPIO inputs.
     </p>
 
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>From</th><th>To</th><th>Why / watch out</th></tr>
+          <tr><th>From Component</th><th>To ESP32 / Rail</th><th>Function &amp; Notes</th></tr>
         </thead>
         <tbody>
           <tr>
-            <td class="pin">Arduino 5V</td>
+            <td class="pin">ESP32 VIN</td>
             <td class="pin">HW-131 5V (bottom + rail)</td>
-            <td>Arduino draws operating power from HW-131 5V output. USB is for serial data.</td>
+            <td>Powers the ESP32 on-board 3.3V regulator from the 5V power supply.</td>
           </tr>
           <tr>
-            <td class="pin">Arduino GND</td>
-            <td class="pin">common ground</td>
-            <td>Bottom &minus; rail.</td>
+            <td class="pin">ESP32 GND</td>
+            <td class="pin">common ground (bottom &minus; rail)</td>
+            <td>Common ground shared across all boards and sensors.</td>
           </tr>
           <tr>
             <td class="pin">PIR 1 OUT (ROOMC)</td>
-            <td class="pin">Arduino Pin 2</td>
-            <td>Its own wire, straight to the pin, never through a rail.</td>
+            <td class="pin wifi">ESP32 GPIO 13</td>
+            <td>Direct wire. HC-SR501 outputs 3.3V HIGH signal &mdash; safe for ESP32.</td>
           </tr>
           <tr>
             <td class="pin">PIR 2 OUT (ROOMA)</td>
-            <td class="pin">Arduino Pin 3</td>
-            <td class="warn">Its own wire. Two sensors sharing one pin is not "both rooms" &mdash; it is one useless mixed signal.</td>
+            <td class="pin wifi">ESP32 GPIO 12</td>
+            <td>Direct wire to GPIO 12.</td>
           </tr>
           <tr>
             <td class="pin">PIR 3 OUT (ROOMB)</td>
-            <td class="pin">Arduino Pin 4</td>
-            <td>Its own wire.</td>
-          </tr>
-          <tr>
-            <td class="pin warn">PIR 4 OUT (ROOMD)</td>
-            <td class="pin warn">&mdash; not wired &mdash;</td>
-            <td class="warn">Retired. Pin 5 would not respond to two different sensors, so Room D is out of the system. Suspect the pin, the wire or the rail tap &mdash; not the sensors.</td>
+            <td class="pin wifi">ESP32 GPIO 14</td>
+            <td>Direct wire to GPIO 14.</td>
           </tr>
           <tr>
             <td class="pin">Buzzer (+) (longer leg)</td>
-            <td class="pin">Arduino Pin 8</td>
-            <td>Direct wire. Triggers a non-blocking alert beep on motion.</td>
+            <td class="pin wifi">ESP32 GPIO 25</td>
+            <td>Direct wire. Triggers pitch-sweep piwiw siren via PWM tone.</td>
           </tr>
           <tr>
-            <td class="pin">Buzzer (&minus;) (shorter leg)</td>
-            <td class="pin">common ground</td>
-            <td>Bottom &minus; rail.</td>
+            <td class="pin">Buzzer (&minus;)</td>
+            <td class="pin">common ground (&minus; rail)</td>
+            <td>Connects to ground.</td>
           </tr>
           <tr>
-            <td class="pin">All three PIR VCC</td>
-            <td class="pin">HW-131 5V (via bottom + rail)</td>
-            <td>About 45&nbsp;mA for all three together &mdash; powered directly by the HW-131 5V bottom rail.</td>
+            <td class="pin">All PIR VCC pins</td>
+            <td class="pin">HW-131 5V (bottom + rail)</td>
+            <td>Powers all PIR sensors from the 5V bus.</td>
           </tr>
           <tr>
-            <td class="pin">All three PIR GND</td>
-            <td class="pin">common ground</td>
-            <td>Bottom &minus; rail (shared with HW-131 GND and Arduino GND).</td>
+            <td class="pin">All PIR GND pins</td>
+            <td class="pin">common ground (&minus; rail)</td>
+            <td>Taps into bottom ground rail.</td>
           </tr>
           <tr>
             <td class="pin">SIM800L TXD</td>
-            <td class="pin">Arduino Pin 10</td>
-            <td>Direct. TX talks to RX &mdash; if the module never answers <code>AT</code>, suspect these two are swapped.</td>
+            <td class="pin wifi">ESP32 GPIO 16 (RX2)</td>
+            <td>Hardware UART2 RX. Direct connection (or via 1k/2k divider).</td>
           </tr>
           <tr>
             <td class="pin">SIM800L RXD</td>
-            <td class="pin">Arduino Pin 11</td>
-            <td class="warn">Direct &mdash; V2.2 is a 5 V-logic board. <strong>No 1k/2k divider.</strong> The divider belongs to the bare 3.7 V module, not this one.</td>
+            <td class="pin wifi">ESP32 GPIO 17 (TX2)</td>
+            <td>Hardware UART2 TX. ESP32 3.3V TX drives SIM800L RX reliably.</td>
           </tr>
           <tr>
             <td class="pin">SIM800L RST</td>
-            <td class="pin">Arduino Pin 12</td>
-            <td>Optional but recommended &mdash; the sketch pulses it to recover a stuck module.</td>
+            <td class="pin wifi">ESP32 GPIO 4</td>
+            <td>Hardware reset pin (Active LOW).</td>
           </tr>
           <tr>
             <td class="pin">SIM800L 5Vin</td>
             <td class="pin">HW-131 5V (top + rail)</td>
-            <td class="warn">Powered from HW-131 top rail (fed by 12V wall adapter). Transmit bursts pull 2 A; buffered by 1000&micro;F cap.</td>
+            <td class="warn">Powered from top 5V rail. Transmit burst pulls 2 A &mdash; buffered by 1000&micro;F capacitor.</td>
           </tr>
           <tr>
             <td class="pin">SIM800L GND</td>
-            <td class="pin">HW-131 &minus; <em>and</em> Arduino GND</td>
-            <td>Must be one shared net, or serial cannot work at all.</td>
+            <td class="pin">HW-131 &minus; <em>and</em> ESP32 GND</td>
+            <td>Must share common ground with ESP32.</td>
           </tr>
           <tr>
-            <td class="pin">SIM800L VDD</td>
-            <td class="pin">nothing</td>
-            <td class="warn">Leave unconnected. It is a 2.8 V reference <em>output</em>, not a power input &mdash; feeding it 5 V damages the board.</td>
-          </tr>
-          <tr>
-            <td class="pin">1000 &micro;F +</td>
-            <td class="pin">module 5Vin</td>
-            <td>In <strong>parallel</strong> across the module's power pins, not in series.</td>
-          </tr>
-          <tr>
-            <td class="pin">1000 &micro;F &minus; (stripe)</td>
-            <td class="pin">module GND</td>
-            <td class="warn">Polarity matters. Backwards, it heats up and vents.</td>
+            <td class="pin">1000 &micro;F Capacitor</td>
+            <td class="pin">Across SIM800L 5Vin &amp; GND</td>
+            <td class="warn">In parallel across 5Vin and GND. Stripe leg to ground.</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <div class="panel" tabindex="0">
-      <svg viewBox="0 0 980 700" role="img" aria-label="Schematic view. A 12 volt wall adapter feeds the HW-131 breadboard power supply module, which outputs 5 volts to both breadboard rails. Top rail feeds the SIM800L with a 1000 microfarad capacitor in parallel. Bottom rail powers the Arduino 5V pin, all three PIR sensors, and the buzzer. Arduino connects over USB for serial communication.">
+      <svg viewBox="0 0 980 660" role="img" aria-label="Schematic diagram for ESP32 Wireless Motion Detection System with SIM800L and 3 PIR sensors.">
 
         <!-- ===== HW-131 & 12V Wall Adapter ===== -->
         <rect class="box" x="30" y="30" width="200" height="96" rx="4" />
@@ -677,7 +615,7 @@
         <!-- ===== SIM800L ===== -->
         <rect class="box" x="330" y="30" width="240" height="155" rx="4" />
         <text class="t-hd" x="348" y="56">SIM800L V2.2</text>
-        <text class="t-sm" x="348" y="72">UNV &middot; 5 V logic board</text>
+        <text class="t-sm" x="348" y="72">Hardware UART2 GSM</text>
         <text class="t-pwrc" x="340" y="100">5Vin</text>
         <text class="t-lbl"  x="340" y="128">GND</text>
         <text class="t-lbl" x="560" y="100" text-anchor="end">TXD</text>
@@ -693,7 +631,7 @@
         <path class="w-gnd" d="M230 112 H238 V124 H330" />
         <circle class="n-gnd" cx="330" cy="124" r="4" />
 
-        <!-- ===== capacitor, in parallel across the module's power pins ===== -->
+        <!-- capacitor in parallel -->
         <path class="w-gnd" d="M262 170 V124" />
         <circle class="n-gnd" cx="262" cy="124" r="4" />
         <path class="w-pwr" d="M300 170 V131 A7 7 0 0 1 300 117 V96" />
@@ -703,34 +641,34 @@
         <text class="t-sm" x="281" y="204" text-anchor="middle">&micro;F</text>
         <text class="t-lbl"  x="258" y="164">&minus;</text>
         <text class="t-pwrc" x="304" y="164">+</text>
-        <text class="t-sm" x="36" y="188">IN PARALLEL across 5Vin / GND</text>
-        <text class="t-sm" x="36" y="204">stripe leg to ground</text>
 
-        <!-- ===== Arduino ===== -->
-        <rect class="box" x="660" y="30" width="290" height="560" rx="4" />
-        <text class="t-hd" x="678" y="56">ARDUINO UNO</text>
-        <text class="t-sm" x="678" y="72">Powered by HW-131 &middot; USB for serial</text>
-        <text class="t-lbl" x="670" y="104">Pin 10</text>
-        <text class="t-lbl" x="670" y="128">Pin 11</text>
-        <text class="t-lbl" x="670" y="152">Pin 12</text>
-        <text class="t-pos" x="670" y="200">5V &larr; HW-131 5V</text>
+        <!-- ===== ESP32 ===== -->
+        <rect class="box" x="660" y="30" width="290" height="580" rx="4" />
+        <text class="t-hd" x="678" y="56">ESP32 (WIFI ENABLED)</text>
+        <text class="t-wifi" x="678" y="74">&bull; Wi-Fi 2.4GHz &rarr; HTTP POST</text>
+        
+        <text class="t-lbl" x="670" y="104">GPIO 16 (RX2)</text>
+        <text class="t-lbl" x="670" y="128">GPIO 17 (TX2)</text>
+        <text class="t-lbl" x="670" y="152">GPIO 4</text>
+        <text class="t-pos" x="670" y="200">VIN &larr; HW-131 5V</text>
         <text class="t-sm" x="790" y="104">&larr; SIM TXD</text>
         <text class="t-sm" x="790" y="128">&rarr; SIM RXD</text>
         <text class="t-sm" x="790" y="152">&rarr; SIM RST</text>
-        <text class="t-sm" x="678" y="218">Draws 5V power from rail</text>
+        <text class="t-sm" x="678" y="218">On-board 3.3V LDO powered</text>
 
-        <text class="t-lbl" x="670" y="304">Pin 2</text>
-        <text class="t-lbl" x="670" y="348">Pin 3</text>
-        <text class="t-lbl" x="670" y="392">Pin 4</text>
-        <text class="t-lbl" x="670" y="430">Pin 8</text>
-        <text class="t-sig" x="790" y="304">&larr; ROOMC</text>
-        <text class="t-sig" x="790" y="348">&larr; ROOMA</text>
-        <text class="t-sig" x="790" y="392">&larr; ROOMB</text>
-        <text class="t-sig" x="790" y="430">&rarr; BUZZER (+)</text>
-        <text class="t-bad" x="670" y="466">Pin 5 &#10005; retired (Room D)</text>
-        <text class="t-lbl" x="670" y="564">GND</text>
+        <text class="t-lbl" x="670" y="296">GPIO 13</text>
+        <text class="t-lbl" x="670" y="340">GPIO 12</text>
+        <text class="t-lbl" x="670" y="384">GPIO 14</text>
+        <text class="t-lbl" x="670" y="428">GPIO 25</text>
+        <text class="t-sig" x="790" y="296">&larr; ROOMC</text>
+        <text class="t-sig" x="790" y="340">&larr; ROOMA</text>
+        <text class="t-sig" x="790" y="384">&larr; ROOMB</text>
+        <text class="t-sig" x="790" y="428">&rarr; BUZZER (+)</text>
+        <text class="t-wifi" x="670" y="480">[WIFI ANTENNA]</text>
+        <text class="t-sm" x="670" y="500">Sends HTTP POST to XAMPP</text>
+        <text class="t-lbl" x="670" y="584">GND</text>
 
-        <!-- data wires: module <-> Arduino -->
+        <!-- data wires: SIM800L <-> ESP32 -->
         <path class="w-sig" d="M570 100 H654" />
         <circle class="n-sig" cx="570" cy="100" r="4" />
         <circle class="n-sig" cx="654" cy="100" r="4" />
@@ -740,587 +678,118 @@
         <path class="w-sig" d="M570 148 H612 V152 H654" />
         <circle class="n-sig" cx="570" cy="148" r="4" />
         <circle class="n-sig" cx="654" cy="152" r="4" />
-        <text class="t-sig" x="340" y="212">RXD needs NO divider &mdash; V2.2 is 5 V logic</text>
 
-        <!-- ===== the PIR sensors ===== -->
-        <rect class="box" x="330" y="278" width="220" height="54" rx="4" />
-        <text class="t-hd"  x="346" y="300">HC-SR501</text>
-        <text class="t-sig" x="346" y="320">ROOMC &rarr; Pin 2</text>
-        <text class="t-pos" x="322" y="300" text-anchor="end">V</text>
-        <text class="t-lbl" x="322" y="322" text-anchor="end">G</text>
-        <text class="t-sig" x="560" y="302" text-anchor="end">OUT</text>
+        <!-- ===== PIR sensors ===== -->
+        <rect class="box" x="330" y="270" width="220" height="50" rx="4" />
+        <text class="t-hd"  x="346" y="290">HC-SR501</text>
+        <text class="t-sig" x="346" y="310">ROOMC &rarr; GPIO 13</text>
+        <text class="t-pos" x="322" y="292" text-anchor="end">V</text>
+        <text class="t-lbl" x="322" y="312" text-anchor="end">G</text>
+        <text class="t-sig" x="560" y="296" text-anchor="end">OUT</text>
 
-        <rect class="box" x="330" y="344" width="220" height="54" rx="4" />
-        <text class="t-hd"  x="346" y="366">HC-SR501</text>
-        <text class="t-sig" x="346" y="386">ROOMA &rarr; Pin 3</text>
-        <text class="t-pos" x="322" y="366" text-anchor="end">V</text>
-        <text class="t-lbl" x="322" y="388" text-anchor="end">G</text>
-        <text class="t-sig" x="560" y="368" text-anchor="end">OUT</text>
+        <rect class="box" x="330" y="330" width="220" height="50" rx="4" />
+        <text class="t-hd"  x="346" y="350">HC-SR501</text>
+        <text class="t-sig" x="346" y="370">ROOMA &rarr; GPIO 12</text>
+        <text class="t-pos" x="322" y="352" text-anchor="end">V</text>
+        <text class="t-lbl" x="322" y="372" text-anchor="end">G</text>
+        <text class="t-sig" x="560" y="356" text-anchor="end">OUT</text>
 
-        <rect class="box" x="330" y="410" width="220" height="54" rx="4" />
-        <text class="t-hd"  x="346" y="432">HC-SR501</text>
-        <text class="t-sig" x="346" y="452">ROOMB &rarr; Pin 4</text>
-        <text class="t-pos" x="322" y="432" text-anchor="end">V</text>
-        <text class="t-lbl" x="322" y="454" text-anchor="end">G</text>
-        <text class="t-sig" x="560" y="434" text-anchor="end">OUT</text>
+        <rect class="box" x="330" y="390" width="220" height="50" rx="4" />
+        <text class="t-hd"  x="346" y="410">HC-SR501</text>
+        <text class="t-sig" x="346" y="430">ROOMB &rarr; GPIO 14</text>
+        <text class="t-pos" x="322" y="412" text-anchor="end">V</text>
+        <text class="t-lbl" x="322" y="432" text-anchor="end">G</text>
+        <text class="t-sig" x="560" y="416" text-anchor="end">OUT</text>
 
-        <!-- each OUT to its own Arduino pin -->
-        <path class="w-sig" d="M550 296 H600 V304 H654" />
-        <circle class="n-sig" cx="550" cy="296" r="4" />
-        <circle class="n-sig" cx="654" cy="304" r="4" />
-        <path class="w-sig" d="M550 362 H612 V348 H654" />
-        <circle class="n-sig" cx="550" cy="362" r="4" />
-        <circle class="n-sig" cx="654" cy="348" r="4" />
-        <path class="w-sig" d="M550 428 H624 V392 H654" />
-        <circle class="n-sig" cx="550" cy="428" r="4" />
-        <circle class="n-sig" cx="654" cy="392" r="4" />
+        <!-- OUT wires to ESP32 -->
+        <path class="w-sig" d="M550 290 H600 V296 H654" />
+        <circle class="n-sig" cx="550" cy="290" r="4" />
+        <circle class="n-sig" cx="654" cy="296" r="4" />
+        <path class="w-sig" d="M550 350 H612 V340 H654" />
+        <circle class="n-sig" cx="550" cy="350" r="4" />
+        <circle class="n-sig" cx="654" cy="340" r="4" />
+        <path class="w-sig" d="M550 410 H624 V384 H654" />
+        <circle class="n-sig" cx="550" cy="410" r="4" />
+        <circle class="n-sig" cx="654" cy="384" r="4" />
 
-        <!-- ===== shared 5 V bus from HW-131 to PIR sensors & Arduino ===== -->
-        <path class="w-ard" d="M180 126 V428 H322" />
+        <!-- 5V power bus -->
+        <path class="w-ard" d="M180 126 V410 H322" />
         <path class="w-ard" d="M180 200 H654" />
-        <path class="w-ard" d="M180 296 H322 M180 362 H322" />
-        <circle class="n-ard" cx="322" cy="296" r="4" />
-        <circle class="n-ard" cx="322" cy="362" r="4" />
-        <circle class="n-ard" cx="322" cy="428" r="4" />
+        <path class="w-ard" d="M180 290 H322 M180 350 H322" />
+        <circle class="n-ard" cx="322" cy="290" r="4" />
+        <circle class="n-ard" cx="322" cy="350" r="4" />
+        <circle class="n-ard" cx="322" cy="410" r="4" />
         <circle class="n-ard" cx="654" cy="200" r="4" />
         <text class="t-pos" x="60" y="246">HW-131 5 V BUS &mdash; bottom + rail</text>
-        <text class="t-sm"  x="60" y="262">powers Arduino 5V pin, PIRs &amp; Buzzer</text>
+        <text class="t-sm"  x="60" y="262">Powers ESP32 VIN &amp; PIR VCC</text>
 
-        <!-- ===== one common ground bus ===== -->
-        <path class="w-gnd" d="M228 124 V600 H640 V564 H654" />
-        <path class="w-gnd" d="M228 318 H322 M228 384 H322 M228 450 H322" />
-        <circle class="n-gnd" cx="322" cy="318" r="4" />
-        <circle class="n-gnd" cx="322" cy="384" r="4" />
-        <circle class="n-gnd" cx="322" cy="450" r="4" />
+        <!-- common ground -->
+        <path class="w-gnd" d="M228 124 V600 H640 V584 H654" />
+        <path class="w-gnd" d="M228 310 H322 M228 370 H322 M228 430 H322" />
+        <circle class="n-gnd" cx="322" cy="310" r="4" />
+        <circle class="n-gnd" cx="322" cy="370" r="4" />
+        <circle class="n-gnd" cx="322" cy="430" r="4" />
         <circle class="n-gnd" cx="228" cy="124" r="4" />
-        <circle class="n-gnd" cx="654" cy="564" r="4" />
-        <text class="t-lbl" x="270" y="622">COMMON GROUND &mdash; HW-131 &minus;, module GND, all PIR GNDs, Buzzer GND, Arduino GND: one net</text>
+        <circle class="n-gnd" cx="654" cy="584" r="4" />
+        <text class="t-lbl" x="270" y="622">COMMON GROUND &mdash; HW-131 &minus;, SIM800L GND, PIR GNDs, Buzzer GND, ESP32 GND</text>
 
       </svg>
     </div>
-
-    <p class="caption">
-      Filled dots are connections; the small arch near the capacitor is a wire hop, crossing over
-      without joining. The HW-131 module provides 5 V to both rails. The Arduino 5V pin connects to the bottom 5V rail, and USB is used for serial communications.
-    </p>
   </section>
 
   <section>
-    <h2><span class="num">03</span>The four rails, and who owns them</h2>
-    <p class="col">
-      The <strong>HW-131 Breadboard Power Module</strong> (fed by the 12 V wall adapter) powers both the
-      top and bottom breadboard rails with clean, regulated <strong>5 V</strong>, while <strong>Ground</strong>
-      is shared across everything.
-    </p>
-
-    <div class="rails">
-      <div class="rail pos">
-        <span class="id">TOP + rail</span>
-        <span class="src">HW-131 5 V output</span>
-        <p>Powers the SIM800L's <code>5Vin</code>. Jumper set to <strong>5V</strong>. Buffered by 1000&micro;F capacitor.</p>
-      </div>
-      <div class="rail neg">
-        <span class="id">TOP &minus; rail</span>
-        <span class="src">common ground</span>
-        <p>HW-131 &minus;, module <code>GND</code>, and Arduino ground.</p>
-      </div>
-      <div class="rail neg">
-        <span class="id">BOTTOM &minus; rail</span>
-        <span class="src">common ground</span>
-        <p>Arduino <code>GND</code>, all three PIR grounds, and Buzzer ground. Connected to top &minus; rail via HW-131 / bridge.</p>
-      </div>
-      <div class="rail pos">
-        <span class="id">BOTTOM + rail</span>
-        <span class="src">HW-131 5 V output</span>
-        <p>Powers Arduino Uno <code>5V</code> pin and all three HC-SR501 sensors. Jumper set to <strong>5V</strong>.</p>
-      </div>
-    </div>
-
-    <p class="col">
-      All three PIR VCC pins tap into the bottom + rail and all three GND pins into the bottom &minus; rail.
-      Each sensor keeps its OUT wire dedicated to its assigned Arduino pin.
-    </p>
-
-    <div class="rule">
-      <span class="tag">Power Connection Rule</span>
-      <p>
-        <strong>HW-131 supplies 5V to Arduino 5V pin & rails. Share the GND line.</strong>
-        The HW-131 powers both rails directly from the 12 V wall adapter. The USB cable connects to the PC/laptop to provide the serial data bridge for the live web dashboard.
-      </p>
-      <p>
-        Most full-size boards <strong>split each rail in the middle</strong> (column 30). Bridge the rail
-        halves with short jumpers so power reaches all columns.
-      </p>
-    </div>
-  </section>
-
-  <section>
-    <h2><span class="num">04</span>The breadboard, hole by hole</h2>
-    <p class="col">
-      Drawn as a full-size 830-point board. The <strong>HW-131 module</strong> slots directly into columns 1–4
-      at the left end, bridging both rails and taking 12 V from the wall adapter.
-    </p>
-
-    <div class="panel" tabindex="0">
-      <svg viewBox="0 0 970 710" role="img" aria-label="Breadboard layout for three sensors with HW-131 power supply. The HW-131 module is plugged into the left side of the breadboard, powered by 12V DC adapter. It provides 5V to top and bottom rails. SIM800L and 1000uF capacitor sit on top rail. PIR sensors sit on bottom rail. Arduino 5V connects to bottom 5V rail, Arduino GND connects to bottom ground rail, and USB is for serial data.">
-
-        <defs>
-          <pattern id="holes" width="13.6" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(57.2, 7)">
-            <circle class="bb-hole" cx="6.8" cy="7" r="2.1" />
-          </pattern>
-        </defs>
-
-        <!-- ===== HW-131 Module Box ===== -->
-        <rect class="box" x="52" y="18" width="220" height="76" rx="4" />
-        <text class="t-hd" x="68" y="42">HW-131 MODULE</text>
-        <text class="t-sm" x="68" y="58">12 V DC wall adapter input</text>
-        <text class="t-sm" x="68" y="74">Jumpers set to 5V / 5V</text>
-        <text class="t-pwrc" x="91.2" y="88" text-anchor="middle">+</text>
-        <text class="t-lbl" x="132" y="88" text-anchor="middle">&minus;</text>
-
-        <rect class="box" x="716" y="52" width="52" height="42" rx="6" />
-        <text class="t-sm" x="742" y="70" text-anchor="middle">1000</text>
-        <text class="t-sm" x="742" y="84" text-anchor="middle">&micro;F</text>
-        <text class="t-pwrc" x="726" y="46" text-anchor="middle">+</text>
-        <text class="t-lbl" x="758" y="46" text-anchor="middle">&minus;</text>
-
-        <rect class="box" x="790" y="18" width="168" height="76" rx="4" />
-        <text class="t-hd" x="806" y="44">SIM800L</text>
-        <text class="t-sm" x="806" y="60">V2.2 &middot; 5 V board</text>
-        <text class="t-pwrc" x="812" y="88" text-anchor="middle">5Vin</text>
-        <text class="t-lbl" x="852.8" y="88" text-anchor="middle">GND</text>
-
-        <!-- ===== BREADBOARD ===== -->
-        <rect class="bb-body" x="44" y="154" width="886" height="280" rx="5" />
-        <rect x="57.2" y="161" width="856.8" height="28" fill="url(#holes)" />
-        <rect x="57.2" y="399" width="856.8" height="28" fill="url(#holes)" />
-        <rect x="57.2" y="217" width="856.8" height="70" fill="url(#holes)" />
-        <rect x="57.2" y="301" width="856.8" height="70" fill="url(#holes)" />
-        <rect class="bb-chan" x="44" y="287" width="886" height="14" />
-
-        <line class="bb-pos" x1="56" y1="157" x2="918" y2="157" />
-        <line class="bb-neg" x1="56" y1="193" x2="918" y2="193" />
-        <line class="bb-neg" x1="56" y1="395" x2="918" y2="395" />
-        <line class="bb-pos" x1="56" y1="431" x2="918" y2="431" />
-
-        <text class="t-pos" x="48" y="171" text-anchor="end">+</text>
-        <text class="t-neg" x="48" y="186" text-anchor="end">&minus;</text>
-        <text class="t-neg" x="48" y="410" text-anchor="end">&minus;</text>
-        <text class="t-pos" x="48" y="424" text-anchor="end">+</text>
-
-        <text class="t-pwrc" x="330" y="172">TOP + &mdash; HW-131 5 V &rarr; SIM800L</text>
-        <text class="t-lbl"  x="330" y="187">TOP &minus; &mdash; COMMON GROUND</text>
-        <text class="t-lbl"  x="155" y="411">COMMON GROUND</text>
-        <text class="t-pos"  x="155" y="425">HW-131 5 V &rarr; Arduino 5V &amp; PIRs</text>
-
-        <!-- row letters -->
-        <text class="t-col" x="52" y="227" text-anchor="middle">J</text>
-        <text class="t-col" x="52" y="241" text-anchor="middle">I</text>
-        <text class="t-col" x="52" y="255" text-anchor="middle">H</text>
-        <text class="t-col" x="52" y="269" text-anchor="middle">G</text>
-        <text class="t-col" x="52" y="283" text-anchor="middle">F</text>
-        <text class="t-col" x="52" y="311" text-anchor="middle">E</text>
-        <text class="t-col" x="52" y="325" text-anchor="middle">D</text>
-        <text class="t-col" x="52" y="339" text-anchor="middle">C</text>
-        <text class="t-col" x="52" y="353" text-anchor="middle">B</text>
-        <text class="t-col" x="52" y="367" text-anchor="middle">A</text>
-
-        <!-- column numbers -->
-        <text class="t-col" x="64"    y="210" text-anchor="middle">1</text>
-        <text class="t-col" x="118.4" y="210" text-anchor="middle">5</text>
-        <text class="t-col" x="186.4" y="210" text-anchor="middle">10</text>
-        <text class="t-col" x="254.4" y="210" text-anchor="middle">15</text>
-        <text class="t-col" x="322.4" y="210" text-anchor="middle">20</text>
-        <text class="t-col" x="390.4" y="210" text-anchor="middle">25</text>
-        <text class="t-col" x="458.4" y="210" text-anchor="middle">30</text>
-        <text class="t-col" x="526.4" y="210" text-anchor="middle">35</text>
-        <text class="t-col" x="594.4" y="210" text-anchor="middle">40</text>
-        <text class="t-col" x="662.4" y="210" text-anchor="middle">45</text>
-        <text class="t-col" x="730.4" y="210" text-anchor="middle">50</text>
-        <text class="t-col" x="798.4" y="210" text-anchor="middle">55</text>
-        <text class="t-col" x="866.4" y="210" text-anchor="middle">60</text>
-
-        <!-- ===== top-half wires ===== -->
-        <!-- HW-131 plugs into cols 1-4 directly -->
-        <!-- cap + leg -> top + rail, col 50 -->
-        <path class="w-pwr" d="M726 94 L730.4 168" />
-        <circle class="n-pwr" cx="730.4" cy="168" r="4" />
-        <!-- cap - leg -> top - rail, col 52, hopping over the + rail -->
-        <path class="w-gnd" d="M758 94 L757.6 161 A7 7 0 0 1 757.6 175 V182" />
-        <circle class="n-gnd" cx="757.6" cy="182" r="4" />
-        <!-- module 5Vin -> top + rail, col 56 -->
-        <path class="w-pwr" d="M812 90 V168" />
-        <circle class="n-pwr" cx="812" cy="168" r="4" />
-        <!-- module GND -> top - rail, col 59, hopping over the + rail -->
-        <path class="w-gnd" d="M852.8 90 V161 A7 7 0 0 1 852.8 175 V182" />
-        <circle class="n-gnd" cx="852.8" cy="182" r="4" />
-
-        <!-- ===== ground bridge, col 62 ===== -->
-        <path class="w-gnd" d="M893.6 406 H948 V182 H893.6" />
-        <circle class="n-gnd" cx="893.6" cy="406" r="4" />
-        <circle class="n-gnd" cx="893.6" cy="182" r="4" />
-        <text class="t-lbl" x="520" y="452">GROUND BRIDGE col 62 &mdash; joins the two &minus; rails</text>
-
-        <!-- ===== Arduino ===== -->
-        <rect class="box" x="52" y="510" width="196" height="100" rx="4" />
-        <text class="t-hd" x="68" y="538">ARDUINO UNO</text>
-        <text class="t-sm" x="68" y="554">HW-131 5V + USB serial</text>
-        <text class="t-sm" x="68" y="570">Pins 10/11/12 &rarr; SIM800L</text>
-        <text class="t-sm" x="68" y="586">Pins 2/3/4 &rarr; OUTs &middot; Pin 8 &rarr; Buzz</text>
-        <text class="t-pos" x="91.2" y="503" text-anchor="middle">5V</text>
-        <text class="t-lbl" x="132" y="503" text-anchor="middle">GND</text>
-
-        <!-- Arduino 5V -> bottom + rail, col 3 -->
-        <path class="w-ard" d="M91.2 510 V420" />
-        <circle class="n-ard" cx="91.2" cy="420" r="4" />
-        <!-- Arduino GND -> bottom - rail, col 6, hopping over the + rail -->
-        <path class="w-gnd" d="M132 510 V427 A7 7 0 0 1 132 413 V406" />
-        <circle class="n-gnd" cx="132" cy="406" r="4" />
-
-        <!-- ===== the sensors ===== -->
-        <!-- ROOMC : V col 18 (x 295.2), G col 21 (x 336) -->
-        <rect class="box" x="270" y="510" width="150" height="100" rx="4" />
-        <text class="t-hd"  x="284" y="536">HC-SR501</text>
-        <text class="t-sig" x="284" y="554">ROOMC</text>
-        <text class="t-sm"  x="284" y="572">V col 18 &middot; G col 21</text>
-        <text class="t-sm"  x="284" y="588">OUT &rarr; Pin 2</text>
-        <text class="t-pos" x="295.2" y="503" text-anchor="middle">V</text>
-        <text class="t-lbl" x="336"   y="503" text-anchor="middle">G</text>
-        <path class="w-ard" d="M295.2 510 V420" />
-        <circle class="n-ard" cx="295.2" cy="420" r="4" />
-        <path class="w-gnd" d="M336 510 V427 A7 7 0 0 1 336 413 V406" />
-        <circle class="n-gnd" cx="336" cy="406" r="4" />
-
-        <!-- ROOMA : V col 31 (x 472), G col 34 (x 512.8) -->
-        <rect class="box" x="440" y="510" width="150" height="100" rx="4" />
-        <text class="t-hd"  x="454" y="536">HC-SR501</text>
-        <text class="t-sig" x="454" y="554">ROOMA</text>
-        <text class="t-sm"  x="454" y="572">V col 31 &middot; G col 34</text>
-        <text class="t-sm"  x="454" y="588">OUT &rarr; Pin 3</text>
-        <text class="t-pos" x="472"   y="503" text-anchor="middle">V</text>
-        <text class="t-lbl" x="512.8" y="503" text-anchor="middle">G</text>
-        <path class="w-ard" d="M472 510 V420" />
-        <circle class="n-ard" cx="472" cy="420" r="4" />
-        <path class="w-gnd" d="M512.8 510 V427 A7 7 0 0 1 512.8 413 V406" />
-        <circle class="n-gnd" cx="512.8" cy="406" r="4" />
-
-        <!-- ROOMB : V col 43 (x 635.2), G col 46 (x 676) -->
-        <rect class="box" x="610" y="510" width="150" height="100" rx="4" />
-        <text class="t-hd"  x="624" y="536">HC-SR501</text>
-        <text class="t-sig" x="624" y="554">ROOMB</text>
-        <text class="t-sm"  x="624" y="572">V col 43 &middot; G col 46</text>
-        <text class="t-sm"  x="624" y="588">OUT &rarr; Pin 4</text>
-        <text class="t-pos" x="635.2" y="503" text-anchor="middle">V</text>
-        <text class="t-lbl" x="676"   y="503" text-anchor="middle">G</text>
-        <path class="w-ard" d="M635.2 510 V420" />
-        <circle class="n-ard" cx="635.2" cy="420" r="4" />
-        <path class="w-gnd" d="M676 510 V427 A7 7 0 0 1 676 413 V406" />
-        <circle class="n-gnd" cx="676" cy="406" r="4" />
-
-        <!-- Room D used to sit here, on Pin 5. Pin retired - drawn empty
-             so the gap is obviously deliberate, not a missing sensor. -->
-        <rect class="box-sub" x="780" y="510" width="150" height="100" rx="4" />
-        <text class="t-bad" x="794" y="540">Pin 5 &#10005;</text>
-        <text class="t-sm"  x="794" y="560">ROOMD retired &mdash;</text>
-        <text class="t-sm"  x="794" y="576">pin would not respond</text>
-        <text class="t-sm"  x="794" y="592">to two sensors</text>
-
-        <!-- ===== the OUT wires: each one straight to its own pin ===== -->
-        <path class="w-sig" d="M345 610 V634 H140 V610" />
-        <circle class="n-sig" cx="345" cy="610" r="4" />
-        <circle class="n-sig" cx="140" cy="610" r="4" />
-        <text class="t-sig" x="356" y="630">&rarr; Pin 2</text>
-
-        <path class="w-sig" d="M515 610 V656 H168 V610" />
-        <circle class="n-sig" cx="515" cy="610" r="4" />
-        <circle class="n-sig" cx="168" cy="610" r="4" />
-        <text class="t-sig" x="526" y="652">&rarr; Pin 3</text>
-
-        <path class="w-sig" d="M685 610 V678 H196 V610" />
-        <circle class="n-sig" cx="685" cy="610" r="4" />
-        <circle class="n-sig" cx="196" cy="610" r="4" />
-        <text class="t-sig" x="696" y="674">&rarr; Pin 4</text>
-
-        <text class="t-sig" x="270" y="702">Every OUT runs straight to its own pin &mdash; none of them ever touches a rail</text>
-
-      </svg>
-    </div>
-
-    <p class="caption">
-      The small semicircular bumps are wire hops: that wire passes <em>over</em> the rail it arches
-      across and does not connect to it. Only the filled dots are connections. The three data jumpers
-      for the SIM800L (<code>TXD</code>&rarr;10, <code>RXD</code>&rarr;11, <code>RST</code>&rarr;12) go
-      module-header to Arduino-header and skip the breadboard entirely, the same as the OUT wires.
-    </p>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Wire</th><th>From</th><th>Lands in</th></tr>
-        </thead>
-        <tbody>
-          <tr><td class="pin">HW-131 Module</td><td>12 V 1A/2A DC Adapter</td><td class="hole">Breadboard left edge (cols 1&ndash;4) &middot; Jumpers at 5V</td></tr>
-          <tr><td class="pin">cap + leg</td><td>1000 &micro;F</td><td class="hole">TOP + rail &middot; col 50</td></tr>
-          <tr><td class="pin">cap &minus; leg</td><td>1000 &micro;F (stripe side)</td><td class="hole">TOP &minus; rail &middot; col 52</td></tr>
-          <tr><td class="pin">5Vin</td><td>SIM800L</td><td class="hole">TOP + rail &middot; col 56</td></tr>
-          <tr><td class="pin">GND</td><td>SIM800L</td><td class="hole">TOP &minus; rail &middot; col 59</td></tr>
-          <tr><td class="pin">bridge</td><td>BOTTOM &minus; rail &middot; col 62</td><td class="hole">TOP &minus; rail &middot; col 62</td></tr>
-          <tr><td class="pin">Arduino 5V</td><td>Arduino 5V</td><td class="hole">BOTTOM + rail &middot; col 3 (draws power from HW-131)</td></tr>
-          <tr><td class="pin">Arduino GND</td><td>Arduino GND</td><td class="hole">BOTTOM &minus; rail &middot; col 6</td></tr>
-          <tr><td class="pin">Buzzer (+)</td><td>5V Piezo Buzzer (+) leg</td><td class="hole">Arduino Pin 8 &mdash; direct</td></tr>
-          <tr><td class="pin">Buzzer (&minus;)</td><td>5V Piezo Buzzer (&minus;) leg</td><td class="hole">BOTTOM &minus; rail &middot; col 15</td></tr>
-          <tr><td class="pin">VCC</td><td>PIR ROOMC</td><td class="hole">BOTTOM + rail &middot; col 18</td></tr>
-          <tr><td class="pin">GND</td><td>PIR ROOMC</td><td class="hole">BOTTOM &minus; rail &middot; col 21</td></tr>
-          <tr><td class="pin">OUT</td><td>PIR ROOMC</td><td class="hole">Arduino Pin 2 &mdash; direct</td></tr>
-          <tr><td class="pin">VCC</td><td>PIR ROOMA</td><td class="hole">BOTTOM + rail &middot; col 31</td></tr>
-          <tr><td class="pin">GND</td><td>PIR ROOMA</td><td class="hole">BOTTOM &minus; rail &middot; col 34</td></tr>
-          <tr><td class="pin">OUT</td><td>PIR ROOMA</td><td class="hole">Arduino Pin 3 &mdash; direct</td></tr>
-          <tr><td class="pin">VCC</td><td>PIR ROOMB</td><td class="hole">BOTTOM + rail &middot; col 43</td></tr>
-          <tr><td class="pin">GND</td><td>PIR ROOMB</td><td class="hole">BOTTOM &minus; rail &middot; col 46</td></tr>
-          <tr><td class="pin">OUT</td><td>PIR ROOMB</td><td class="hole">Arduino Pin 4 &mdash; direct</td></tr>
-          <tr><td class="pin">TXD / RXD / RST</td><td>SIM800L</td><td class="hole">Arduino pins 10 / 11 / 12 &mdash; direct</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p class="caption">
-      Top-rail columns 50&ndash;59 are chosen so the capacitor sits beside the module's own power wires.
-      The bottom-rail columns are simply spread out to keep the sensors' taps apart; nothing
-      electrical depends on the numbers. Pin order under the HC-SR501 dome varies between batches &mdash;
-      read the letters printed on <em>each</em> of your sensors before wiring. They will not all
-      necessarily match, and they will not necessarily match this diagram.
-    </p>
-  </section>
-
-  <section>
-    <h2><span class="num">05</span>Set each sensor, then add them one at a time</h2>
-    <p class="col">
-      Every HC-SR501 has two adjustments and a jumper, and they ship at random settings. Do them all
-      before anything is wired, while you can still turn them over easily.
-    </p>
-
-    <div class="checks">
-      <div class="check"><span class="mark">01</span><span>Move the <strong>yellow jumper to H</strong> (repeat-trigger). On L the sensor goes deaf for its whole delay period after each trigger, so someone still in the room reads as gone.</span></div>
-      <div class="check"><span class="mark">02</span><span>Turn the <strong>time-delay screw fully anti-clockwise</strong> &mdash; the shortest hold. The sketch decides when motion has stopped; the sensor holding its output high for minutes only hides that.</span></div>
-      <div class="check"><span class="mark">03</span><span>Leave the <strong>sensitivity screw</strong> mid-range to start. Turn it down later if a sensor keeps firing at nothing.</span></div>
-      <div class="check"><span class="mark">04</span><span>Read the <strong><code>V</code> / <code>O</code> / <code>G</code> letters</strong> printed under each dome. The order differs between batches &mdash; check each one separately, they may not agree with each other.</span></div>
-    </div>
-
-    <p class="col">
-      Now build up in stages. Wire <strong>one</strong> sensor, upload the sketch, open the Serial Monitor
-      at 9600, and confirm that waving at it prints the room you expect &mdash; not just <em>a</em> room.
-      Only then add the next. Several sensors wired all at once give you a pile of possible pin-to-room
-      mix-ups and no way to tell which one you have.
-    </p>
-
-    <div class="rule">
-      <span class="tag">If a sensor fires with nobody near it</span>
-      <p>
-        Unplug that sensor's OUT wire from the Arduino and <strong>jumper that pin straight to GND</strong>
-        instead. If the phantom triggers stop, the sketch is fine and that sensor's OUT wire is not
-        seated properly &mdash; a floating input picks up whatever noise is nearby and reports it as a
-        person. If they continue, the problem is in the sketch or that pin.
-      </p>
-      <p>
-        This is the fastest test in the whole build and it is worth doing before you suspect anything
-        else. Add sensors one at a time and it also tells you <em>which</em> sensor is the bad one.
-      </p>
-    </div>
-  </section>
-
-  <section>
-    <h2><span class="num">06</span>Check the board before you power it</h2>
-    <div class="checks">
-      <div class="check"><span class="mark">01</span><span>Check the <strong>HW-131 jumpers</strong> &mdash; confirm both the top and bottom jumpers are firmly seated across the <strong>5V</strong> pins (not 3.3V or OFF).</span></div>
-      <div class="check"><span class="mark">02</span><span>Probe the <strong>two &minus; rails</strong> with a multimeter on continuity &mdash; it <em>must</em> beep. That confirms common ground across the board.</span></div>
-      <div class="check"><span class="mark">03</span><span>Probe each rail end to end. Silence in the middle means your board's rails are split at column 30 &mdash; bridge the halves. With the sensors spread from column 18 to 46, a split rail can leave one of them unpowered.</span></div>
-      <div class="check"><span class="mark">04</span><span>Confirm the <strong>Arduino's 5V pin is connected to the bottom 5V rail</strong> and Arduino GND is connected to the bottom ground rail.</span></div>
-      <div class="check"><span class="mark">05</span><span>Probe <strong>each OUT wire against every other</strong> &mdash; none may beep. A beep means two rooms are shorted together and will always report as one.</span></div>
-      <div class="check"><span class="mark">06</span><span>Count the OUT wires landing in the Arduino header: exactly one each in pins 2, 3, and 4, and nothing in any other digital pin.</span></div>
-      <div class="check"><span class="mark">07</span><span>Check the capacitor is across two <em>different</em> rails (+ and &minus;), not two holes in the same rail.</span></div>
-      <div class="check"><span class="mark">08</span><span>Confirm the stripe leg of the capacitor is the one in the &minus; rail. Backwards, it vents.</span></div>
-      <div class="check"><span class="mark">09</span><span>Confirm <code>VDD</code> on the SIM800L has nothing plugged into it at all.</span></div>
-      <div class="check"><span class="mark">10</span><span>Screw the antenna on <em>before</em> powering up. Transmitting without one damages the radio.</span></div>
-    </div>
-  </section>
-
-  <section>
-    <h2><span class="num">07</span>Power up and read the status LED</h2>
-    <p class="col">
-      Power and antenna first, before you upload anything. The blink rate is the module telling you
-      whether it found a 2G network &mdash; nothing after this can work until this does.
-    </p>
-    <div class="leds">
-      <div class="led good">
-        <div class="rate"><span class="dot"></span> one blink &middot; every ~3 s</div>
-        <span class="verdict">joined the network</span>
-        <p>Registered on 2G. Upload <code>motion_sensor.ino</code> and go on.</p>
-      </div>
-      <div class="led bad">
-        <div class="rate"><span class="dot"></span> one blink &middot; every ~1 s</div>
-        <span class="verdict">still searching</span>
-        <p>No antenna, no coverage, or a SIM problem. Test the SIM in a phone forced to 2G, in this same room.</p>
-      </div>
-      <div class="led dead">
-        <div class="rate"><span class="dot"></span> nothing, or on and off in a loop</div>
-        <span class="verdict">power problem</span>
-        <p>Check the capacitor's polarity, then the supply. Power banks often cut out at the module's low idle current.</p>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <h2><span class="num">08</span>What the Arduino says, and where it goes</h2>
+    <h2><span class="num">03</span>Wireless Data Flow (Before vs. After)</h2>
 
     <div class="flow">
-      <span class="tag">Two paths from one wave of the hand</span>
+      <span class="tag">Direct Wi-Fi Transmission</span>
       <p class="chain">
-        PIR &rarr; Arduino &rarr; SIM800L &rarr; <strong>your phone</strong><br>
-        PIR &rarr; Arduino &rarr; USB &rarr; serial_reader.ps1 &rarr; PHP API &rarr; MySQL &rarr; <strong>dashboard</strong>
+        <strong>PIR Sensor</strong> &rarr; <strong>ESP32</strong> &rarr; <strong>SIM800L</strong> &rarr; <strong>Your Phone (SMS)</strong><br>
+        <strong>PIR Sensor</strong> &rarr; <strong>ESP32</strong> &rarr; <span style="color:var(--wifi); font-weight:bold;">[Wi-Fi HTTP POST]</span> &rarr; <strong>PHP API (XAMPP)</strong> &rarr; <strong>MySQL</strong> &rarr; <strong>Web &amp; Android Dashboard</strong>
       </p>
       <p>
-        The text and the database entry are independent. If the SMS fails, the motion is still
-        recorded &mdash; and the failure is recorded too, which is exactly what makes this rig worth building.
+        The ESP32 eliminates the middleman script! You no longer need <code>serial_reader.ps1</code> or a COM port open.
       </p>
     </div>
-
-    <p class="col">
-      Every line below carries its room in the name, and that name is the <em>only</em> thing telling
-      the dashboard which sensor spoke. <code>ROOMx</code> here stands for any of
-      <code>ROOMA</code>, <code>ROOMB</code>, <code>ROOMC</code>.
-    </p>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Serial line</th><th>Meaning</th><th>Where it is saved</th></tr>
-        </thead>
-        <tbody>
-          <tr><td class="tok">ROOMx_MOTION_DETECTED</td><td>Movement started in that room</td><td><code>motion_events</code></td></tr>
-          <tr><td class="tok">ROOMx_MOTION_STOPPED</td><td>That room quiet for 2 seconds</td><td><code>motion_events</code></td></tr>
-          <tr><td class="tok">SMS_SENT:ROOMx</td><td>The network accepted the text</td><td><code>sms_events</code> &middot; SENT</td></tr>
-          <tr><td class="tok">SMS_FAIL:ROOMx:TIMEOUT</td><td>No <code>+CMGS</code> within 30 s</td><td><code>sms_events</code> &middot; FAILED</td></tr>
-          <tr><td class="tok">SMS_FAIL:ROOMx:NOPROMPT</td><td>The module never sent its <code>&gt;</code> prompt</td><td><code>sms_events</code> &middot; FAILED</td></tr>
-          <tr><td class="tok">SMS_FAIL:ROOMx:NOMODULE</td><td>The module failed its start-up checks</td><td><code>sms_events</code> &middot; FAILED</td></tr>
-          <tr><td class="tok">SMS_SKIP:ROOMx:COOLDOWN</td><td>Blocked on purpose &mdash; under 60 s since the last text <em>for that room</em></td><td><code>sms_events</code> &middot; SKIPPED</td></tr>
-          <tr><td class="tok">SIM_READY</td><td>Module answered, SIM unlocked, network joined</td><td>shown on screen only</td></tr>
-          <tr><td class="tok">SIM_FAIL:NOSIM</td><td>SIM missing, seated badly, or PIN-locked</td><td>shown on screen only</td></tr>
-          <tr><td class="tok">SIM_FAIL:NONETWORK</td><td>No 2G registration &mdash; antenna, coverage, or load</td><td>shown on screen only</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p class="caption">
-      The cooldown is counted per room, not for the rig as a whole. Somebody pacing around Room&nbsp;A
-      gets you one text a minute; somebody walking from Room&nbsp;A into Room&nbsp;B gets you a second
-      text immediately. Only one message can be in flight at a time, so a second room's alert queues
-      for a few seconds rather than being lost.
-    </p>
-
-    <p class="caption">
-      Anything else the sketch prints &mdash; the pin-to-room list at start-up, the warm-up countdown,
-      <code>System Ready</code>, the signal reading &mdash; appears in the reader window but is
-      deliberately not saved.
-    </p>
   </section>
 
   <section>
-    <h2><span class="num">09</span>When it doesn't work</h2>
+    <h2><span class="num">04</span>Pre-Power Checklist</h2>
+    <div class="checks">
+      <div class="check"><span class="mark">01</span><span>Check the <strong>HW-131 jumpers</strong> &mdash; verify both are seated firmly at <strong>5V</strong>.</span></div>
+      <div class="check"><span class="mark">02</span><span>Multimeter continuity check on the <strong>ground rails</strong> &mdash; verify ESP32 GND, SIM800L GND, and PIR GND are unified.</span></div>
+      <div class="check"><span class="mark">03</span><span>Confirm the <strong>1000 &micro;F capacitor</strong> polarity across SIM800L power rails (striped leg to GND).</span></div>
+      <div class="check"><span class="mark">04</span><span>Confirm <code>VDD</code> on the SIM800L is <strong>unconnected</strong>.</span></div>
+      <div class="check"><span class="mark">05</span><span>Verify Wi-Fi credentials (<code>WIFI_SSID</code>, <code>WIFI_PASSWORD</code>) and your PC's IP (<code>SERVER_IP</code>) in <code>esp32_motion_sensor.ino</code>.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">05</span>Troubleshooting</h2>
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Symptom</th><th>Most likely cause</th><th>Fix</th></tr>
+          <tr><th>Symptom</th><th>Probable Cause</th><th>Resolution</th></tr>
         </thead>
         <tbody>
           <tr>
-            <td>Module never answers <code>AT</code> &mdash; <code>SIM_FAIL:NOREPLY</code></td>
-            <td>TXD and RXD swapped, or grounds not shared</td>
-            <td>Swap pins 10 and 11. Confirm the &minus; rails are bridged.</td>
+            <td class="warn">Wi-Fi connection fails</td>
+            <td>Incorrect SSID/Password or 5GHz network</td>
+            <td>ESP32 only supports <strong>2.4GHz Wi-Fi</strong>. Check your router SSID and password.</td>
           </tr>
           <tr>
-            <td>Module restarts mid-send</td>
-            <td>Brownout on the 2 A transmit burst</td>
-            <td>Capacitor closer to the module; short thick wires for <code>5Vin</code>/<code>GND</code>; a wall adapter, not a bank.</td>
+            <td class="warn">HTTP POST returns error (-1 or connection refused)</td>
+            <td>Wrong PC IP or Windows Firewall blocking Port 80</td>
+            <td>Find your PC's IPv4 via <code>ipconfig</code> and update <code>SERVER_IP</code>. Ensure Apache is running in XAMPP and allowed in Windows Firewall.</td>
           </tr>
           <tr>
-            <td>First text sends, then <code>TIMEOUT</code> followed by <code>ERROR</code>, over and over</td>
-            <td>Brownout, confirmed. The <code>TIMEOUT</code> is the module dying mid-send; it reboots, which forgets <code>AT+CMGF=1</code>, so the next send gets <code>ERROR</code> straight away.</td>
-            <td>Fix the power &mdash; no sketch change cures this. Watch the status LED: if it goes dark and re-blinks after each attempt, the module is resetting.</td>
+            <td class="warn">SIM800L no reply to AT commands</td>
+            <td>GPIO 16/17 swapped or power insufficient</td>
+            <td>Ensure SIM800L TXD &rarr; GPIO 16 and RXD &rarr; GPIO 17. Verify HW-131 has 12V adapter plugged in.</td>
           </tr>
           <tr>
-            <td><code>Signal:</code> prints garbage like <code>)-5?AT+CSQ</code></td>
-            <td>Command echo is on, so the module's repeat of your own question is read as the answer</td>
-            <td>Send <code>ATE0</code> during start-up. The sketch does this from the start.</td>
-          </tr>
-          <tr>
-            <td>Module switches on and off in a loop</td>
-            <td>Capacitor in backwards</td>
-            <td>Stripe leg goes to GND. Replace the capacitor if it got hot.</td>
-          </tr>
-          <tr>
-            <td>Power bank shuts itself off after a minute</td>
-            <td>Idle draw is under the bank's auto-cutoff</td>
-            <td>Add a 47 &Omega; 1 W bleeder across the supply, or use a wall adapter.</td>
-          </tr>
-          <tr>
-            <td>A PIR fires constantly right after power-on</td>
-            <td>Still in the 30-second warm-up</td>
-            <td>They all warm up together &mdash; stay out of <em>every</em> sensor's view until <code>System Ready</code> prints.</td>
-          </tr>
-          <tr>
-            <td>Waving at Room A lights up Room B on the dashboard</td>
-            <td>Two OUT wires swapped between pins</td>
-            <td>Read the pin-to-room list the sketch prints at start-up, then move the wire &mdash; not the code. If you would rather move the code, edit <code>ZONE_NAME[]</code> in <code>motion_sensor.ino</code>, keeping it in pin order 2, 3, 4, 5.</td>
-          </tr>
-          <tr>
-            <td>One room never reports anything, the other three are fine</td>
-            <td>That sensor's OUT wire is in the wrong hole, or its VCC/GND tap missed the rail</td>
-            <td>Jumper that Arduino pin straight to GND: if the room still never appears, the wire is the problem. Then check its two rail taps &mdash; a tap one row off the rail looks identical and does nothing.</td>
-          </tr>
-          <tr>
-            <td>A pin stays dead even after swapping in a known-good sensor</td>
-            <td>The pin, its OUT wire, or that position's rail taps &mdash; not the sensor</td>
-            <td>Move that sensor to a spare pin (6 or 7) and retest with <code>pir_sms_test/arduino/one_pin_test/one_pin_test.ino</code>. If it works there, the original pin or its wiring is the fault. This is what happened to Pin 5 / Room D on this build.</td>
-          </tr>
-          <tr>
-            <td>Every room triggers when you wave at just one</td>
-            <td>Nothing is broken &mdash; the sensors all see the same room</td>
-            <td>On a bench they sit centimetres apart with ~110&deg; cones metres deep. Cover the ones you are not testing, point them apart, or turn the sensitivity down. Confirm with <code>pin_monitor.ino</code>.</td>
-          </tr>
-          <tr>
-            <td class="warn">One room reports every time <em>another</em> room sends a text &mdash; but <code>pin_monitor.ino</code> showed clean isolation</td>
-            <td class="warn">The GSM transmit burst. It pulls ~2&nbsp;A for a few milliseconds and radiates hard from the antenna; PIR sensors pick up both. <code>pin_monitor.ino</code> cannot show this because it never uses the module.</td>
-            <td>Confirm by setting <code>SIM_ENABLED = false</code> and re-testing &mdash; phantom rooms should vanish. Then: move the <strong>antenna</strong> away from the sensors (usually the whole fix), shorten the module's <code>5Vin</code>/<code>GND</code> leads, keep OUT wires short, and add 0.1&nbsp;&micro;F across each PIR's VCC/GND. The sketch's <code>START_CONFIRM_MS</code> filter already rejects short pulses.</td>
-          </tr>
-          <tr>
-            <td>Two rooms always trigger together</td>
-            <td>Their OUT wires are shorted, or both are in the same pin</td>
-            <td>Continuity-test the two OUT wires against each other. They must not beep.</td>
-          </tr>
-          <tr>
-            <td>Every room reports at once, constantly</td>
-            <td>The bottom &minus; rail is not reaching the Arduino's GND, so every input floats</td>
-            <td>Check the ground bridge at column 62, and that the Arduino's GND wire is in the &minus; rail and not the + rail.</td>
-          </tr>
-          <tr>
-            <td>Some rooms work, others never do &mdash; and they alternate along the board</td>
-            <td>The bottom rails are split in the middle and only one half is fed</td>
-            <td>Bridge the two halves of both bottom rails near column 30.</td>
-          </tr>
-          <tr>
-            <td>Reader says "Cannot reach the API"</td>
-            <td>Apache is not running</td>
-            <td>Start Apache in the XAMPP Control Panel.</td>
-          </tr>
-          <tr>
-            <td>Reader cannot open COM5</td>
-            <td>The Arduino IDE Serial Monitor still holds the port</td>
-            <td>Close the Serial Monitor. Only one program can hold a COM port.</td>
-          </tr>
-          <tr>
-            <td>Dashboard stays empty but the reader shows <code>[OK]</code></td>
-            <td>The SQL was never imported, or MySQL is stopped</td>
-            <td>Import <code>database/database.sql</code> in phpMyAdmin.</td>
+            <td class="warn">Sensor false-triggers on SMS send</td>
+            <td>GSM RF burst coupling into PIR dome</td>
+            <td>Position the GSM antenna at least 15&ndash;20 cm away from the PIR sensor domes.</td>
           </tr>
         </tbody>
       </table>
@@ -1329,15 +798,12 @@
 
   <footer>
     <p>
-      Build sheet for <code>ABMDMS</code> &middot; sketch in <code>arduino/motion_sensor/motion_sensor.ino</code> &middot;
-      AT-command reference in <code>sms_module_test/AT_COMMANDS.md</code> &middot;
-      power faults in <code>sms_module_test/POWER_TROUBLESHOOTING.md</code>.
-    </p>
-    <p>
-      Board drawn as 830-point, 63 columns. Rails matter, column numbers don't &mdash; shift them to fit
-      whatever board is on your desk. The sensors and their pins match the main ABMDMS system
-      exactly, so this sheet describes that build too; only the database name differs.
+      Wireless Build Sheet for <code>ABMDMS</code> &middot; Sketch: <code>arduino/esp32_motion_sensor/esp32_motion_sensor.ino</code> &middot;
+      Backend: <code>api/record_motion.php</code> &amp; <code>api/record_sms.php</code>.
     </p>
   </footer>
 
 </div>
+
+</body>
+</html>
