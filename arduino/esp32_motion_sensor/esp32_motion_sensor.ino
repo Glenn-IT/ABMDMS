@@ -38,7 +38,7 @@ const char* WIFI_PASSWORD = "qwerty123";
 
 // 2. Enter your PC/Laptop Local IPv4 Address (find it using 'ipconfig' in cmd)
 // Example: "192.168.1.15"
-const char* SERVER_IP     = "10.147.150.14";
+const char* SERVER_IP     = "10.192.10.14";
 const int   SERVER_PORT   = 80;
 
 // API Endpoints on your XAMPP server
