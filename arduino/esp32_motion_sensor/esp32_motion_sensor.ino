@@ -5,13 +5,14 @@
   Board  : ESP32 Dev Module / NodeMCU-32S
   Sensors: 3x HC-SR501 PIR Motion Sensors (Room C, Room A, Room B)
   GSM    : SIM800L V2.2 (HardwareSerial UART2)
+  Audio  : MAX98357A I2S 3W Class-D Amplifier + Speaker
   Wi-Fi  : Direct HTTP POST to XAMPP PHP API (No USB cord needed!)
   ============================================================
 
   HOW THIS WIRELESS SYSTEM WORKS:
   -------------------------------
   1. PIR sensor detects motion in Room A, B, or C.
-  2. ESP32 plays non-blocking piezo buzzer chirp/siren.
+  2. ESP32 plays non-blocking high-power siren through MAX98357A I2S speaker amp.
   3. ESP32 directly sends HTTP POST over Wi-Fi to your PC/Laptop running XAMPP:
         http://<PC_IP_ADDRESS>/ABMDMS/api/record_motion.php
   4. ESP32 queues and sends SMS via SIM800L (Hardware UART2 on GPIO 16/17).
@@ -24,6 +25,8 @@
 
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include "driver/i2s.h"
+#include <math.h>
 
 // ============================================================
 // SECTION 1 - WI-FI & SERVER SETTINGS (EDIT THESE)
@@ -54,15 +57,20 @@ const char* ZONE_NAME[NUM_ZONES] = { "ROOMC", "ROOMA", "ROOMB" };
 const char* ZONE_TEXT[NUM_ZONES] = { "Room C","Room A","Room B" }; 
 
 // Feedback Peripherals
-const int LED_PIN    = 2;              // Built-in Blue LED on ESP32 DevKit (GPIO 2)
-const int BUZZER_PIN = 25;             // 5V Passive Buzzer (+) leg -> GPIO 25
-const bool BUZZER_ENABLED = true;
+const int LED_PIN = 2; // Built-in Blue LED on ESP32 DevKit (GPIO 2)
 
-// Siren Settings for Passive Buzzer
-const unsigned long BUZZER_SWEEP_MS = 200; 
-const int BUZZER_CYCLES             = 4;   
-const int BUZZER_FREQ_LOW           = 800; 
-const int BUZZER_FREQ_HIGH          = 2500;
+// MAX98357A I2S Amplifier Audio Pins
+const int I2S_WS_PIN      = 25; // LRC / WS (Word Select) -> GPIO 25
+const int I2S_BCK_PIN     = 26; // BCLK (Bit Clock)       -> GPIO 26
+const int I2S_DATA_PIN    = 27; // DIN (Data In)          -> GPIO 27
+const bool SPEAKER_ENABLED = true;
+
+// Siren Settings for MAX98357A Speaker
+const unsigned long SIREN_SWEEP_MS = 250;   // Speed of each high-low sweep (ms)
+const int SIREN_CYCLES             = 4;     // Total sweeps per alarm trigger
+const int SIREN_FREQ_LOW           = 600;   // Low pitch frequency (Hz)
+const int SIREN_FREQ_HIGH          = 2200;  // High pitch frequency (Hz)
+const int SIREN_VOLUME             = 18000; // Amplitude volume (1 to 32767)
 
 const unsigned long WARMUP_SECONDS  = 30;   
 const unsigned long STOP_CONFIRM_MS = 2000; 
@@ -97,9 +105,10 @@ bool          motionActive[NUM_ZONES] = {};
 unsigned long lowStartedAt[NUM_ZONES] = {};   
 unsigned long highStartedAt[NUM_ZONES] = {};  
 
-// Buzzer state
-bool          buzzerPlaying = false;
-unsigned long buzzerStarted = 0;
+// Speaker state
+bool          speakerPlaying = false;
+unsigned long speakerStarted = 0;
+float         i2sPhase       = 0.0f;
 
 // SMS state
 bool          smsPending[NUM_ZONES]  = {};   
@@ -139,8 +148,9 @@ int  parseCsq();
 void queueSms(int zone);
 void smsTick();
 void smsFinish(bool ok, const char* reason);
-void buzzerTick();
-void buzzerChirp(int freq, int durationMs);
+void i2sInit();
+void speakerTick();
+void speakerChirp(int freq, int durationMs);
 
 // ============================================================
 // SECTION 5 - SETUP
@@ -152,6 +162,7 @@ void setup() {
 
   Serial.println(F("\n=========================================="));
   Serial.println(F("  ABMDMS - ESP32 Wireless Motion System   "));
+  Serial.println(F("  Audio: MAX98357A I2S Speaker Amplifier  "));
   Serial.println(F("=========================================="));
 
   // Configure PIR Pins
@@ -163,7 +174,8 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
-  pinMode(BUZZER_PIN, OUTPUT);
+  // Initialize MAX98357A I2S Driver
+  i2sInit();
 
   // Initialize Wi-Fi Connection
   Serial.printf("Connecting to Wi-Fi SSID: %s", WIFI_SSID);
@@ -198,11 +210,11 @@ void setup() {
     delay(1000);
   }
 
-  // Arming double chirp
-  if (BUZZER_ENABLED) {
-    buzzerChirp(1800, 80);
+  // Arming double chirp over speaker
+  if (SPEAKER_ENABLED) {
+    speakerChirp(1600, 80);
     delay(100);
-    buzzerChirp(2500, 120);
+    speakerChirp(2400, 120);
   }
 
   Serial.println(F("System Ready! Monitoring zones wirelessly..."));
@@ -241,10 +253,11 @@ void loop() {
 
           Serial.printf("[%s] MOTION DETECTED!\n", ZONE_NAME[i]);
 
-          // Trigger audible siren
-          if (BUZZER_ENABLED) {
-            buzzerPlaying = true;
-            buzzerStarted = millis();
+          // Trigger audible speaker siren
+          if (SPEAKER_ENABLED) {
+            speakerPlaying = true;
+            speakerStarted = millis();
+            i2sPhase       = 0.0f;
           }
 
           // Send HTTP POST wirelessly to XAMPP backend
@@ -288,7 +301,7 @@ void loop() {
   digitalWrite(LED_PIN, anyActive ? HIGH : LOW);
 
   // Advance non-blocking tasks
-  buzzerTick();
+  speakerTick();
   smsTick();
 
   delay(10);
@@ -349,41 +362,104 @@ void postSmsEvent(const char* zone, const char* status, const char* detail) {
 }
 
 // ============================================================
-// SECTION 8 - NON-BLOCKING BUZZER
+// SECTION 8 - NON-BLOCKING MAX98357A I2S AUDIO DRIVER
 // ============================================================
 
-void buzzerChirp(int freq, int durationMs) {
-  tone(BUZZER_PIN, freq, durationMs);
-  delay(durationMs);
-  noTone(BUZZER_PIN);
+#define I2S_NUM            I2S_NUM_0
+#define I2S_SAMPLE_RATE    22050
+#define I2S_BUFFER_FRAMES  128
+
+void i2sInit() {
+  i2s_config_t i2s_config = {
+    .mode                 = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
+    .sample_rate          = I2S_SAMPLE_RATE,
+    .bits_per_sample      = I2S_BITS_PER_SAMPLE_16BIT,
+    .channel_format       = I2S_CHANNEL_FMT_RIGHT_LEFT,
+    .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+    .intr_alloc_flags     = ESP_INTR_FLAG_LEVEL1,
+    .dma_buf_count        = 4,
+    .dma_buf_len          = 256,
+    .use_apll             = false,
+    .tx_desc_auto_clear   = true
+  };
+
+  i2s_pin_config_t pin_config = {
+    .bck_io_num   = I2S_BCK_PIN,
+    .ws_io_num    = I2S_WS_PIN,
+    .data_out_num = I2S_DATA_PIN,
+    .data_in_num  = I2S_PIN_NO_CHANGE
+  };
+
+  i2s_driver_install(I2S_NUM, &i2s_config, 0, NULL);
+  i2s_set_pin(I2S_NUM, &pin_config);
+  i2s_zero_dma_buffer(I2S_NUM);
 }
 
-void buzzerTick() {
-  if (!BUZZER_ENABLED || !buzzerPlaying) {
+void speakerChirp(int freq, int durationMs) {
+  if (!SPEAKER_ENABLED) return;
+
+  unsigned long start = millis();
+  int16_t buffer[I2S_BUFFER_FRAMES * 2];
+  float phase = 0.0f;
+  float phaseInc = (2.0f * (float)M_PI * freq) / I2S_SAMPLE_RATE;
+  size_t bytesWritten;
+
+  while (millis() - start < (unsigned long)durationMs) {
+    for (int i = 0; i < I2S_BUFFER_FRAMES; i++) {
+      int16_t sample = (int16_t)(sin(phase) * SIREN_VOLUME);
+      phase += phaseInc;
+      if (phase >= 2.0f * (float)M_PI) phase -= 2.0f * (float)M_PI;
+      buffer[i * 2]     = sample;
+      buffer[i * 2 + 1] = sample;
+    }
+    i2s_write(I2S_NUM, buffer, sizeof(buffer), &bytesWritten, portMAX_DELAY);
+  }
+
+  // Clear buffer so no hum/buzz remains
+  memset(buffer, 0, sizeof(buffer));
+  i2s_write(I2S_NUM, buffer, sizeof(buffer), &bytesWritten, portMAX_DELAY);
+}
+
+void speakerTick() {
+  if (!SPEAKER_ENABLED || !speakerPlaying) {
     return;
   }
 
-  unsigned long elapsed = millis() - buzzerStarted;
-  unsigned long totalDuration = BUZZER_SWEEP_MS * BUZZER_CYCLES;
+  unsigned long elapsed = millis() - speakerStarted;
+  unsigned long totalDuration = SIREN_SWEEP_MS * SIREN_CYCLES;
 
   if (elapsed >= totalDuration) {
-    buzzerPlaying = false;
-    noTone(BUZZER_PIN);
+    speakerPlaying = false;
+    int16_t zeroBuf[I2S_BUFFER_FRAMES * 2] = {0};
+    size_t bytesWritten;
+    i2s_write(I2S_NUM, zeroBuf, sizeof(zeroBuf), &bytesWritten, 0);
     return;
   }
 
-  unsigned long cycleTime = elapsed % BUZZER_SWEEP_MS;
-  unsigned long halfCycle = BUZZER_SWEEP_MS / 2;
+  unsigned long cycleTime = elapsed % SIREN_SWEEP_MS;
+  unsigned long halfCycle = SIREN_SWEEP_MS / 2;
   int freq;
 
   if (cycleTime < halfCycle) {
-    freq = BUZZER_FREQ_LOW + (int)(((long)(BUZZER_FREQ_HIGH - BUZZER_FREQ_LOW) * cycleTime) / halfCycle);
+    freq = SIREN_FREQ_LOW + (int)(((long)(SIREN_FREQ_HIGH - SIREN_FREQ_LOW) * cycleTime) / halfCycle);
   } else {
     unsigned long downTime = cycleTime - halfCycle;
-    freq = BUZZER_FREQ_HIGH - (int)(((long)(BUZZER_FREQ_HIGH - BUZZER_FREQ_LOW) * downTime) / halfCycle);
+    freq = SIREN_FREQ_HIGH - (int)(((long)(SIREN_FREQ_HIGH - SIREN_FREQ_LOW) * downTime) / halfCycle);
   }
 
-  tone(BUZZER_PIN, freq);
+  float phaseInc = (2.0f * (float)M_PI * freq) / I2S_SAMPLE_RATE;
+  int16_t buffer[I2S_BUFFER_FRAMES * 2];
+
+  for (int i = 0; i < I2S_BUFFER_FRAMES; i++) {
+    int16_t sample = (int16_t)(sin(i2sPhase) * SIREN_VOLUME);
+    i2sPhase += phaseInc;
+    if (i2sPhase >= 2.0f * (float)M_PI) i2sPhase -= 2.0f * (float)M_PI;
+    buffer[i * 2]     = sample;
+    buffer[i * 2 + 1] = sample;
+  }
+
+  size_t bytesWritten;
+  i2s_write(I2S_NUM, buffer, sizeof(buffer), &bytesWritten, 0);
 }
 
 // ============================================================
