@@ -51,9 +51,19 @@ The ESP32 has dedicated Hardware UARTs, providing far better reliability than Ar
 
 ---
 
-### D. 5V Passive Piezo Buzzer
-* **Buzzer (+) Leg** $\rightarrow$ **ESP32 GPIO 25**
-* **Buzzer (-) Leg** $\rightarrow$ **ESP32 GND**
+### D. MAX98357A I2S Audio Amplifier & Speaker
+The ESP32 uses dedicated hardware I2S DMA channels to drive the MAX98357A 3W Class-D amplifier:
+
+| MAX98357A Pin | Connect to ESP32 / Rail | Function / Notes |
+|---|---|---|
+| **LRC (WS)** | **GPIO 25** | I2S Word Select Clock |
+| **BCLK** | **GPIO 26** | I2S Bit Clock |
+| **DIN** | **GPIO 27** | I2S Digital Audio Data |
+| **VIN** | Breadboard 5V Rail | Power supply (5V gives 3W loudness) |
+| **GND** | Breadboard GND Rail | Common Ground with ESP32 |
+| **GAIN** | *Unconnected* | Defaults to 9dB gain (connect to GND for 3dB) |
+| **SD** | *Unconnected* | Default (Left + Right mix to mono) |
+| **SPK + / -** | **Speaker (+/-)** | Direct connection to 4Ω or 8Ω speaker |
 
 ---
 

@@ -442,7 +442,7 @@
       <span class="tag">Wireless Architecture &bull; No USB Cord Needed</span>
       <p>
         The ESP32 runs standalone on your 5V HW-131 breadboard power adapter. When motion is detected,
-        it triggers the buzzer, texts via SIM800L (Hardware UART2), and transmits HTTP POST data
+        it triggers the MAX98357A I2S speaker siren, texts via SIM800L (Hardware UART2), and transmits HTTP POST data
         over 2.4GHz Wi-Fi straight into <code>record_motion.php</code> and <code>record_sms.php</code>.
       </p>
     </div>
@@ -477,9 +477,9 @@
         <p>Powered by 5V rail. Sensor OUT is 3.3V logic &mdash; 100% safe to plug directly into ESP32 GPIOs!</p>
       </div>
       <div class="part key">
-        <span class="id">5V Piezo Buzzer</span>
-        <span class="qty">&times;1 &middot; audible motion alarm</span>
-        <p>Positive (+) leg to ESP32 GPIO 25, negative (-) to ground rail. Plays non-blocking siren.</p>
+        <span class="id">MAX98357A I2S Amp + Speaker</span>
+        <span class="qty">&times;1 &middot; 3W Class-D Audio</span>
+        <p>LRC &rarr; GPIO 25, BCLK &rarr; GPIO 26, DIN &rarr; GPIO 27. Connects to 4&Omega;/8&Omega; speaker for loud sirens.</p>
       </div>
       <div class="part">
         <span class="id">1000 &micro;F capacitor</span>
@@ -496,13 +496,13 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Sensor</th><th>OUT Wire Lands In</th><th>Zone Token</th><th>Web &amp; Android Display</th></tr>
+          <tr><th>Component</th><th>ESP32 / Wire Pin</th><th>Signal Token</th><th>System Function</th></tr>
         </thead>
         <tbody>
-          <tr><td class="pin">PIR 1</td><td class="pin wifi">ESP32 GPIO 13</td><td class="tok">ROOMC</td><td>Room C</td></tr>
-          <tr><td class="pin">PIR 2</td><td class="pin wifi">ESP32 GPIO 12</td><td class="tok">ROOMA</td><td>Room A</td></tr>
-          <tr><td class="pin">PIR 3</td><td class="pin wifi">ESP32 GPIO 14</td><td class="tok">ROOMB</td><td>Room B</td></tr>
-          <tr><td class="pin">PIR 4 (Optional)</td><td class="pin wifi">ESP32 GPIO 27</td><td class="tok">ROOMD</td><td>Room D (Ready to enable)</td></tr>
+          <tr><td class="pin">PIR 1</td><td class="pin wifi">ESP32 GPIO 13</td><td class="tok">ROOMC</td><td>Room C Motion Sensor</td></tr>
+          <tr><td class="pin">PIR 2</td><td class="pin wifi">ESP32 GPIO 12</td><td class="tok">ROOMA</td><td>Room A Motion Sensor</td></tr>
+          <tr><td class="pin">PIR 3</td><td class="pin wifi">ESP32 GPIO 14</td><td class="tok">ROOMB</td><td>Room B Motion Sensor</td></tr>
+          <tr><td class="pin">MAX98357A Amp</td><td class="pin wifi">GPIO 25, 26, 27</td><td class="tok">I2S AUDIO</td><td>3W Speaker Siren (LRC, BCLK, DIN)</td></tr>
         </tbody>
       </table>
     </div>
@@ -547,14 +547,29 @@
             <td>Direct wire to GPIO 14.</td>
           </tr>
           <tr>
-            <td class="pin">Buzzer (+) (longer leg)</td>
+            <td class="pin">MAX98357A LRC (WS)</td>
             <td class="pin wifi">ESP32 GPIO 25</td>
-            <td>Direct wire. Triggers pitch-sweep piwiw siren via PWM tone.</td>
+            <td>I2S Word Select Clock &mdash; Left/Right audio channel sync.</td>
           </tr>
           <tr>
-            <td class="pin">Buzzer (&minus;)</td>
-            <td class="pin">common ground (&minus; rail)</td>
-            <td>Connects to ground.</td>
+            <td class="pin">MAX98357A BCLK</td>
+            <td class="pin wifi">ESP32 GPIO 26</td>
+            <td>I2S Bit Clock &mdash; timing clock for digital audio bitstream.</td>
+          </tr>
+          <tr>
+            <td class="pin">MAX98357A DIN</td>
+            <td class="pin wifi">ESP32 GPIO 27</td>
+            <td>I2S Serial Data Input &mdash; sends digital synthesized wave samples.</td>
+          </tr>
+          <tr>
+            <td class="pin">MAX98357A VIN &amp; GND</td>
+            <td class="pin">HW-131 5V &amp; common GND</td>
+            <td>Powers 3W amplifier from 5V rail; shares common ground with ESP32.</td>
+          </tr>
+          <tr>
+            <td class="pin">MAX98357A SPK (+ / &minus;)</td>
+            <td class="pin">Speaker (+ / &minus;) Terminals</td>
+            <td>Direct connection to 4&Omega; or 8&Omega; speaker.</td>
           </tr>
           <tr>
             <td class="pin">All PIR VCC pins</td>
@@ -601,7 +616,7 @@
     </div>
 
     <div class="panel" tabindex="0">
-      <svg viewBox="0 0 980 660" role="img" aria-label="Schematic diagram for ESP32 Wireless Motion Detection System with SIM800L and 3 PIR sensors.">
+      <svg viewBox="0 0 980 720" role="img" aria-label="Schematic diagram for ESP32 Wireless Motion Detection System with SIM800L, MAX98357A I2S Amplifier, and 3 PIR sensors.">
 
         <!-- ===== HW-131 & 12V Wall Adapter ===== -->
         <rect class="box" x="30" y="30" width="200" height="96" rx="4" />
@@ -643,7 +658,7 @@
         <text class="t-pwrc" x="304" y="164">+</text>
 
         <!-- ===== ESP32 ===== -->
-        <rect class="box" x="660" y="30" width="290" height="580" rx="4" />
+        <rect class="box" x="660" y="30" width="290" height="640" rx="4" />
         <text class="t-hd" x="678" y="56">ESP32 (WIFI ENABLED)</text>
         <text class="t-wifi" x="678" y="74">&bull; Wi-Fi 2.4GHz &rarr; HTTP POST</text>
         
@@ -659,14 +674,18 @@
         <text class="t-lbl" x="670" y="296">GPIO 13</text>
         <text class="t-lbl" x="670" y="340">GPIO 12</text>
         <text class="t-lbl" x="670" y="384">GPIO 14</text>
-        <text class="t-lbl" x="670" y="428">GPIO 25</text>
+        <text class="t-lbl" x="670" y="440">GPIO 25</text>
+        <text class="t-lbl" x="670" y="468">GPIO 26</text>
+        <text class="t-lbl" x="670" y="496">GPIO 27</text>
         <text class="t-sig" x="790" y="296">&larr; ROOMC</text>
         <text class="t-sig" x="790" y="340">&larr; ROOMA</text>
         <text class="t-sig" x="790" y="384">&larr; ROOMB</text>
-        <text class="t-sig" x="790" y="428">&rarr; BUZZER (+)</text>
-        <text class="t-wifi" x="670" y="480">[WIFI ANTENNA]</text>
-        <text class="t-sm" x="670" y="500">Sends HTTP POST to XAMPP</text>
-        <text class="t-lbl" x="670" y="584">GND</text>
+        <text class="t-sig" x="790" y="440">&rarr; I2S LRC (WS)</text>
+        <text class="t-sig" x="790" y="468">&rarr; I2S BCLK</text>
+        <text class="t-sig" x="790" y="496">&rarr; I2S DIN</text>
+        <text class="t-wifi" x="670" y="540">[WIFI ANTENNA]</text>
+        <text class="t-sm" x="670" y="560">Sends HTTP POST to XAMPP</text>
+        <text class="t-lbl" x="670" y="640">GND</text>
 
         <!-- data wires: SIM800L <-> ESP32 -->
         <path class="w-sig" d="M570 100 H654" />
@@ -701,6 +720,28 @@
         <text class="t-lbl" x="322" y="432" text-anchor="end">G</text>
         <text class="t-sig" x="560" y="416" text-anchor="end">OUT</text>
 
+        <!-- ===== MAX98357A I2S Audio Amp ===== -->
+        <rect class="box" x="330" y="460" width="220" height="85" rx="4" />
+        <text class="t-hd"  x="346" y="480">MAX98357A I2S AMP</text>
+        <text class="t-sm"  x="346" y="496">3W Class-D &rarr; Speaker</text>
+        <text class="t-pos" x="322" y="480" text-anchor="end">V</text>
+        <text class="t-lbl" x="322" y="500" text-anchor="end">G</text>
+        <text class="t-sig" x="560" y="480" text-anchor="end">LRC</text>
+        <text class="t-sig" x="560" y="502" text-anchor="end">BCLK</text>
+        <text class="t-sig" x="560" y="524" text-anchor="end">DIN</text>
+        <text class="t-sm"  x="346" y="534">SPK+/- &rarr; 4&Omega;/8&Omega; Speaker</text>
+
+        <!-- Audio wires to ESP32 -->
+        <path class="w-sig" d="M550 480 H600 V440 H654" />
+        <circle class="n-sig" cx="550" cy="480" r="4" />
+        <circle class="n-sig" cx="654" cy="440" r="4" />
+        <path class="w-sig" d="M550 502 H612 V468 H654" />
+        <circle class="n-sig" cx="550" cy="502" r="4" />
+        <circle class="n-sig" cx="654" cy="468" r="4" />
+        <path class="w-sig" d="M550 524 H624 V496 H654" />
+        <circle class="n-sig" cx="550" cy="524" r="4" />
+        <circle class="n-sig" cx="654" cy="496" r="4" />
+
         <!-- OUT wires to ESP32 -->
         <path class="w-sig" d="M550 290 H600 V296 H654" />
         <circle class="n-sig" cx="550" cy="290" r="4" />
@@ -713,25 +754,27 @@
         <circle class="n-sig" cx="654" cy="384" r="4" />
 
         <!-- 5V power bus -->
-        <path class="w-ard" d="M180 126 V410 H322" />
+        <path class="w-ard" d="M180 126 V480 H322" />
         <path class="w-ard" d="M180 200 H654" />
-        <path class="w-ard" d="M180 290 H322 M180 350 H322" />
+        <path class="w-ard" d="M180 290 H322 M180 350 H322 M180 410 H322" />
         <circle class="n-ard" cx="322" cy="290" r="4" />
         <circle class="n-ard" cx="322" cy="350" r="4" />
         <circle class="n-ard" cx="322" cy="410" r="4" />
+        <circle class="n-ard" cx="322" cy="480" r="4" />
         <circle class="n-ard" cx="654" cy="200" r="4" />
         <text class="t-pos" x="60" y="246">HW-131 5 V BUS &mdash; bottom + rail</text>
-        <text class="t-sm"  x="60" y="262">Powers ESP32 VIN &amp; PIR VCC</text>
+        <text class="t-sm"  x="60" y="262">Powers ESP32 VIN, PIRs &amp; MAX98357A</text>
 
         <!-- common ground -->
-        <path class="w-gnd" d="M228 124 V600 H640 V584 H654" />
-        <path class="w-gnd" d="M228 310 H322 M228 370 H322 M228 430 H322" />
+        <path class="w-gnd" d="M228 124 V660 H640 V640 H654" />
+        <path class="w-gnd" d="M228 310 H322 M228 370 H322 M228 430 H322 M228 500 H322" />
         <circle class="n-gnd" cx="322" cy="310" r="4" />
         <circle class="n-gnd" cx="322" cy="370" r="4" />
         <circle class="n-gnd" cx="322" cy="430" r="4" />
+        <circle class="n-gnd" cx="322" cy="500" r="4" />
         <circle class="n-gnd" cx="228" cy="124" r="4" />
-        <circle class="n-gnd" cx="654" cy="584" r="4" />
-        <text class="t-lbl" x="270" y="622">COMMON GROUND &mdash; HW-131 &minus;, SIM800L GND, PIR GNDs, Buzzer GND, ESP32 GND</text>
+        <circle class="n-gnd" cx="654" cy="640" r="4" />
+        <text class="t-lbl" x="270" y="682">COMMON GROUND &mdash; HW-131 &minus;, SIM800L GND, PIR GNDs, MAX98357A GND, ESP32 GND</text>
 
       </svg>
     </div>
