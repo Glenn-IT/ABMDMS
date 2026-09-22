@@ -66,7 +66,7 @@ const int BUZZER_FREQ_HIGH          = 2500;
 
 const unsigned long WARMUP_SECONDS  = 30;   
 const unsigned long STOP_CONFIRM_MS = 2000; 
-const unsigned long START_CONFIRM_MS = 150; 
+const unsigned long START_CONFIRM_MS = 500;  // 500ms continuous HIGH required to prevent noise glitches 
 
 // ============================================================
 // SECTION 3 - GSM / SIM800L SETTINGS
@@ -154,10 +154,10 @@ void setup() {
   Serial.println(F("  ABMDMS - ESP32 Wireless Motion System   "));
   Serial.println(F("=========================================="));
 
-  // Configure PIR Pins
+  // Configure PIR Pins with internal pull-down to eliminate floating noise
   for (int i = 0; i < NUM_ZONES; i++) {
-    pinMode(PIR_PIN[i], INPUT);
-    Serial.printf("   PIR Pin %d -> %s\n", PIR_PIN[i], ZONE_NAME[i]);
+    pinMode(PIR_PIN[i], INPUT_PULLDOWN);
+    Serial.printf("   PIR Pin %d -> %s (INPUT_PULLDOWN)\n", PIR_PIN[i], ZONE_NAME[i]);
   }
 
   pinMode(LED_PIN, OUTPUT);
