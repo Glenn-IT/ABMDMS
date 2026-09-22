@@ -42,8 +42,9 @@ const char* SERVER_IP     = "10.192.10.14";
 const int   SERVER_PORT   = 80;
 
 // API Endpoints on your XAMPP server
-String MOTION_API_URL = String("http://") + SERVER_IP + ":" + SERVER_PORT + "/ABMDMS/api/record_motion.php";
-String SMS_API_URL    = String("http://") + SERVER_IP + ":" + SERVER_PORT + "/ABMDMS/api/record_sms.php";
+String MOTION_API_URL  = String("http://") + SERVER_IP + ":" + SERVER_PORT + "/ABMDMS/api/record_motion.php";
+String SMS_API_URL     = String("http://") + SERVER_IP + ":" + SERVER_PORT + "/ABMDMS/api/record_sms.php";
+String SENSORS_API_URL = String("http://") + SERVER_IP + ":" + SERVER_PORT + "/mbpsaas_api/get_sensors.php";
 
 // ============================================================
 // SECTION 2 - SENSOR & PIN SETTINGS
@@ -132,10 +133,12 @@ const int SIM_BUF_SIZE = 128;
 char simBuf[SIM_BUF_SIZE];
 int  simBufLen = 0;
 
-// Wi-Fi Reconnect Timer
-unsigned long lastWifiCheck = 0;
+// Dynamic Sensor Enable/Disable State (Synced wirelessly from mobile app)
+bool          zoneEnabled[NUM_ZONES] = { true, true, true };
+unsigned long lastSensorSync         = 0;
 
 // Forward declarations
+void syncSensorStates();
 void postMotionEvent(const char* zone, const char* eventType);
 void postSmsEvent(const char* zone, const char* status, const char* detail);
 void simSetup();
@@ -225,17 +228,22 @@ void setup() {
 // ============================================================
 
 void loop() {
-  // Check Wi-Fi connection periodically
-  if (millis() - lastWifiCheck > 10000) {
-    lastWifiCheck = millis();
-    if (WiFi.status() != WL_CONNECTED) {
-      Serial.println(F("[Wi-Fi] Disconnected, reconnecting..."));
-      WiFi.reconnect();
-    }
+  // Sync enabled/disabled sensor toggles from mobile app via XAMPP API every 3 seconds
+  if (millis() - lastSensorSync > 3000) {
+    lastSensorSync = millis();
+    syncSensorStates();
   }
 
   // 1. Poll each PIR zone
   for (int i = 0; i < NUM_ZONES; i++) {
+    // If this zone was disabled in the mobile app, skip sensing completely
+    if (!zoneEnabled[i]) {
+      motionActive[i]  = false;
+      lowStartedAt[i]  = 0;
+      highStartedAt[i] = 0;
+      continue;
+    }
+
     int sensorValue = digitalRead(PIR_PIN[i]);
 
     // CASE A: Motion Active
@@ -357,6 +365,43 @@ void postSmsEvent(const char* zone, const char* status, const char* detail) {
     Serial.printf("[HTTP POST SMS Log] %s %s -> HTTP %d\n", zone, status, httpCode);
   } else {
     Serial.printf("[HTTP POST SMS Error] %s\n", http.errorToString(httpCode).c_str());
+  }
+  http.end();
+}
+
+void syncSensorStates() {
+  if (WiFi.status() != WL_CONNECTED) {
+    WiFi.reconnect();
+    return;
+  }
+
+  HTTPClient http;
+  http.begin(SENSORS_API_URL);
+  http.setTimeout(2500);
+
+  int httpCode = http.GET();
+  if (httpCode == 200) {
+    String payload = http.getString();
+    // Parse each zone's is_enabled state from JSON response
+    for (int i = 0; i < NUM_ZONES; i++) {
+      int zoneIdx = payload.indexOf(ZONE_NAME[i]);
+      if (zoneIdx != -1) {
+        int enabledIdx = payload.indexOf("is_enabled", zoneIdx);
+        if (enabledIdx != -1 && enabledIdx - zoneIdx < 80) {
+          int colonIdx = payload.indexOf(":", enabledIdx);
+          if (colonIdx != -1) {
+            String valStr = payload.substring(colonIdx + 1, colonIdx + 7);
+            valStr.toLowerCase();
+            valStr.trim();
+            bool newState = valStr.startsWith("true") || valStr.startsWith("1");
+            if (zoneEnabled[i] != newState) {
+              zoneEnabled[i] = newState;
+              Serial.printf("[SENSOR CONTROL] %s (%s) is now %s\n", ZONE_TEXT[i], ZONE_NAME[i], newState ? "ACTIVE" : "DISABLED (Muted)");
+            }
+          }
+        }
+      }
+    }
   }
   http.end();
 }
