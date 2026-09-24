@@ -47,6 +47,7 @@ $dbCheck = testDBConnection();
         <nav class="nav-links">
             <a href="index.php" class="active">Dashboard</a>
             <a href="wiring.html" target="_blank">Wiring Diagram</a>
+            <a href="prototype.php" target="_blank">System Prototype</a>
             <a href="tools/simulate_motion.php">Test Tool</a>
             <span id="connection-badge" class="badge badge-live">Live</span>
         </nav>
