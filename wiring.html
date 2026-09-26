@@ -25,6 +25,8 @@
     --signal-bg: #E1F0F1;
     --wifi:      #2B6CB0;
     --wifi-bg:   #EBF8FF;
+    --audio:     #6B46C1;
+    --audio-bg:  #F3E8FF;
 
     --board:     #EFEFEA;
     --board-ln:  #C9CAC3;
@@ -34,6 +36,7 @@
     --rail-neg:  #2F5FA8;
     --wire-gnd:  #6B757E;
     --wire-pwr:  #B8720F;
+    --wire-aud:  #6B46C1;
 
     --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
     --font-mono: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, "Liberation Mono", monospace;
@@ -59,6 +62,8 @@
       --signal-bg: #0E2529;
       --wifi:      #63B3ED;
       --wifi-bg:   #1A365D;
+      --audio:     #B794F4;
+      --audio-bg:  #2B1B48;
 
       --board:     #23282C;
       --board-ln:  #3B444C;
@@ -68,6 +73,7 @@
       --rail-neg:  #6E9BD6;
       --wire-gnd:  #8C97A0;
       --wire-pwr:  #E5A33F;
+      --wire-aud:  #B794F4;
     }
   }
 
@@ -124,7 +130,7 @@
     letter-spacing: -0.02em;
     font-weight: 650;
     text-wrap: balance;
-    max-width: 24ch;
+    max-width: 26ch;
     margin: 0;
   }
 
@@ -144,7 +150,7 @@
     vertical-align: 3px;
   }
 
-  h3 { font-size: 15px; font-weight: 640; margin: 0; }
+  h3 { font-size: 16px; font-weight: 640; margin: 12px 0 4px; }
 
   p { max-width: 68ch; margin: 0; }
   strong { font-weight: 640; }
@@ -181,15 +187,20 @@
   .t-neg     { font-family: var(--font-mono); font-size: 11px; fill: var(--rail-neg); }
   .box       { fill: var(--surface-2); stroke: var(--line-2); stroke-width: 1.5; }
   .box-sub   { fill: none; stroke: var(--line-2); stroke-width: 1; }
+  .box-aud   { fill: var(--audio-bg); stroke: var(--audio); stroke-width: 1.5; }
   .w-gnd     { stroke: var(--wire-gnd); stroke-width: 2.5; fill: none; stroke-linecap: round; }
   .w-pwr     { stroke: var(--wire-pwr); stroke-width: 2.5; fill: none; stroke-linecap: round; }
   .w-ard     { stroke: var(--rail-pos); stroke-width: 2.5; fill: none; stroke-linecap: round; }
   .w-sig     { stroke: var(--signal); stroke-width: 2.5; fill: none; stroke-linecap: round; }
+  .w-aud     { stroke: var(--audio); stroke-width: 2.5; fill: none; stroke-linecap: round; }
+  .w-spk     { stroke: #D97706; stroke-width: 2.5; fill: none; stroke-linecap: round; }
   .w-wifi    { stroke: var(--wifi); stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-dasharray: 5 4; }
   .n-gnd     { fill: var(--wire-gnd); }
   .n-pwr     { fill: var(--wire-pwr); }
   .n-ard     { fill: var(--rail-pos); }
   .n-sig     { fill: var(--signal); }
+  .n-aud     { fill: var(--audio); }
+  .n-spk     { fill: #D97706; }
   .n-wifi    { fill: var(--wifi); }
   .t         { font-family: var(--font-mono); font-size: 12px; fill: var(--ink); }
   .t-sm      { font-family: var(--font-mono); font-size: 10px; fill: var(--ink-3); }
@@ -199,6 +210,7 @@
   .t-bad     { font-family: var(--font-mono); font-size: 11.5px; fill: var(--fail); letter-spacing: 0.04em; }
   .t-pwrc    { font-family: var(--font-mono); font-size: 11px; fill: var(--wire-pwr); }
   .t-sig     { font-family: var(--font-mono); font-size: 11px; fill: var(--signal); }
+  .t-aud     { font-family: var(--font-mono); font-size: 11px; fill: var(--audio); }
   .t-wifi    { font-family: var(--font-mono); font-size: 11px; fill: var(--wifi); }
 
   /* ---- parts list ---- */
@@ -215,8 +227,9 @@
     gap: 6px;
   }
 
-  .part.key { border-left-color: var(--accent); }
-  .part.wifi { border-left-color: var(--wifi); }
+  .part.key   { border-left-color: var(--accent); }
+  .part.wifi  { border-left-color: var(--wifi); }
+  .part.audio { border-left-color: var(--audio); }
 
   .part .id { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--ink); }
 
@@ -230,36 +243,7 @@
 
   .part p { font-size: 13.5px; color: var(--ink-2); margin: 0; }
 
-  /* ---- rails ---- */
-  .rails { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-
-  .rail {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--line-2);
-    border-radius: 4px;
-    padding: 16px 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-  }
-
-  .rail.pos { border-left-color: var(--rail-pos); }
-  .rail.neg { border-left-color: var(--rail-neg); }
-
-  .rail .id { font-family: var(--font-mono); font-size: 12px; color: var(--ink); font-weight: 600; }
-
-  .rail .src {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-  }
-
-  .rail p { font-size: 13.5px; color: var(--ink-2); margin: 0; }
-
-  /* ---- the rules ---- */
+  /* ---- the rules & callouts ---- */
   .rule {
     background: var(--accent-bg);
     border: 1px solid var(--accent);
@@ -275,6 +259,16 @@
     border-color: var(--wifi);
   }
 
+  .rule.audio-banner {
+    background: var(--audio-bg);
+    border-color: var(--audio);
+  }
+
+  .rule.danger-banner {
+    background: var(--fail-bg);
+    border-color: var(--fail);
+  }
+
   .rule .tag {
     font-family: var(--font-mono);
     font-size: 10.5px;
@@ -284,9 +278,9 @@
     font-weight: 600;
   }
 
-  .rule.wifi-banner .tag {
-    color: var(--wifi);
-  }
+  .rule.wifi-banner .tag   { color: var(--wifi); }
+  .rule.audio-banner .tag  { color: var(--audio); }
+  .rule.danger-banner .tag { color: var(--fail); }
 
   .rule p { margin: 0; font-size: 14.5px; color: var(--ink-2); }
   .rule strong { color: var(--ink); }
@@ -329,10 +323,11 @@
     font-variant-numeric: tabular-nums;
   }
 
-  td.hole { color: var(--accent); }
-  td.tok  { color: var(--signal); }
-  td.warn { color: var(--fail); font-weight: 600; }
-  td.wifi { color: var(--wifi); font-weight: 600; }
+  td.hole  { color: var(--accent); }
+  td.tok   { color: var(--signal); }
+  td.aud   { color: var(--audio); font-weight: 600; }
+  td.warn  { color: var(--fail); font-weight: 600; }
+  td.wifi  { color: var(--wifi); font-weight: 600; }
 
   /* ---- flow ---- */
   .flow {
@@ -372,45 +367,6 @@
   .check .mark { font-family: var(--font-mono); color: var(--accent); font-size: 13px; flex: none; font-weight: 600; }
   .check span:last-child { font-size: 14.5px; color: var(--ink-2); }
 
-  /* ---- LED decoder ---- */
-  .leds { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
-
-  .led {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    padding: 16px 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-  }
-
-  .led .rate {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--ink);
-  }
-
-  .led .verdict {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-  }
-
-  .led p { font-size: 13.5px; color: var(--ink-2); margin: 0; }
-
-  .led .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ink-3); flex: none; }
-  .led.good .dot { background: var(--pass); animation: blink 3s steps(1, end) infinite; }
-  .led.bad  .dot { background: var(--fail); animation: blink 1s steps(1, end) infinite; }
-  .led.dead .dot { background: transparent; border: 1px solid var(--line-2); }
-
-  @keyframes blink { 0%, 12% { opacity: 1; } 13%, 100% { opacity: 0.18; } }
-
   footer {
     border-top: 1px solid var(--line);
     padding-top: 24px;
@@ -430,193 +386,247 @@
 <div class="wrap">
 
   <header class="masthead">
-    <div class="eyebrow">ABMDMS &nbsp;&middot;&nbsp; ESP32 Wireless Build Sheet</div>
-    <h1>Wireless Motion Detection with ESP32 &amp; SIM800L</h1>
+    <div class="eyebrow">ABMDMS &nbsp;&middot;&nbsp; ESP32 Wireless &amp; Audio Build Sheet</div>
+    <h1>ESP32 Wireless Motion Detection &amp; Audio Alarm Wiring Guide</h1>
     <p class="standfirst">
-      Upgraded to <strong>ESP32 Wi-Fi</strong>. Motion events and SMS status reports are posted
-      directly to your XAMPP backend over the local Wi-Fi network &mdash; <strong>no USB tethering cord
-      or PowerShell serial bridge required</strong>.
+      Complete wiring specification featuring <strong>ESP32 Wi-Fi</strong>, <strong>SIM800L GSM</strong>,
+      and the newly integrated <strong>MAX98357A I2S 3W Class-D Audio Amplifier &amp; Speaker</strong>.
     </p>
 
     <div class="rule wifi-banner">
-      <span class="tag">Wireless Architecture &bull; No USB Cord Needed</span>
+      <span class="tag">System Operational Flow &bull; Wi-Fi + GSM + Loud Alarm</span>
       <p>
-        The ESP32 runs standalone on your 5V HW-131 breadboard power adapter. When motion is detected,
-        it triggers the MAX98357A I2S speaker siren, texts via SIM800L (Hardware UART2), and transmits HTTP POST data
-        over 2.4GHz Wi-Fi straight into <code>record_motion.php</code> and <code>record_sms.php</code>.
+        The ESP32 runs standalone powered by the 5V HW-131 breadboard adapter. When motion is detected,
+        it simultaneously plays a high-power non-blocking audio siren over the <strong>MAX98357A I2S Speaker</strong>,
+        sends an emergency alert via <strong>SIM800L GSM</strong> (UART2), and dispatches wireless HTTP POST telemetry
+        directly to your XAMPP backend (<code>record_motion.php</code> &amp; <code>record_sms.php</code>).
       </p>
     </div>
   </header>
 
+  <!-- ============================================================ -->
+  <!-- SECTION 01: HARDWARE PARTS LIST                              -->
+  <!-- ============================================================ -->
   <section>
     <h2><span class="num">01</span>What you need on the desk</h2>
     <div class="parts">
       <div class="part wifi">
         <span class="id">ESP32 Dev Module</span>
         <span class="qty">&times;1 &middot; NodeMCU-32S / ESP32-WROOM</span>
-        <p>Powered via VIN from HW-131 5V rail. Direct Wi-Fi HTTP client &amp; Hardware UART2.</p>
+        <p>Main wireless microcontroller. Runs direct Wi-Fi HTTP client, Hardware UART2, and hardware I2S DMA audio driver.</p>
+      </div>
+      <div class="part audio">
+        <span class="id">MAX98357A I2S Amplifier</span>
+        <span class="qty">&times;1 &middot; 3W Mono Class-D</span>
+        <p>Digital I2S audio DAC &amp; Amp. Connects to ESP32 GPIOs 25 (LRC), 26 (BCLK), 27 (DIN). Powered from 5V rail.</p>
+      </div>
+      <div class="part audio">
+        <span class="id">Speaker (4&Omega; or 8&Omega;)</span>
+        <span class="qty">&times;1 &middot; 3 Watt rating</span>
+        <p>Connects directly to the amplifier SPK+ and SPK- screw terminals. Delivers loud arming chirps and sweep sirens.</p>
       </div>
       <div class="part key">
         <span class="id">HW-131 Power Module</span>
         <span class="qty">&times;1 &middot; MB-102 compatible</span>
-        <p>Plugs onto breadboard end. Sets both rails to 5 V. Powers ESP32 VIN, SIM800L, and PIRs.</p>
+        <p>Plugs onto breadboard end. Sets both top &amp; bottom rails to 5V. Powers ESP32 VIN, SIM800L, PIRs, and MAX98357A.</p>
       </div>
       <div class="part key">
         <span class="id">12 V DC Wall Adapter</span>
         <span class="qty">&times;1 &middot; 1 A to 2 A rating</span>
-        <p>Plugs into HW-131 DC barrel jack (5.5mm &times; 2.1mm center positive).</p>
+        <p>Plugs into HW-131 DC barrel jack (5.5mm &times; 2.1mm center positive). Delivers robust power during 2A GSM &amp; 3W audio bursts.</p>
       </div>
       <div class="part key">
         <span class="id">SIM800L V2.2 (UNV)</span>
         <span class="qty">&times;1 &middot; 5 V board</span>
-        <p>Communicates with ESP32 via Hardware UART2 (GPIO 16 RX / GPIO 17 TX).</p>
+        <p>Communicates with ESP32 via Hardware UART2 (GPIO 16 RX2 / GPIO 17 TX2 / GPIO 4 RST). Sends SMS text alerts.</p>
       </div>
       <div class="part key">
         <span class="id">HC-SR501 PIR Sensors</span>
         <span class="qty">&times;3 &middot; ROOMA / ROOMB / ROOMC</span>
-        <p>Powered by 5V rail. Sensor OUT is 3.3V logic &mdash; 100% safe to plug directly into ESP32 GPIOs!</p>
-      </div>
-      <div class="part key">
-        <span class="id">MAX98357A I2S Amp + Speaker</span>
-        <span class="qty">&times;1 &middot; 3W Class-D Audio</span>
-        <p>LRC &rarr; GPIO 25, BCLK &rarr; GPIO 26, DIN &rarr; GPIO 27. Connects to 4&Omega;/8&Omega; speaker for loud sirens.</p>
+        <p>Powered by 5V rail. Sensor OUT provides 3.3V logic &mdash; 100% safe to plug directly into ESP32 GPIOs 12, 14, and 13.</p>
       </div>
       <div class="part">
-        <span class="id">1000 &micro;F capacitor</span>
+        <span class="id">1000 &micro;F Capacitor</span>
         <span class="qty">&times;1 &middot; 16 V or higher</span>
-        <p>Sits across SIM800L 5Vin and GND in parallel to buffer 2 A GSM transmit bursts.</p>
+        <p>Electrolytic capacitor sitting in parallel across SIM800L 5Vin and GND to buffer 2A cellular transmit surges.</p>
       </div>
       <div class="part">
         <span class="id">Breadboard + Jumpers</span>
-        <span class="qty">830-point &middot; M-F &amp; M-M</span>
-        <p>Male-to-female for module/sensor headers; male-to-male for rails &amp; ground links.</p>
+        <span class="qty">830-point &middot; M-M &amp; M-F</span>
+        <p>Full size 830-tie point solderless breadboard with jumper wires for modules and power rail distribution.</p>
       </div>
     </div>
 
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Component</th><th>ESP32 / Wire Pin</th><th>Signal Token</th><th>System Function</th></tr>
+          <tr><th>Component</th><th>Module Pin</th><th>ESP32 / Rail Connection</th><th>Signal Token</th><th>System Function</th></tr>
         </thead>
         <tbody>
-          <tr><td class="pin">PIR 1</td><td class="pin wifi">ESP32 GPIO 13</td><td class="tok">ROOMC</td><td>Room C Motion Sensor</td></tr>
-          <tr><td class="pin">PIR 2</td><td class="pin wifi">ESP32 GPIO 12</td><td class="tok">ROOMA</td><td>Room A Motion Sensor</td></tr>
-          <tr><td class="pin">PIR 3</td><td class="pin wifi">ESP32 GPIO 14</td><td class="tok">ROOMB</td><td>Room B Motion Sensor</td></tr>
-          <tr><td class="pin">MAX98357A Amp</td><td class="pin wifi">GPIO 25, 26, 27</td><td class="tok">I2S AUDIO</td><td>3W Speaker Siren (LRC, BCLK, DIN)</td></tr>
+          <tr><td class="pin">PIR 1</td><td class="pin">OUT</td><td class="pin wifi">ESP32 GPIO 13</td><td class="tok">ROOMC</td><td>Room C Motion Sensor (Coop Zone C)</td></tr>
+          <tr><td class="pin">PIR 2</td><td class="pin">OUT</td><td class="pin wifi">ESP32 GPIO 12</td><td class="tok">ROOMA</td><td>Room A Motion Sensor (Coop Zone A)</td></tr>
+          <tr><td class="pin">PIR 3</td><td class="pin">OUT</td><td class="pin wifi">ESP32 GPIO 14</td><td class="tok">ROOMB</td><td>Room B Motion Sensor (Coop Zone B)</td></tr>
+          <tr><td class="pin">SIM800L</td><td class="pin">TXD / RXD / RST</td><td class="pin wifi">GPIO 16 / 17 / 4</td><td class="tok">UART2 GSM</td><td>Hardware Serial SMS Messaging Engine</td></tr>
+          <tr><td class="pin aud">MAX98357A</td><td class="pin aud">LRC (WS)</td><td class="pin wifi">ESP32 GPIO 25</td><td class="tok aud">I2S CLOCK</td><td>Left/Right Audio Word Select Sync</td></tr>
+          <tr><td class="pin aud">MAX98357A</td><td class="pin aud">BCLK</td><td class="pin wifi">ESP32 GPIO 26</td><td class="tok aud">I2S CLOCK</td><td>Bit Clock for Digital Audio Samples</td></tr>
+          <tr><td class="pin aud">MAX98357A</td><td class="pin aud">DIN</td><td class="pin wifi">ESP32 GPIO 27</td><td class="tok aud">I2S DATA</td><td>Serial PCM Audio Data Stream</td></tr>
+          <tr><td class="pin aud">MAX98357A</td><td class="pin aud">GAIN / SD</td><td class="pin">Unconnected (Floating)</td><td class="tok">&mdash;</td><td>Default +9dB Gain / Mixed Mono Output</td></tr>
+          <tr><td class="pin aud">Speaker</td><td class="pin aud">+ / &minus;</td><td class="pin aud">Amp SPK+ / SPK&minus;</td><td class="tok aud">AUDIO OUT</td><td>4&Omega;/8&Omega; 3W Audible Siren Output (BTL)</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
+  <!-- ============================================================ -->
+  <!-- SECTION 02: PIN BY PIN SCHEMATIC & WIRING                    -->
+  <!-- ============================================================ -->
   <section>
     <h2><span class="num">02</span>Every connection, pin by pin</h2>
     <p class="col">
-      Clean and simple. The ESP32 is powered via <code>VIN</code> from the regulated 5V rail.
-      The PIR signal wires connect directly to GPIO inputs.
+      The ESP32 is powered via <code>VIN</code> from the regulated HW-131 5V bus.
+      All sensors and modules share one unified ground plane. Notice how the MAX98357A takes digital I2S audio
+      directly from the ESP32 hardware DMA pins.
     </p>
 
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>From Component</th><th>To ESP32 / Rail</th><th>Function &amp; Notes</th></tr>
+          <tr><th>From Component Pin</th><th>Connects To</th><th>Wire Color Hint</th><th>Function &amp; Important Notes</th></tr>
         </thead>
         <tbody>
           <tr>
             <td class="pin">ESP32 VIN</td>
-            <td class="pin">HW-131 5V (bottom + rail)</td>
-            <td>Powers the ESP32 on-board 3.3V regulator from the 5V power supply.</td>
+            <td class="pin">HW-131 5V (Bottom + Rail)</td>
+            <td class="tok">Red</td>
+            <td>Powers ESP32 on-board 3.3V LDO regulator from the external 5V power supply.</td>
           </tr>
           <tr>
             <td class="pin">ESP32 GND</td>
-            <td class="pin">common ground (bottom &minus; rail)</td>
-            <td>Common ground shared across all boards and sensors.</td>
+            <td class="pin">Bottom &minus; Ground Rail</td>
+            <td class="tok">Black</td>
+            <td>ESP32 logic ground. Shared with power supply and all peripherals.</td>
           </tr>
           <tr>
             <td class="pin">PIR 1 OUT (ROOMC)</td>
             <td class="pin wifi">ESP32 GPIO 13</td>
-            <td>Direct wire. HC-SR501 outputs 3.3V HIGH signal &mdash; safe for ESP32.</td>
+            <td class="tok">Green</td>
+            <td>Sensor OUT provides 3.3V logic HIGH when motion occurs. Direct wire.</td>
           </tr>
           <tr>
             <td class="pin">PIR 2 OUT (ROOMA)</td>
             <td class="pin wifi">ESP32 GPIO 12</td>
+            <td class="tok">Yellow</td>
             <td>Direct wire to GPIO 12.</td>
           </tr>
           <tr>
             <td class="pin">PIR 3 OUT (ROOMB)</td>
             <td class="pin wifi">ESP32 GPIO 14</td>
+            <td class="tok">Orange</td>
             <td>Direct wire to GPIO 14.</td>
           </tr>
           <tr>
-            <td class="pin">MAX98357A LRC (WS)</td>
+            <td class="pin">All PIR VCC Pins</td>
+            <td class="pin">Bottom + Rail (5V)</td>
+            <td class="tok">Red</td>
+            <td>Powers HC-SR501 internal electronics (accepts 4.5V to 12V).</td>
+          </tr>
+          <tr>
+            <td class="pin">All PIR GND Pins</td>
+            <td class="pin">Bottom &minus; Rail (GND)</td>
+            <td class="tok">Black</td>
+            <td>PIR sensor ground reference.</td>
+          </tr>
+          <tr style="background:var(--audio-bg);">
+            <td class="pin aud">MAX98357A LRC (WS)</td>
             <td class="pin wifi">ESP32 GPIO 25</td>
-            <td>I2S Word Select Clock &mdash; Left/Right audio channel sync.</td>
+            <td class="tok aud">Purple</td>
+            <td>I2S Word Select / Left-Right Clock. Synchronizes audio frames.</td>
           </tr>
-          <tr>
-            <td class="pin">MAX98357A BCLK</td>
+          <tr style="background:var(--audio-bg);">
+            <td class="pin aud">MAX98357A BCLK</td>
             <td class="pin wifi">ESP32 GPIO 26</td>
-            <td>I2S Bit Clock &mdash; timing clock for digital audio bitstream.</td>
+            <td class="tok aud">Blue</td>
+            <td>I2S Bit Clock. Governs the rate of digital audio bit transfers.</td>
           </tr>
-          <tr>
-            <td class="pin">MAX98357A DIN</td>
+          <tr style="background:var(--audio-bg);">
+            <td class="pin aud">MAX98357A DIN</td>
             <td class="pin wifi">ESP32 GPIO 27</td>
-            <td>I2S Serial Data Input &mdash; sends digital synthesized wave samples.</td>
+            <td class="tok aud">White</td>
+            <td>I2S Serial Data In. Carries DMA synthesized audio waveform samples.</td>
           </tr>
-          <tr>
-            <td class="pin">MAX98357A VIN &amp; GND</td>
-            <td class="pin">HW-131 5V &amp; common GND</td>
-            <td>Powers 3W amplifier from 5V rail; shares common ground with ESP32.</td>
+          <tr style="background:var(--audio-bg);">
+            <td class="pin aud">MAX98357A VIN</td>
+            <td class="pin">Bottom + Rail (5V)</td>
+            <td class="tok">Red</td>
+            <td>Power to Class-D amplifier. 5V supply produces up to 3.2 Watts into 4&Omega;.</td>
           </tr>
-          <tr>
-            <td class="pin">MAX98357A SPK (+ / &minus;)</td>
-            <td class="pin">Speaker (+ / &minus;) Terminals</td>
-            <td>Direct connection to 4&Omega; or 8&Omega; speaker.</td>
+          <tr style="background:var(--audio-bg);">
+            <td class="pin aud">MAX98357A GND</td>
+            <td class="pin">Bottom &minus; Rail (GND)</td>
+            <td class="tok">Black</td>
+            <td>Amplifier signal and power ground.</td>
           </tr>
-          <tr>
-            <td class="pin">All PIR VCC pins</td>
-            <td class="pin">HW-131 5V (bottom + rail)</td>
-            <td>Powers all PIR sensors from the 5V bus.</td>
+          <tr style="background:var(--audio-bg);">
+            <td class="pin aud">MAX98357A GAIN</td>
+            <td class="pin">Leave Unconnected (Floating)</td>
+            <td class="tok">&mdash;</td>
+            <td>Internal pull-up resistor defaults to <strong>+9 dB gain</strong> (ideal for loud siren).</td>
           </tr>
-          <tr>
-            <td class="pin">All PIR GND pins</td>
-            <td class="pin">common ground (&minus; rail)</td>
-            <td>Taps into bottom ground rail.</td>
+          <tr style="background:var(--audio-bg);">
+            <td class="pin aud">MAX98357A SD</td>
+            <td class="pin">Leave Unconnected (Floating)</td>
+            <td class="tok">&mdash;</td>
+            <td>Shutdown/Mode pin. Floating enables chip and downmixes (Left+Right)/2 into mono.</td>
+          </tr>
+          <tr style="background:var(--audio-bg);">
+            <td class="pin aud">MAX98357A SPK+ / SPK&minus;</td>
+            <td class="pin aud">Speaker (+) and (&minus;) Terminals</td>
+            <td class="tok aud">Pair</td>
+            <td class="warn">Bridge-Tied Load (BTL) output! Connect directly to speaker. NEVER tie SPK&minus; to GND!</td>
           </tr>
           <tr>
             <td class="pin">SIM800L TXD</td>
             <td class="pin wifi">ESP32 GPIO 16 (RX2)</td>
-            <td>Hardware UART2 RX. Direct connection (or via 1k/2k divider).</td>
+            <td class="tok">Green</td>
+            <td>Hardware UART2 RX. SIM800L transmits AT response tokens back to ESP32.</td>
           </tr>
           <tr>
             <td class="pin">SIM800L RXD</td>
             <td class="pin wifi">ESP32 GPIO 17 (TX2)</td>
-            <td>Hardware UART2 TX. ESP32 3.3V TX drives SIM800L RX reliably.</td>
+            <td class="tok">Blue</td>
+            <td>Hardware UART2 TX. ESP32 3.3V logic level drives SIM800L RX pin safely.</td>
           </tr>
           <tr>
             <td class="pin">SIM800L RST</td>
             <td class="pin wifi">ESP32 GPIO 4</td>
-            <td>Hardware reset pin (Active LOW).</td>
+            <td class="tok">Brown</td>
+            <td>Active-LOW hardware reset control. Pulled HIGH during normal operation.</td>
           </tr>
           <tr>
             <td class="pin">SIM800L 5Vin</td>
-            <td class="pin">HW-131 5V (top + rail)</td>
-            <td class="warn">Powered from top 5V rail. Transmit burst pulls 2 A &mdash; buffered by 1000&micro;F capacitor.</td>
+            <td class="pin">Top + Rail (5V)</td>
+            <td class="tok">Red</td>
+            <td class="warn">Dedicated high-current 5V rail fed by HW-131. Pulls up to 2A transmit spikes.</td>
           </tr>
           <tr>
             <td class="pin">SIM800L GND</td>
-            <td class="pin">HW-131 &minus; <em>and</em> ESP32 GND</td>
-            <td>Must share common ground with ESP32.</td>
+            <td class="pin">Top &minus; Rail (GND)</td>
+            <td class="tok">Black</td>
+            <td>Common ground plane connection.</td>
           </tr>
           <tr>
             <td class="pin">1000 &micro;F Capacitor</td>
-            <td class="pin">Across SIM800L 5Vin &amp; GND</td>
-            <td class="warn">In parallel across 5Vin and GND. Stripe leg to ground.</td>
+            <td class="pin">Across Top + &amp; Top &minus; Rails</td>
+            <td class="tok">Stripe to &minus;</td>
+            <td class="warn">Parallel buffer right next to SIM800L 5Vin/GND. Prevents GSM transmission brownouts.</td>
           </tr>
         </tbody>
       </table>
     </div>
 
+    <!-- ===== SCHEMATIC SVG ===== -->
     <div class="panel" tabindex="0">
-      <svg viewBox="0 0 980 720" role="img" aria-label="Schematic diagram for ESP32 Wireless Motion Detection System with SIM800L, MAX98357A I2S Amplifier, and 3 PIR sensors.">
+      <svg viewBox="0 0 980 770" role="img" aria-label="Schematic diagram for ESP32 Wireless Motion Detection System with SIM800L, MAX98357A I2S Amplifier, 4-8 Ohm Speaker, and 3 PIR sensors.">
 
         <!-- ===== HW-131 & 12V Wall Adapter ===== -->
         <rect class="box" x="30" y="30" width="200" height="96" rx="4" />
@@ -658,7 +668,7 @@
         <text class="t-pwrc" x="304" y="164">+</text>
 
         <!-- ===== ESP32 ===== -->
-        <rect class="box" x="660" y="30" width="290" height="640" rx="4" />
+        <rect class="box" x="660" y="30" width="290" height="690" rx="4" />
         <text class="t-hd" x="678" y="56">ESP32 (WIFI ENABLED)</text>
         <text class="t-wifi" x="678" y="74">&bull; Wi-Fi 2.4GHz &rarr; HTTP POST</text>
         
@@ -674,18 +684,18 @@
         <text class="t-lbl" x="670" y="296">GPIO 13</text>
         <text class="t-lbl" x="670" y="340">GPIO 12</text>
         <text class="t-lbl" x="670" y="384">GPIO 14</text>
-        <text class="t-lbl" x="670" y="440">GPIO 25</text>
-        <text class="t-lbl" x="670" y="468">GPIO 26</text>
-        <text class="t-lbl" x="670" y="496">GPIO 27</text>
+        <text class="t-aud" x="670" y="440">GPIO 25</text>
+        <text class="t-aud" x="670" y="468">GPIO 26</text>
+        <text class="t-aud" x="670" y="496">GPIO 27</text>
         <text class="t-sig" x="790" y="296">&larr; ROOMC</text>
         <text class="t-sig" x="790" y="340">&larr; ROOMA</text>
         <text class="t-sig" x="790" y="384">&larr; ROOMB</text>
-        <text class="t-sig" x="790" y="440">&rarr; I2S LRC (WS)</text>
-        <text class="t-sig" x="790" y="468">&rarr; I2S BCLK</text>
-        <text class="t-sig" x="790" y="496">&rarr; I2S DIN</text>
-        <text class="t-wifi" x="670" y="540">[WIFI ANTENNA]</text>
-        <text class="t-sm" x="670" y="560">Sends HTTP POST to XAMPP</text>
-        <text class="t-lbl" x="670" y="640">GND</text>
+        <text class="t-aud" x="790" y="440">&rarr; I2S LRC (WS)</text>
+        <text class="t-aud" x="790" y="468">&rarr; I2S BCLK</text>
+        <text class="t-aud" x="790" y="496">&rarr; I2S DIN</text>
+        <text class="t-wifi" x="670" y="550">[WIFI ANTENNA]</text>
+        <text class="t-sm" x="670" y="570">Sends HTTP POST to XAMPP</text>
+        <text class="t-lbl" x="670" y="680">GND</text>
 
         <!-- data wires: SIM800L <-> ESP32 -->
         <path class="w-sig" d="M570 100 H654" />
@@ -721,28 +731,48 @@
         <text class="t-sig" x="560" y="416" text-anchor="end">OUT</text>
 
         <!-- ===== MAX98357A I2S Audio Amp ===== -->
-        <rect class="box" x="330" y="460" width="220" height="85" rx="4" />
-        <text class="t-hd"  x="346" y="480">MAX98357A I2S AMP</text>
-        <text class="t-sm"  x="346" y="496">3W Class-D &rarr; Speaker</text>
-        <text class="t-pos" x="322" y="480" text-anchor="end">V</text>
-        <text class="t-lbl" x="322" y="500" text-anchor="end">G</text>
-        <text class="t-sig" x="560" y="480" text-anchor="end">LRC</text>
-        <text class="t-sig" x="560" y="502" text-anchor="end">BCLK</text>
-        <text class="t-sig" x="560" y="524" text-anchor="end">DIN</text>
-        <text class="t-sm"  x="346" y="534">SPK+/- &rarr; 4&Omega;/8&Omega; Speaker</text>
+        <rect class="box-aud" x="330" y="460" width="220" height="110" rx="4" />
+        <text class="t-hd"  x="346" y="482">MAX98357A I2S AMP</text>
+        <text class="t-aud" x="346" y="498">3W Class-D Digital Audio</text>
+        <text class="t-pos" x="322" y="480" text-anchor="end">VIN</text>
+        <text class="t-lbl" x="322" y="500" text-anchor="end">GND</text>
+        <text class="t-aud" x="560" y="480" text-anchor="end">LRC</text>
+        <text class="t-aud" x="560" y="502" text-anchor="end">BCLK</text>
+        <text class="t-aud" x="560" y="524" text-anchor="end">DIN</text>
+        <text class="t-sm"  x="346" y="520">GAIN &amp; SD: Leave Open</text>
+        <text class="t-pwrc" x="340" y="556">SPK+</text>
+        <text class="t-lbl"  x="390" y="556">SPK&minus;</text>
+        <text class="t-sm"   x="440" y="556">BTL Output</text>
 
         <!-- Audio wires to ESP32 -->
-        <path class="w-sig" d="M550 480 H600 V440 H654" />
-        <circle class="n-sig" cx="550" cy="480" r="4" />
-        <circle class="n-sig" cx="654" cy="440" r="4" />
-        <path class="w-sig" d="M550 502 H612 V468 H654" />
-        <circle class="n-sig" cx="550" cy="502" r="4" />
-        <circle class="n-sig" cx="654" cy="468" r="4" />
-        <path class="w-sig" d="M550 524 H624 V496 H654" />
-        <circle class="n-sig" cx="550" cy="524" r="4" />
-        <circle class="n-sig" cx="654" cy="496" r="4" />
+        <path class="w-aud" d="M550 480 H600 V440 H654" />
+        <circle class="n-aud" cx="550" cy="480" r="4" />
+        <circle class="n-aud" cx="654" cy="440" r="4" />
+        <path class="w-aud" d="M550 502 H612 V468 H654" />
+        <circle class="n-aud" cx="550" cy="502" r="4" />
+        <circle class="n-aud" cx="654" cy="468" r="4" />
+        <path class="w-aud" d="M550 524 H624 V496 H654" />
+        <circle class="n-aud" cx="550" cy="524" r="4" />
+        <circle class="n-aud" cx="654" cy="496" r="4" />
 
-        <!-- OUT wires to ESP32 -->
+        <!-- ===== SPEAKER MODULE ===== -->
+        <rect class="box" x="80" y="530" width="180" height="90" rx="6" />
+        <text class="t-hd" x="96" y="556">SPEAKER</text>
+        <text class="t-sm" x="96" y="574">4&Omega; or 8&Omega; (3 Watts)</text>
+        <text class="t-sm" x="96" y="592">High-Decibel Siren</text>
+        <text class="t-pwrc" x="250" y="556" text-anchor="end">+</text>
+        <text class="t-lbl"  x="250" y="586" text-anchor="end">&minus;</text>
+        <text class="t-bad"  x="96" y="612">Do NOT wire &minus; to GND</text>
+
+        <!-- Speaker connecting wires to MAX98357A SPK+ and SPK- -->
+        <path class="w-spk" d="M260 552 H340 V546" />
+        <circle class="n-spk" cx="260" cy="552" r="4" />
+        <circle class="n-spk" cx="340" cy="546" r="4" />
+        <path class="w-gnd" d="M260 582 H320 V562 H390 V546" />
+        <circle class="n-gnd" cx="260" cy="582" r="4" />
+        <circle class="n-gnd" cx="390" cy="546" r="4" />
+
+        <!-- PIR OUT wires to ESP32 -->
         <path class="w-sig" d="M550 290 H600 V296 H654" />
         <circle class="n-sig" cx="550" cy="290" r="4" />
         <circle class="n-sig" cx="654" cy="296" r="4" />
@@ -762,52 +792,381 @@
         <circle class="n-ard" cx="322" cy="410" r="4" />
         <circle class="n-ard" cx="322" cy="480" r="4" />
         <circle class="n-ard" cx="654" cy="200" r="4" />
-        <text class="t-pos" x="60" y="246">HW-131 5 V BUS &mdash; bottom + rail</text>
+        <text class="t-pos" x="60" y="246">HW-131 5 V BUS &mdash; Bottom + Rail</text>
         <text class="t-sm"  x="60" y="262">Powers ESP32 VIN, PIRs &amp; MAX98357A</text>
 
-        <!-- common ground -->
-        <path class="w-gnd" d="M228 124 V660 H640 V640 H654" />
+        <!-- Common Ground -->
+        <path class="w-gnd" d="M228 124 V700 H640 V680 H654" />
         <path class="w-gnd" d="M228 310 H322 M228 370 H322 M228 430 H322 M228 500 H322" />
         <circle class="n-gnd" cx="322" cy="310" r="4" />
         <circle class="n-gnd" cx="322" cy="370" r="4" />
         <circle class="n-gnd" cx="322" cy="430" r="4" />
         <circle class="n-gnd" cx="322" cy="500" r="4" />
         <circle class="n-gnd" cx="228" cy="124" r="4" />
-        <circle class="n-gnd" cx="654" cy="640" r="4" />
-        <text class="t-lbl" x="270" y="682">COMMON GROUND &mdash; HW-131 &minus;, SIM800L GND, PIR GNDs, MAX98357A GND, ESP32 GND</text>
+        <circle class="n-gnd" cx="654" cy="680" r="4" />
+        <text class="t-lbl" x="270" y="722">COMMON GROUND &mdash; HW-131 &minus;, SIM800L GND, PIR GNDs, MAX98357A GND, ESP32 GND (Single Net)</text>
 
       </svg>
     </div>
   </section>
 
+  <!-- ============================================================ -->
+  <!-- SECTION 03: THE BREADBOARD HOLE BY HOLE                      -->
+  <!-- ============================================================ -->
   <section>
-    <h2><span class="num">03</span>Wireless Data Flow (Before vs. After)</h2>
+    <h2><span class="num">03</span>The breadboard, hole by hole</h2>
+    <p class="col">
+      Physical wiring on a full-size 830-tie point breadboard. The <strong>HW-131 module</strong> slots
+      into columns 1&ndash;4 on the left edge, powered by the 12V DC wall adapter.
+      The top rail provides dedicated high-current 5V for the SIM800L, while the bottom rail powers the ESP32,
+      PIR sensors, and the MAX98357A audio amplifier.
+    </p>
 
-    <div class="flow">
-      <span class="tag">Direct Wi-Fi Transmission</span>
-      <p class="chain">
-        <strong>PIR Sensor</strong> &rarr; <strong>ESP32</strong> &rarr; <strong>SIM800L</strong> &rarr; <strong>Your Phone (SMS)</strong><br>
-        <strong>PIR Sensor</strong> &rarr; <strong>ESP32</strong> &rarr; <span style="color:var(--wifi); font-weight:bold;">[Wi-Fi HTTP POST]</span> &rarr; <strong>PHP API (XAMPP)</strong> &rarr; <strong>MySQL</strong> &rarr; <strong>Web &amp; Android Dashboard</strong>
+    <div class="rule audio-banner">
+      <span class="tag">Amplifier &amp; Speaker Breadboard Rules</span>
+      <p>
+        <strong>1. Never ground the speaker negative terminal:</strong> The MAX98357A uses Bridge-Tied Load (BTL) drive.
+        Its <code>SPK+</code> and <code>SPK&minus;</code> outputs both carry live audio signals. Connecting <code>SPK&minus;</code> to GND will short-circuit the output stage and overheat the amplifier!
       </p>
       <p>
-        The ESP32 eliminates the middleman script! You no longer need <code>serial_reader.ps1</code> or a COM port open.
+        <strong>2. Keep speaker wires away from the SIM800L antenna:</strong> GSM transmit bursts can induce RF ticking into speaker cables. Twist the speaker wire pair and keep them at least 10 cm away from the SIM800L antenna.
+      </p>
+    </div>
+
+    <!-- ===== BREADBOARD PHYSICAL SVG ===== -->
+    <div class="panel" tabindex="0">
+      <svg viewBox="0 0 980 780" role="img" aria-label="Physical breadboard layout for ESP32 Wireless Motion Detection System with SIM800L, MAX98357A I2S Amplifier, 4-8 Ohm Speaker, and 3 PIR sensors.">
+        
+        <defs>
+          <pattern id="holes" width="13.6" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(57.2, 7)">
+            <circle class="bb-hole" cx="6.8" cy="7" r="2.1" />
+          </pattern>
+        </defs>
+
+        <!-- ===== HW-131 Module Box ===== -->
+        <rect class="box" x="52" y="18" width="220" height="76" rx="4" />
+        <text class="t-hd" x="68" y="42">HW-131 MODULE</text>
+        <text class="t-sm" x="68" y="58">12 V DC wall adapter input</text>
+        <text class="t-sm" x="68" y="74">Jumpers set to 5V / 5V</text>
+        <text class="t-pwrc" x="91.2" y="88" text-anchor="middle">+</text>
+        <text class="t-lbl" x="132" y="88" text-anchor="middle">&minus;</text>
+
+        <!-- Capacitor across top rail -->
+        <rect class="box" x="716" y="52" width="52" height="42" rx="6" />
+        <text class="t-sm" x="742" y="70" text-anchor="middle">1000</text>
+        <text class="t-sm" x="742" y="84" text-anchor="middle">&micro;F</text>
+        <text class="t-pwrc" x="726" y="46" text-anchor="middle">+</text>
+        <text class="t-lbl" x="758" y="46" text-anchor="middle">&minus;</text>
+
+        <!-- SIM800L Module Box -->
+        <rect class="box" x="790" y="18" width="168" height="76" rx="4" />
+        <text class="t-hd" x="806" y="44">SIM800L</text>
+        <text class="t-sm" x="806" y="60">V2.2 &middot; 5 V board</text>
+        <text class="t-pwrc" x="812" y="88" text-anchor="middle">5Vin</text>
+        <text class="t-lbl" x="852.8" y="88" text-anchor="middle">GND</text>
+
+        <!-- ===== BREADBOARD BODY ===== -->
+        <rect class="bb-body" x="44" y="154" width="886" height="280" rx="5" />
+        <rect x="57.2" y="161" width="856.8" height="28" fill="url(#holes)" />
+        <rect x="57.2" y="399" width="856.8" height="28" fill="url(#holes)" />
+        <rect x="57.2" y="217" width="856.8" height="70" fill="url(#holes)" />
+        <rect x="57.2" y="301" width="856.8" height="70" fill="url(#holes)" />
+        <rect class="bb-chan" x="44" y="287" width="886" height="14" />
+
+        <line class="bb-pos" x1="56" y1="157" x2="918" y2="157" />
+        <line class="bb-neg" x1="56" y1="193" x2="918" y2="193" />
+        <line class="bb-neg" x1="56" y1="395" x2="918" y2="395" />
+        <line class="bb-pos" x1="56" y1="431" x2="918" y2="431" />
+
+        <text class="t-pos" x="48" y="171" text-anchor="end">+</text>
+        <text class="t-neg" x="48" y="186" text-anchor="end">&minus;</text>
+        <text class="t-neg" x="48" y="410" text-anchor="end">&minus;</text>
+        <text class="t-pos" x="48" y="424" text-anchor="end">+</text>
+
+        <text class="t-pwrc" x="330" y="172">TOP + &mdash; HW-131 5 V &rarr; SIM800L (2A Capable)</text>
+        <text class="t-lbl"  x="330" y="187">TOP &minus; &mdash; COMMON GROUND</text>
+        <text class="t-lbl"  x="155" y="411">BOTTOM &minus; &mdash; COMMON GROUND</text>
+        <text class="t-pos"  x="155" y="425">BOTTOM + &mdash; HW-131 5 V &rarr; ESP32, PIRs &amp; MAX98357A</text>
+
+        <!-- Breadboard Column Labels -->
+        <text class="t-col" x="64"    y="210" text-anchor="middle">1</text>
+        <text class="t-col" x="118.4" y="210" text-anchor="middle">5</text>
+        <text class="t-col" x="186.4" y="210" text-anchor="middle">10</text>
+        <text class="t-col" x="254.4" y="210" text-anchor="middle">15</text>
+        <text class="t-col" x="322.4" y="210" text-anchor="middle">20</text>
+        <text class="t-col" x="390.4" y="210" text-anchor="middle">25</text>
+        <text class="t-col" x="458.4" y="210" text-anchor="middle">30</text>
+        <text class="t-col" x="526.4" y="210" text-anchor="middle">35</text>
+        <text class="t-col" x="594.4" y="210" text-anchor="middle">40</text>
+        <text class="t-col" x="662.4" y="210" text-anchor="middle">45</text>
+        <text class="t-col" x="730.4" y="210" text-anchor="middle">50</text>
+        <text class="t-col" x="798.4" y="210" text-anchor="middle">55</text>
+        <text class="t-col" x="866.4" y="210" text-anchor="middle">60</text>
+
+        <!-- Top Rail Wires -->
+        <path class="w-pwr" d="M726 94 L730.4 168" />
+        <circle class="n-pwr" cx="730.4" cy="168" r="4" />
+        <path class="w-gnd" d="M758 94 L757.6 161 A7 7 0 0 1 757.6 175 V182" />
+        <circle class="n-gnd" cx="757.6" cy="182" r="4" />
+        <path class="w-pwr" d="M812 90 V168" />
+        <circle class="n-pwr" cx="812" cy="168" r="4" />
+        <path class="w-gnd" d="M852.8 90 V161 A7 7 0 0 1 852.8 175 V182" />
+        <circle class="n-gnd" cx="852.8" cy="182" r="4" />
+
+        <!-- Ground Bridge col 60 -->
+        <path class="w-gnd" d="M866.4 406 H948 V182 H866.4" />
+        <circle class="n-gnd" cx="866.4" cy="406" r="4" />
+        <circle class="n-gnd" cx="866.4" cy="182" r="4" />
+        <text class="t-lbl" x="520" y="452">GROUND BRIDGE col 60 &mdash; Unifies Top &amp; Bottom &minus; Rails</text>
+
+        <!-- ===== ESP32 Box Below Board ===== -->
+        <rect class="box" x="52" y="520" width="220" height="170" rx="4" />
+        <text class="t-hd" x="68" y="546">ESP32 DEVKIT</text>
+        <text class="t-wifi" x="68" y="564">Wi-Fi HTTP + I2S Audio</text>
+        <text class="t-pos" x="91.2" y="513" text-anchor="middle">VIN</text>
+        <text class="t-lbl" x="132"   y="513" text-anchor="middle">GND</text>
+        <text class="t-sig" x="68" y="590">PIRs: GPIO 13, 12, 14</text>
+        <text class="t-aud" x="68" y="612">I2S: GPIO 25, 26, 27</text>
+        <text class="t-sm"  x="68" y="634">GSM: GPIO 16, 17, 4</text>
+        <text class="t-sm"  x="68" y="654">Antenna: Wi-Fi 2.4GHz</text>
+
+        <!-- ESP32 VIN & GND wires to bottom rail -->
+        <path class="w-ard" d="M91.2 520 V420" />
+        <circle class="n-ard" cx="91.2" cy="420" r="4" />
+        <path class="w-gnd" d="M132 520 V427 A7 7 0 0 1 132 413 V406" />
+        <circle class="n-gnd" cx="132" cy="406" r="4" />
+
+        <!-- ===== HC-SR501 SENSORS ===== -->
+        <!-- ROOMC -->
+        <rect class="box" x="290" y="520" width="130" height="96" rx="4" />
+        <text class="t-hd"  x="302" y="544">HC-SR501</text>
+        <text class="t-sig" x="302" y="562">ROOMC</text>
+        <text class="t-sm"  x="302" y="580">OUT &rarr; GPIO 13</text>
+        <text class="t-pos" x="308" y="513" text-anchor="middle">V</text>
+        <text class="t-lbl" x="336" y="513" text-anchor="middle">G</text>
+        <path class="w-ard" d="M308 520 V420" />
+        <circle class="n-ard" cx="308" cy="420" r="4" />
+        <path class="w-gnd" d="M336 520 V427 A7 7 0 0 1 336 413 V406" />
+        <circle class="n-gnd" cx="336" cy="406" r="4" />
+
+        <!-- ROOMA -->
+        <rect class="box" x="435" y="520" width="130" height="96" rx="4" />
+        <text class="t-hd"  x="447" y="544">HC-SR501</text>
+        <text class="t-sig" x="447" y="562">ROOMA</text>
+        <text class="t-sm"  x="447" y="580">OUT &rarr; GPIO 12</text>
+        <text class="t-pos" x="453" y="513" text-anchor="middle">V</text>
+        <text class="t-lbl" x="481" y="513" text-anchor="middle">G</text>
+        <path class="w-ard" d="M453 520 V420" />
+        <circle class="n-ard" cx="453" cy="420" r="4" />
+        <path class="w-gnd" d="M481 520 V427 A7 7 0 0 1 481 413 V406" />
+        <circle class="n-gnd" cx="481" cy="406" r="4" />
+
+        <!-- ROOMB -->
+        <rect class="box" x="580" y="520" width="130" height="96" rx="4" />
+        <text class="t-hd"  x="592" y="544">HC-SR501</text>
+        <text class="t-sig" x="592" y="562">ROOMB</text>
+        <text class="t-sm"  x="592" y="580">OUT &rarr; GPIO 14</text>
+        <text class="t-pos" x="598" y="513" text-anchor="middle">V</text>
+        <text class="t-lbl" x="626" y="513" text-anchor="middle">G</text>
+        <path class="w-ard" d="M598 520 V420" />
+        <circle class="n-ard" cx="598" cy="420" r="4" />
+        <path class="w-gnd" d="M626 520 V427 A7 7 0 0 1 626 413 V406" />
+        <circle class="n-gnd" cx="626" cy="406" r="4" />
+
+        <!-- ===== MAX98357A AMPLIFIER ON BREADBOARD ===== -->
+        <rect class="box-aud" x="726" y="500" width="230" height="150" rx="6" />
+        <text class="t-hd"  x="740" y="524">MAX98357A I2S AMP</text>
+        <text class="t-aud" x="740" y="542">Plugs into breadboard</text>
+        <text class="t-sm"  x="740" y="560">LRC &rarr; GPIO 25 &middot; BCLK &rarr; GPIO 26</text>
+        <text class="t-sm"  x="740" y="576">DIN &rarr; GPIO 27 &middot; GAIN/SD open</text>
+        <text class="t-pos" x="748" y="493" text-anchor="middle">VIN</text>
+        <text class="t-lbl" x="776" y="493" text-anchor="middle">GND</text>
+        <path class="w-ard" d="M748 500 V420" />
+        <circle class="n-ard" cx="748" cy="420" r="4" />
+        <path class="w-gnd" d="M776 500 V427 A7 7 0 0 1 776 413 V406" />
+        <circle class="n-gnd" cx="776" cy="406" r="4" />
+
+        <!-- Speaker screw terminals on amplifier -->
+        <rect class="box" x="850" y="600" width="94" height="42" rx="3" />
+        <text class="t-pwrc" x="872" y="626">SPK+</text>
+        <text class="t-lbl"  x="914" y="626">SPK&minus;</text>
+
+        <!-- 4-8 Ohm Speaker Box -->
+        <rect class="box" x="726" y="666" width="230" height="90" rx="6" />
+        <text class="t-hd" x="740" y="692">4&Omega; or 8&Omega; 3W SPEAKER</text>
+        <text class="t-sm" x="740" y="710">Direct 2-wire connection to SPK +/-</text>
+        <text class="t-bad" x="740" y="730">&#10005; Do NOT tie SPK&minus; to GND</text>
+
+        <!-- Wires from SPK terminals to Speaker -->
+        <path class="w-spk" d="M872 642 V666" />
+        <circle class="n-spk" cx="872" cy="642" r="3" />
+        <circle class="n-spk" cx="872" cy="666" r="3" />
+        <path class="w-gnd" d="M914 642 V666" />
+        <circle class="n-gnd" cx="914" cy="642" r="3" />
+        <circle class="n-gnd" cx="914" cy="666" r="3" />
+
+        <!-- OUT signal traces to ESP32 header -->
+        <path class="w-sig" d="M360 616 V680 H180 V690" />
+        <circle class="n-sig" cx="360" cy="616" r="3" />
+        <circle class="n-sig" cx="180" cy="690" r="3" />
+        <text class="t-sig" x="368" y="675">&rarr; GPIO 13 (ROOMC)</text>
+
+        <path class="w-sig" d="M505 616 V702 H200 V690" />
+        <circle class="n-sig" cx="505" cy="616" r="3" />
+        <circle class="n-sig" cx="200" cy="690" r="3" />
+        <text class="t-sig" x="513" y="697">&rarr; GPIO 12 (ROOMA)</text>
+
+        <path class="w-sig" d="M650 616 V724 H220 V690" />
+        <circle class="n-sig" cx="650" cy="616" r="3" />
+        <circle class="n-sig" cx="220" cy="690" r="3" />
+        <text class="t-sig" x="658" y="719">&rarr; GPIO 14 (ROOMB)</text>
+
+      </svg>
+    </div>
+
+    <!-- Hole Landing Reference Table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Wire / Lead</th><th>From Component Pin</th><th>Lands in Breadboard Point</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="pin">HW-131 Module</td><td>12 V 1A/2A DC Adapter</td><td class="hole">Cols 1&ndash;4 (Left Edge)</td><td>Set both jumpers to 5V.</td></tr>
+          <tr><td class="pin">SIM800L 5Vin</td><td>SIM800L 5Vin</td><td class="hole">TOP + Rail &middot; col 56</td><td>High current 5V line.</td></tr>
+          <tr><td class="pin">SIM800L GND</td><td>SIM800L GND</td><td class="hole">TOP &minus; Rail &middot; col 59</td><td>SIM800L power ground.</td></tr>
+          <tr><td class="pin">Capacitor (+)</td><td>1000 &micro;F (+) leg</td><td class="hole">TOP + Rail &middot; col 50</td><td>Parallel power buffer.</td></tr>
+          <tr><td class="pin">Capacitor (&minus;)</td><td>1000 &micro;F (&minus;) stripe leg</td><td class="hole">TOP &minus; Rail &middot; col 52</td><td>Never insert backwards.</td></tr>
+          <tr><td class="pin">Ground Bridge</td><td>BOTTOM &minus; Rail &middot; col 60</td><td class="hole">TOP &minus; Rail &middot; col 60</td><td>Joins all grounds into a single net.</td></tr>
+          <tr><td class="pin">ESP32 VIN</td><td>ESP32 VIN Pin</td><td class="hole">BOTTOM + Rail &middot; col 5</td><td>Draws 5V from HW-131.</td></tr>
+          <tr><td class="pin">ESP32 GND</td><td>ESP32 GND Pin</td><td class="hole">BOTTOM &minus; Rail &middot; col 8</td><td>ESP32 system ground.</td></tr>
+          <tr style="background:var(--audio-bg);"><td class="pin aud">Amp VIN</td><td>MAX98357A VIN</td><td class="hole">BOTTOM + Rail &middot; col 48</td><td>5V amplifier power source.</td></tr>
+          <tr style="background:var(--audio-bg);"><td class="pin aud">Amp GND</td><td>MAX98357A GND</td><td class="hole">BOTTOM &minus; Rail &middot; col 50</td><td>Amplifier ground.</td></tr>
+          <tr style="background:var(--audio-bg);"><td class="pin aud">Amp LRC</td><td>MAX98357A LRC</td><td class="hole">ESP32 GPIO 25 (Direct)</td><td>I2S Word Select Clock.</td></tr>
+          <tr style="background:var(--audio-bg);"><td class="pin aud">Amp BCLK</td><td>MAX98357A BCLK</td><td class="hole">ESP32 GPIO 26 (Direct)</td><td>I2S Bit Clock.</td></tr>
+          <tr style="background:var(--audio-bg);"><td class="pin aud">Amp DIN</td><td>MAX98357A DIN</td><td class="hole">ESP32 GPIO 27 (Direct)</td><td>I2S Serial Audio Data.</td></tr>
+          <tr style="background:var(--audio-bg);"><td class="pin aud">Amp GAIN</td><td>MAX98357A GAIN</td><td class="hole">Unconnected / Open</td><td>Defaults to +9dB loud alarm.</td></tr>
+          <tr style="background:var(--audio-bg);"><td class="pin aud">Amp SD</td><td>MAX98357A SD</td><td class="hole">Unconnected / Open</td><td>Defaults to mono channel mix.</td></tr>
+          <tr style="background:var(--audio-bg);"><td class="pin aud">Speaker (+)</td><td>4&Omega;/8&Omega; Speaker (+) wire</td><td class="hole">Amp SPK+ Screw Terminal</td><td>Differential positive.</td></tr>
+          <tr style="background:var(--audio-bg);"><td class="pin aud">Speaker (&minus;)</td><td>4&Omega;/8&Omega; Speaker (&minus;) wire</td><td class="hole">Amp SPK&minus; Screw Terminal</td><td>Differential negative &mdash; DO NOT GROUND.</td></tr>
+          <tr><td class="pin">PIR ROOMC VCC/GND</td><td>PIR 1 VCC &amp; GND</td><td class="hole">BOTTOM + Rail (col 18) / &minus; Rail (col 20)</td><td>Powers Room C sensor.</td></tr>
+          <tr><td class="pin">PIR ROOMC OUT</td><td>PIR 1 OUT</td><td class="hole">ESP32 GPIO 13 (Direct)</td><td>Motion trigger for Room C.</td></tr>
+          <tr><td class="pin">PIR ROOMA VCC/GND</td><td>PIR 2 VCC &amp; GND</td><td class="hole">BOTTOM + Rail (col 28) / &minus; Rail (col 30)</td><td>Powers Room A sensor.</td></tr>
+          <tr><td class="pin">PIR ROOMA OUT</td><td>PIR 2 OUT</td><td class="hole">ESP32 GPIO 12 (Direct)</td><td>Motion trigger for Room A.</td></tr>
+          <tr><td class="pin">PIR ROOMB VCC/GND</td><td>PIR 3 VCC &amp; GND</td><td class="hole">BOTTOM + Rail (col 38) / &minus; Rail (col 40)</td><td>Powers Room B sensor.</td></tr>
+          <tr><td class="pin">PIR ROOMB OUT</td><td>PIR 3 OUT</td><td class="hole">ESP32 GPIO 14 (Direct)</td><td>Motion trigger for Room B.</td></tr>
+          <tr><td class="pin">SIM800L Data</td><td>TXD / RXD / RST</td><td class="hole">ESP32 GPIOs 16 / 17 / 4 (Direct)</td><td>Direct jumpers to ESP32 headers.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 04: SPEAKER & AUDIO SIREN CONFIGURATION              -->
+  <!-- ============================================================ -->
+  <section>
+    <h2><span class="num">04</span>Speaker, Amplifier &amp; Siren Audio Behavior</h2>
+    <p class="col">
+      The firmware uses the ESP32 hardware <strong>I2S DMA audio controller</strong> to synthesize clean, loud sine-wave
+      alarm sweeps and system status chimes directly without blocking any sensor monitoring or Wi-Fi operations.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Audio Event</th><th>Acoustic Sound Profile</th><th>Firmware Trigger in <code>esp32_motion_sensor.ino</code></th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="aud">Boot / Arming Chime</td>
+            <td>Dual rising chirp: <strong>1600 Hz (80 ms)</strong> followed by <strong>2400 Hz (120 ms)</strong>.</td>
+            <td>Fires in <code>setup()</code> once the 30-second PIR sensor warm-up countdown completes and Wi-Fi connects.</td>
+          </tr>
+          <tr>
+            <td class="aud">Motion Alarm Siren</td>
+            <td>Rapid 12-sweep emergency siren: sweeps continuously from <strong>600 Hz up to 2200 Hz</strong> over 3000 ms (3 seconds).</td>
+            <td>Fires inside <code>loop()</code> whenever any active PIR zone confirms continuous movement for &gt;500 ms.</td>
+          </tr>
+          <tr>
+            <td class="aud">Non-Blocking Playback</td>
+            <td>Zero delay. DMA buffer transfers audio frames in background while the CPU continues polling sensors and Wi-Fi.</td>
+            <td>Handled via <code>speakerTick()</code> in the main loop using <code>i2s_write()</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Hardware Gain Adjustment Settings</h3>
+    <p class="col">
+      The MAX98357A has an internal gain selector pin (<code>GAIN</code>). By default, leaving it unconnected
+      gives +9 dB, which produces an authoritative, loud siren for farm poultry or building security:
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>GAIN Pin Wiring</th><th>Gain (dB)</th><th>Loudness Level</th><th>Best Used For</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="pin">Connected to GND</td><td>3 dB</td><td>Low</td><td>Quiet benchtop testing in apartments / office</td></tr>
+          <tr><td class="pin">100 k&Omega; resistor to GND</td><td>6 dB</td><td>Medium-Low</td><td>Indoor room alerts</td></tr>
+          <tr style="background:var(--audio-bg);"><td class="pin aud">Unconnected (Floating)</td><td><strong>9 dB</strong></td><td><strong>Standard Loud (Default)</strong></td><td><strong>Recommended &mdash; clear, penetrating security alarm</strong></td></tr>
+          <tr><td class="pin">Connected to 5V (VIN)</td><td>12 dB</td><td>Very Loud</td><td>High-ambient noise environments</td></tr>
+          <tr><td class="pin">100 k&Omega; resistor to 5V</td><td>15 dB</td><td>Maximum</td><td>Open outdoor spaces (may clip if volume is set to max)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Step-by-Step Audio Verification Test</h3>
+    <div class="checks">
+      <div class="check"><span class="mark">01</span><span>Plug the 12V adapter into HW-131 and verify the green LED on the HW-131 lights up.</span></div>
+      <div class="check"><span class="mark">02</span><span>Watch the Arduino Serial Monitor at <strong>115200 baud</strong>. Confirm you see: <code>[I2S] Audio amplifier initialized (LRC:25, BCK:26, DIN:27)</code>.</span></div>
+      <div class="check"><span class="mark">03</span><span>Wait for the 30-second sensor countdown to end. Listen for the crisp <strong>two-tone arming chirp</strong> ("pip-peep!").</span></div>
+      <div class="check"><span class="mark">04</span><span>Wave your hand across PIR 1, 2, or 3. Confirm the <strong>12-cycle sweep siren (3 seconds)</strong> sounds loudly and clearly through the speaker.</span></div>
+      <div class="check"><span class="mark">05</span><span>Verify the web dashboard updates instantly to show the triggered zone with a new log entry.</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 05: WIRELESS DATA FLOW                               -->
+  <!-- ============================================================ -->
+  <section>
+    <h2><span class="num">05</span>Wireless Data Flow (Before vs. After)</h2>
+
+    <div class="flow">
+      <span class="tag">Direct Wi-Fi Transmission &bull; No Serial Bridge Required</span>
+      <p class="chain">
+        <strong>PIR Motion Detected</strong> &rarr; <strong>ESP32 Hardware Interrupt / Poll</strong><br>
+        &bull; <strong>MAX98357A I2S Audio Amp</strong> &rarr; <strong>4&Omega;/8&Omega; 3W Speaker Siren</strong> (Instant Local Deterrent)<br>
+        &bull; <strong>SIM800L (Hardware UART2)</strong> &rarr; <strong>Cellular Network</strong> &rarr; <strong>Mobile Phone (SMS Alert)</strong><br>
+        &bull; <span style="color:var(--wifi); font-weight:bold;">[2.4GHz Wi-Fi HTTP POST]</span> &rarr; <strong>PHP API (XAMPP)</strong> &rarr; <strong>MySQL</strong> &rarr; <strong>Live Dashboard &amp; Android App</strong>
+      </p>
+      <p>
+        The ESP32 completely eliminates the need for USB serial tethering cables, <code>serial_reader.ps1</code>, or running background PowerShell scripts on your PC.
       </p>
     </div>
   </section>
 
+  <!-- ============================================================ -->
+  <!-- SECTION 06: PRE-POWER CHECKLIST                              -->
+  <!-- ============================================================ -->
   <section>
-    <h2><span class="num">04</span>Pre-Power Checklist</h2>
+    <h2><span class="num">06</span>Pre-Power Checklist</h2>
     <div class="checks">
-      <div class="check"><span class="mark">01</span><span>Check the <strong>HW-131 jumpers</strong> &mdash; verify both are seated firmly at <strong>5V</strong>.</span></div>
-      <div class="check"><span class="mark">02</span><span>Multimeter continuity check on the <strong>ground rails</strong> &mdash; verify ESP32 GND, SIM800L GND, and PIR GND are unified.</span></div>
-      <div class="check"><span class="mark">03</span><span>Confirm the <strong>1000 &micro;F capacitor</strong> polarity across SIM800L power rails (striped leg to GND).</span></div>
-      <div class="check"><span class="mark">04</span><span>Confirm <code>VDD</code> on the SIM800L is <strong>unconnected</strong>.</span></div>
-      <div class="check"><span class="mark">05</span><span>Verify Wi-Fi credentials (<code>WIFI_SSID</code>, <code>WIFI_PASSWORD</code>) and your PC's IP (<code>SERVER_IP</code>) in <code>esp32_motion_sensor.ino</code>.</span></div>
+      <div class="check"><span class="mark">01</span><span>Check the <strong>HW-131 jumpers</strong> &mdash; verify both top and bottom jumpers are seated across the <strong>5V</strong> pins (not 3.3V or OFF).</span></div>
+      <div class="check"><span class="mark">02</span><span>Multimeter continuity test: probe the <strong>top and bottom &minus; rails</strong> &mdash; verify they beep together (confirming common ground bridge at col 60).</span></div>
+      <div class="check"><span class="mark">03</span><span>Audio Amplifier Safety: verify <strong>neither SPK+ nor SPK&minus; is connected to breadboard ground or 5V</strong>. They must connect only to the two speaker terminals.</span></div>
+      <div class="check"><span class="mark">04</span><span>Check the <strong>1000 &micro;F capacitor polarity</strong> across the SIM800L power rails &mdash; striped leg must be seated in the &minus; rail.</span></div>
+      <div class="check"><span class="mark">05</span><span>Confirm <code>VDD</code> on the SIM800L is <strong>unconnected</strong> (it is an internal 2.8V reference output &mdash; feeding it 5V will burn the SIM800L radio).</span></div>
+      <div class="check"><span class="mark">06</span><span>Screw the GSM antenna securely onto the SIM800L module before powering up. Transmitting without an antenna can damage the RF PA.</span></div>
+      <div class="check"><span class="mark">07</span><span>Verify Wi-Fi credentials (<code>WIFI_SSID</code>, <code>WIFI_PASSWORD</code>) and your PC's IP (<code>SERVER_IP</code>) in <code>esp32_motion_sensor.ino</code>.</span></div>
     </div>
   </section>
 
+  <!-- ============================================================ -->
+  <!-- SECTION 07: TROUBLESHOOTING                                  -->
+  <!-- ============================================================ -->
   <section>
-    <h2><span class="num">05</span>Troubleshooting</h2>
+    <h2><span class="num">07</span>Troubleshooting</h2>
     <div class="table-wrap">
       <table>
         <thead>
@@ -815,24 +1174,39 @@
         </thead>
         <tbody>
           <tr>
-            <td class="warn">Wi-Fi connection fails</td>
-            <td>Incorrect SSID/Password or 5GHz network</td>
-            <td>ESP32 only supports <strong>2.4GHz Wi-Fi</strong>. Check your router SSID and password.</td>
+            <td class="warn">No sound from speaker on boot or motion</td>
+            <td>I2S pin mismatch or amplifier power missing</td>
+            <td>Confirm LRC &rarr; GPIO 25, BCLK &rarr; GPIO 26, DIN &rarr; GPIO 27. Ensure amp VIN is wired to 5V rail and GND to common ground. Check that <code>SPEAKER_ENABLED = true</code> in the sketch.</td>
           </tr>
           <tr>
-            <td class="warn">HTTP POST returns error (-1 or connection refused)</td>
+            <td class="warn">Audio is distorted or speaker crackles</td>
+            <td>Volume clipping or weak 5V rail</td>
+            <td>Lower <code>SIREN_VOLUME</code> in sketch (e.g. from 28000 to 18000 or 14000). Ensure the HW-131 is powered by a 12V 1A&ndash;2A adapter rather than USB power.</td>
+          </tr>
+          <tr>
+            <td class="warn">Buzzing / static clicking in speaker during SMS</td>
+            <td>GSM RF transmission coupling into audio wires</td>
+            <td>Twist the two speaker wires tightly together. Route the speaker and amplifier wires at least 15 cm away from the SIM800L GSM antenna.</td>
+          </tr>
+          <tr>
+            <td class="warn">ESP32 reboots when alarm siren plays</td>
+            <td>Voltage drop on 5V rail caused by simultaneous audio &amp; GSM draw</td>
+            <td>Ensure the 1000 &micro;F capacitor is installed on the power rails. Use a 12V 2A DC wall adapter. Optionally add a 470 &micro;F capacitor across the amp VIN and GND pins.</td>
+          </tr>
+          <tr>
+            <td class="warn">Wi-Fi connection fails (stuck on connecting dots)</td>
+            <td>5GHz network or incorrect credentials</td>
+            <td>ESP32 only supports <strong>2.4GHz Wi-Fi</strong>. Verify your Wi-Fi SSID and password in <code>esp32_motion_sensor.ino</code>.</td>
+          </tr>
+          <tr>
+            <td class="warn">HTTP POST returns error (-1 or Connection Refused)</td>
             <td>Wrong PC IP or Windows Firewall blocking Port 80</td>
-            <td>Find your PC's IPv4 via <code>ipconfig</code> and update <code>SERVER_IP</code>. Ensure Apache is running in XAMPP and allowed in Windows Firewall.</td>
+            <td>Find your PC's IPv4 via <code>ipconfig</code> in Command Prompt and update <code>SERVER_IP</code>. Ensure Apache is running in XAMPP and allowed in Windows Firewall.</td>
           </tr>
           <tr>
             <td class="warn">SIM800L no reply to AT commands</td>
             <td>GPIO 16/17 swapped or power insufficient</td>
-            <td>Ensure SIM800L TXD &rarr; GPIO 16 and RXD &rarr; GPIO 17. Verify HW-131 has 12V adapter plugged in.</td>
-          </tr>
-          <tr>
-            <td class="warn">Sensor false-triggers on SMS send</td>
-            <td>GSM RF burst coupling into PIR dome</td>
-            <td>Position the GSM antenna at least 15&ndash;20 cm away from the PIR sensor domes.</td>
+            <td>Ensure SIM800L TXD &rarr; GPIO 16 (RX2) and RXD &rarr; GPIO 17 (TX2). Verify HW-131 power switch is pushed in (ON).</td>
           </tr>
         </tbody>
       </table>
@@ -841,7 +1215,7 @@
 
   <footer>
     <p>
-      Wireless Build Sheet for <code>ABMDMS</code> &middot; Sketch: <code>arduino/esp32_motion_sensor/esp32_motion_sensor.ino</code> &middot;
+      Wireless &amp; Audio Build Sheet for <code>ABMDMS</code> &middot; Sketch: <code>arduino/esp32_motion_sensor/esp32_motion_sensor.ino</code> &middot;
       Backend: <code>api/record_motion.php</code> &amp; <code>api/record_sms.php</code>.
     </p>
   </footer>

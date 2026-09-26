@@ -65,6 +65,10 @@ The ESP32 uses dedicated hardware I2S DMA channels to drive the MAX98357A 3W Cla
 | **SD** | *Unconnected* | Default (Left + Right mix to mono) |
 | **SPK + / -** | **Speaker (+/-)** | Direct connection to 4Ω or 8Ω speaker |
 
+> **⚠️ CRITICAL SPEAKER NOTE (BTL Output):** The MAX98357A uses Bridge-Tied Load (BTL) drive. **NEVER connect SPK(-) or SPK(+) to Breadboard Ground or 5V!** Connect only to the two speaker terminals.
+> 
+> For interactive schematics and the 830-point hole-by-hole breadboard diagram, open [wiring.html](file:///C:/xampp/htdocs/ABMDMS/wiring.html).
+
 ---
 
 ## 3. Software Configuration

@@ -68,10 +68,10 @@ const bool SPEAKER_ENABLED = true;
 
 // Siren Settings for MAX98357A Speaker
 const unsigned long SIREN_SWEEP_MS = 250;   // Speed of each high-low sweep (ms)
-const int SIREN_CYCLES             = 4;     // Total sweeps per alarm trigger
+const int SIREN_CYCLES             = 12;    // Total sweeps per alarm trigger (12 * 250ms = 3.0s alarm, previous: 4)
 const int SIREN_FREQ_LOW           = 600;   // Low pitch frequency (Hz)
 const int SIREN_FREQ_HIGH          = 2200;  // High pitch frequency (Hz)
-const int SIREN_VOLUME             = 18000; // Amplitude volume (1 to 32767)
+const int SIREN_VOLUME             = 28000; // Amplitude volume (1 to 32767, increased from 18000)
 
 const unsigned long WARMUP_SECONDS  = 30;   
 const unsigned long STOP_CONFIRM_MS = 2000; 
